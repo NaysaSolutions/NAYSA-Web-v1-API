@@ -22,8 +22,8 @@
     </div>
 
     @php
-      // Build the frontend link here (no need to pass $resetUrl from PHP)
-      $baseUrl   = rtrim(config('app.frontend_url', config('app.url')) ?? '', '/');
+      
+      $baseUrl = rtrim(config('app.url'), '/');
       $userQ     = urlencode($userCode ?? '');
       $isReset   = ($purpose ?? '') === 'reset';
 
