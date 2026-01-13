@@ -70,6 +70,8 @@ class UserController extends Controller
     {
         $req->validate(['userCode' => 'required|string']);
         $userCode = trim($req->input('userCode'));
+        $company = $req->header('X-Company-DB'); // ✅ tenant/db
+
 
         try {
             // Fetch user (for email/name) via sproc
@@ -91,7 +93,8 @@ class UserController extends Controller
                     'reset',                                      // purpose
                     $user['userName'] ?? $userCode,               // name
                     $userCode,                                    // userCode
-                    null                                          // temp (none)
+                    null,
+                    $company // ✅ add                                          // temp (none)
                 ));
 
                 return response()->json([
@@ -119,7 +122,8 @@ class UserController extends Controller
                 'release',
                 $user['userName'] ?? $userCode,
                 $userCode,
-                $temp
+                $temp,
+                $company // ✅ add
             ));
 
             return response()->json([
