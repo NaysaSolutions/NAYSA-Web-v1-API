@@ -168,4 +168,44 @@ public function addDetail(Request $request) {
     }
 }
 
+public function delete(Request $request)
+{
+    try {
+        $vendCode = trim($request->input('VEND_CODE', ''));
+
+        if ($vendCode === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payee Code is required.',
+            ], 400);
+        }
+
+        $params = [
+            'json_data' => [
+                'vendCode' => $vendCode,
+            ],
+        ];
+
+        DB::statement(
+            "EXEC sproc_PHP_VendMast @mode = ?, @params = ?",
+            [
+                'Delete',
+                json_encode($params),
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payee deleted successfully.',
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to delete payee.',
+            'error'   => $e->getMessage(),
+        ], 500);
+    }
+}
+
+
 }
