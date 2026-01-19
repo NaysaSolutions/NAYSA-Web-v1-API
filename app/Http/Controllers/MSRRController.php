@@ -258,6 +258,43 @@ public function update(Request $request)
         }
     }
 
+    public function finalize(Request $request)
+{
+    $request->validate([
+        'tranId' => 'required|string|max:40',
+        'mode'   => 'nullable|string',
+    ]);
+
+    try {
+        $tranId   = $request->tranId;
+        $mode     = $request->mode ?? 'Finalize';
+        $userCode = optional($request->user())->USER_CODE ?? $request->userCode;
+
+        $params = json_encode([
+            'json_data' => [
+                'userCode' => $userCode
+            ]
+        ]);
+
+        $result = DB::connection('sqlsrv')->select(
+            'EXEC dbo.sproc_PHP_Posting_MSRR @tranId = ?, @mode = ?, @userCode = ?, @params = ?',
+            [$tranId, $mode, $userCode, $params]
+        );
+
+        return response()->json([
+            'success' => true,
+            'result'  => $result[0]->result ?? null
+        ]);
+
+    } catch (\Throwable $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 500);
+    }
+}
+
+
 }
 
 

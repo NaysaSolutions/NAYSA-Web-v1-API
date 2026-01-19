@@ -63,7 +63,7 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MSISController;
 use App\Http\Controllers\MSSTController;
 use App\Http\Controllers\MSAJController;
-
+use App\Http\Controllers\MSRRController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -305,11 +305,12 @@ Route::middleware('tenant')->group(function () {
     Route::post('/getPROpen', [PRController::class, 'getPROpen']);
     Route::post('/po/update', [POController::class, 'updatePrFromPO']);
 
-    Route::get('/RR', [RRController::class, 'index']);
-    Route::post('/upsertRR', [RRController::class, 'upsert']);
-    Route::post('/generateGLRR', [RRController::class, 'generateGL']);
-    Route::get('/getRR', [RRController::class, 'get']);
-    Route::get('/postingRR', [RRController::class, 'posting']);
+    Route::get('/RR', [MSRRController::class, 'index']);
+    Route::post('/upsertRR', [MSRRController::class, 'upsert']);
+    Route::post('/generateGLRR', [MSRRController::class, 'generateGL']);
+    Route::get('/getRR', [MSRRController::class, 'get']);
+    Route::get('/postingRR', [MSRRController::class, 'posting']);
+    
 
     Route::get('/MSIS', [MSISController::class, 'index']);
     Route::post('/upsertMSIS', [MSISController::class, 'upsert']);
@@ -436,6 +437,7 @@ Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
     Route::post('/finalizeCV',   [CVController::class, 'finalize']);
     Route::post('/finalizeAPDM', [APDMController::class, 'finalize']);
     Route::post('/finalizeAPCM', [APCMController::class, 'finalize']);
+    Route::post('/finalizeMSRR', [MSRRController::class, 'finalize']);
 
     Route::post('/cancelARDM', [ARDMController::class, 'cancel']);
     Route::post('/cancelSOA', [SOAController::class, 'cancel']);
