@@ -62,6 +62,7 @@ use App\Http\Controllers\WarehouseMastController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\MSISController;
 use App\Http\Controllers\MSSTController;
+use App\Http\Controllers\MSAJController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -308,6 +309,15 @@ Route::middleware('tenant')->group(function () {
     Route::post('/generateGLMSST', [MSSTController::class, 'generateGL']);
     Route::get('/getMSST', [MSSTController::class, 'get']);
     Route::get('/postingMSST', [MSSTController::class, 'posting']);
+
+
+    Route::get('/MSAJ', [MSAJController::class, 'index']);
+    Route::post('/upsertMSAJ', [MSAJController::class, 'upsert']);
+    Route::post('/generateGLMSAJ', [MSAJController::class, 'generateGL']);
+    Route::get('/getMSAJ', [MSAJController::class, 'get']);
+    Route::get('/postingMSAJ', [MSAJController::class, 'posting']);
+
+
 
     Route::prefix('warehouse')->group(function () {
         Route::get('/warehouse',   [WarehouseMastController::class, 'load']);
