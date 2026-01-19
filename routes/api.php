@@ -88,7 +88,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsertCompany', [CompanyController::class, 'upsert']);
     Route::get('/getCompany', [CompanyController::class, 'get']);
 
-    Route::get('/get', [UserController::class, 'get']);
+    Route::get('/getUser', [UserController::class, 'get']);
     Route::get('/load', [UserController::class, 'load']);
     Route::post('/users/upsert', [UserController::class, 'upsert']);
     Route::post('/users/approve', [UserController::class, 'approveAccount']);
