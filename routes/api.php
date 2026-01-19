@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 use App\Http\Controllers\HSDocController;
 use App\Http\Controllers\HSDropdownController;
@@ -88,8 +88,13 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsertCompany', [CompanyController::class, 'upsert']);
     Route::get('/getCompany', [CompanyController::class, 'get']);
 
-    Route::get('/getUser', [UserController::class, 'get']);
-    Route::get('/users', [UserController::class, 'loadUsers']);
+    Route::get('/get', [UserController::class, 'get']);
+    Route::get('/load', [UserController::class, 'load']);
+    Route::post('/users/upsert', [UserController::class, 'upsert']);
+    Route::post('/users/approve', [UserController::class, 'approveAccount']);
+    Route::post('/users/delete', [UserController::class, 'delete']);
+    Route::post('/users/request-password-reset', [UserController::class, 'requestPasswordReset']);
+    Route::post('/users/change-password', [UserController::class, 'changePassword']);
 
     // Heart Strong
     Route::get('/getHSDoc', [HSDocController::class, 'get']);
@@ -102,12 +107,16 @@ Route::middleware('tenant')->group(function () {
 
     Route::get('/role', [AccessRightsController::class, 'loadRole']);
     Route::get('/getRole', [AccessRightsController::class, 'getRole']);
-    Route::post('/deleteRole', [AccessRightsController::class, 'deleteRole']);
+    Route::post('/deleteRole', [AccessRightsController::class, 'DeleteRole']);
+    Route::get('/loadRole', [AccessRightsController::class, 'getUsers']);
     Route::get('/getRoleMenu', [AccessRightsController::class, 'getRoleMenu']);
-    Route::get('/getUserRole', [AccessRightsController::class, 'getUserRole']);
-    Route::post('/upsertRole', [AccessRightsController::class, 'upsertRole']);
+    Route::get('/getUserRoles', [AccessRightsController::class, 'getUserRoles']);
+    Route::post('/upsertRole', [AccessRightsController::class, 'UpsertRole']);
     Route::post('/upsertRoleMenu', [AccessRightsController::class, 'upsertRoleMenu']);
     Route::post('/UpsertUserRole', [AccessRightsController::class, 'UpsertUserRole']);
+    Route::post('/upsert', [AccessRightsController::class, 'upsert']);
+    Route::post('/deleteUserRole', [AccessRightsController::class, 'deleteUserRole']);
+    Route::get('/getUserRoles', [AccessRightsController::class, 'getUserRoles']);
 
     //Printing
     Route::prefix('printing')->group(function () {
@@ -163,16 +172,19 @@ Route::middleware('tenant')->group(function () {
     Route::get('/bankType', [BankTypeController::class, 'index']);
     Route::post('/upsertBankType', [BankTypeController::class, 'upsert']);
     Route::get('/lookupBankType', [BankTypeController::class, 'lookup']);
+    Route::post('/deleteBankType', [BankTypeController::class, 'delete']);
 
     Route::get('/curr', [CurrController::class, 'index']);
     Route::post('/upsertCurr', [CurrController::class, 'upsert']);
     Route::get('/lookupCurr', [CurrController::class, 'lookup']);
     Route::get('/getCurr', [CurrController::class, 'get']);
+    Route::post('/deleteCurr', [CurrController::class, 'delete']);
 
     Route::get('/vat', [VATController::class, 'index']);
     Route::post('/upsertVat', [VATController::class, 'upsert']);
     Route::get('/lookupVat', [VATController::class, 'lookup']);
     Route::get('/getVat', [VATController::class, 'get']);
+    Route::post('/deleteVat', [VATController::class, 'delete']);
 
     Route::get('/atc', [ATCController::class, 'index']);
     Route::post('/upsertATC', [ATCController::class, 'upsert']);
@@ -183,6 +195,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsertCutOff', [CutoffController::class, 'upsert']);
     Route::get('/lookupCutOff', [CutoffController::class, 'lookup']);
     Route::get('/getCutOff', [CutoffController::class, 'get']);
+    Route::post('/deleteCutOff', [CutoffController::class, 'delete']);
 
     Route::get('/rCType', [RCTypeController::class, 'index']);
     Route::post('/upsertRCType', [RCTypeController::class, 'upsert']);
@@ -323,14 +336,14 @@ Route::middleware('tenant')->group(function () {
         Route::get('/warehouse',   [WarehouseMastController::class, 'load']);
         Route::get('/getWarehouse',    [WarehouseMastController::class, 'get']);      // ?whCode=WH001
         Route::get('/lookupWarehouse', [WarehouseMastController::class, 'lookup']);   // ?filter=ActiveAll
-        Route::post('/upsertWarehouse',[WarehouseMastController::class, 'upsert']);
+        Route::post('/upsertWarehouse', [WarehouseMastController::class, 'upsert']);
     });
 
     Route::prefix('location')->group(function () {
         Route::get('/location',   [LocationController::class, 'load']);
         Route::get('/getLocation',    [LocationController::class, 'get']);           // ?locCode=L001
         Route::get('/lookupLocation', [LocationController::class, 'lookup']);        // ?filter=ActiveAll
-        Route::post('/upsertLocation',[LocationController::class, 'upsert']);
+        Route::post('/upsertLocation', [LocationController::class, 'upsert']);
     });
 
     Route::get('/aPCM', [APCMController::class, 'index']);
@@ -373,7 +386,7 @@ Route::middleware('tenant')->group(function () {
 
     Route::get('/sOA', [SOAController::class, 'index']);
     Route::post('/upsertSOA', [SOAController::class, 'upsert']);
-    Route::post('/generateGLSOA', [SOAController::class, 'generateGL']);   
+    Route::post('/generateGLSOA', [SOAController::class, 'generateGL']);
     Route::get('/getSOA', [SOAController::class, 'get']);
     Route::get('/postingSOA', [SOAController::class, 'posting']);
     Route::post('/getSOAHistory', [SOAController::class, 'history']);
@@ -395,7 +408,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/cR', [CRController::class, 'index']);
     Route::post('/upsertCR', [CRController::class, 'upsert']);
     Route::post('/getCR', [CRController::class, 'get']);
-    Route::post('/generateGLCR', [CRController::class, 'generateGL']);   
+    Route::post('/generateGLCR', [CRController::class, 'generateGL']);
     Route::get('/getCR', [CRController::class, 'get']);
     Route::get('/postingCR', [CRController::class, 'posting']);
     Route::post('/getCRHistory', [CRController::class, 'history']);
@@ -428,12 +441,12 @@ Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
     Route::post('/cancelPCV', [PCVController::class, 'cancel']);
     Route::post('/cancelCV',  [CVController::class, 'cancel']);
     Route::post('/cancelAPV', [APVoucherController::class, 'cancel']);
-    Route::post('/cancelJV',  [JournalVoucherController::class, 'cancel']);    
-    Route::post('/cancelARCM',[ARCMController::class, 'cancel']);
+    Route::post('/cancelJV',  [JournalVoucherController::class, 'cancel']);
+    Route::post('/cancelARCM', [ARCMController::class, 'cancel']);
     Route::post('/cancelCR',  [CRController::class, 'cancel']);
     Route::post('/cancelAR',  [ARController::class, 'cancel']);
-    Route::post('/cancelAPDM',[APDMController::class, 'cancel']);
-    Route::post('/cancelAPCM',[APCMController::class, 'cancel']);
+    Route::post('/cancelAPDM', [APDMController::class, 'cancel']);
+    Route::post('/cancelAPCM', [APCMController::class, 'cancel']);
 
     Route::post('/cancelPR',  [PRController::class, 'cancel']);
 

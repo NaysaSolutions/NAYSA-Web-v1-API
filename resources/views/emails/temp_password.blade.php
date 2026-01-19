@@ -22,16 +22,19 @@
     </div>
 
     @php
-      // Build the frontend link here (no need to pass $resetUrl from PHP)
-      $baseUrl   = rtrim(config('app.frontend_url', config('app.url')) ?? '', '/');
-      $userQ     = urlencode($userCode ?? '');
-      $isReset   = ($purpose ?? '') === 'reset';
+  $baseUrl = rtrim(config('app.url'), '/');
+  $userQ   = urlencode($userCode ?? '');
+  $isReset = ($purpose ?? '') === 'reset';
 
-      // Tokenless URLs (as requested)
-      $actionUrl = $isReset
-          ? "{$baseUrl}/change-password?mode=reset&user={$userQ}"
-          : "{$baseUrl}/change-password?mode=release&user={$userQ}";
-    @endphp
+  // ✅ get company/db code (adjust variable name based on what you pass to the view)
+  $companyQ = urlencode($company ?? $companyCode ?? $db ?? $branchcode ?? '');
+
+  // Tokenless URLs (as requested)
+  $actionUrl = $isReset
+      ? "{$baseUrl}/change-password?mode=reset&user={$userQ}&company={$companyQ}"
+      : "{$baseUrl}/change-password?mode=release&user={$userQ}&company={$companyQ}";
+@endphp
+
 
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f3f4f6;">
       <tr>
