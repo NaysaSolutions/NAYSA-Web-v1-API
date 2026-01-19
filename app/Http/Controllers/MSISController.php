@@ -261,6 +261,58 @@ public function history(Request $request) {
 
 }
 
+public function msLookup(Request $request)
+    {
+        // ✅ Basic validation (adjust as needed)
+        $validated = $request->validate([
+            'whouseCode' => 'nullable|string|max:100',
+            'locCode'    => 'nullable|string|max:100',
+            'docType'    => 'required|string|max:20', // expect "MSIS"
+            'userCode'   => 'nullable|string|max:50',
+            'dt1'        => 'nullable', // can be array or omitted
+            'mode'       => 'nullable|string|max:20', // optional
+        ]);
+
+        // Build the JSON payload exactly like the stored procedure expects
+        $payload = [
+            'json_data' => [
+                'dt1'        => $validated['dt1'] ?? [],         // your sproc parses it but doesn't use it
+                'userCode'   => $validated['userCode'] ?? '',     // parsed but not used
+                'whouseCode' => $validated['whouseCode'] ?? '',
+                'locCode'    => $validated['locCode'] ?? '',
+                'docType'    => $validated['docType'],            // must be MSIS to run
+            ],
+        ];
+
+        $mode = $validated['mode'] ?? 'Lookup';
+        $params = json_encode($payload, JSON_UNESCAPED_SLASHES);
+
+        // ✅ Call the stored procedure
+        // Your SP returns a single row with a column named "result" (JSON text)
+        $rows = DB::select(
+            "EXEC dbo.sproc_PHP_INVLookup_MS @mode = ?, @params = ?",
+            [$mode, $params]
+        );
+
+        $resultJson = $rows[0]->result ?? '[]';
+
+        // If result is a JSON string, decode and return as real JSON array (recommended)
+        $decoded = json_decode($resultJson, true);
+
+        // If decoding fails, still return raw to avoid breaking clients
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return response()->json([
+                'ok' => true,
+                'result_raw' => $resultJson,
+                'warning' => 'Result is not valid JSON',
+            ]);
+        }
+
+        return response()->json([
+            'ok' => true,
+            'result' => $decoded,
+        ]);
+    }
 
 }
 

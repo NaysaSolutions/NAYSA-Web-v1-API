@@ -346,6 +346,8 @@ Route::middleware('tenant')->group(function () {
         Route::post('/upsertLocation', [LocationController::class, 'upsert']);
     });
 
+    Route::post('/msLookup', [MSISController::class, 'msLookup']);
+
     Route::get('/aPCM', [APCMController::class, 'index']);
     Route::post('/upsertAPCM', [APCMController::class, 'upsert']);
     Route::post('/generateGLAPCM', [APCMController::class, 'generateGL']);
