@@ -261,28 +261,27 @@ public function history(Request $request) {
 
 }
 
-public function msLookup(Request $request)
+ public function msLookup(Request $request)
     {
-        // ✅ Basic validation (adjust as needed)
         $validated = $request->validate([
             'whouseCode' => 'nullable|string|max:100',
             'locCode'    => 'nullable|string|max:100',
-            'docType'    => 'required|string|max:20', // expect "MSIS"
+            'docType'    => 'required|string|max:20',
             'userCode'   => 'nullable|string|max:50',
-            'dt1'        => 'nullable', // can be array or omitted
-            'mode'       => 'nullable|string|max:20', // optional
         ]);
 
-        // Build the JSON payload exactly like the stored procedure expects
+        $mode = 'Lookup';
+
         $payload = [
             'json_data' => [
-                'dt1'        => $validated['dt1'] ?? [],         // your sproc parses it but doesn't use it
-                'userCode'   => $validated['userCode'] ?? '',     // parsed but not used
+                'dt1'        => [],
+                'userCode'   => $validated['userCode'] ?? '',
                 'whouseCode' => $validated['whouseCode'] ?? '',
                 'locCode'    => $validated['locCode'] ?? '',
-                'docType'    => $validated['docType'],            // must be MSIS to run
+                'docType'    => $validated['docType'],
             ],
         ];
+
 
         $mode = $validated['mode'] ?? 'Lookup';
         $params = json_encode($payload, JSON_UNESCAPED_SLASHES);

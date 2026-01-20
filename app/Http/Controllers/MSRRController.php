@@ -77,10 +77,8 @@ public function upsert(Request $request)
             $mode = 'Upsert';
 
             // Call the stored procedure
-            $result = DB::select('EXEC sproc_PHP_PR @mode = ?, @params = ?', [
-                $mode,
-                $params
-            ]);
+            $result = DB::select("EXEC sproc_PHP_MSRR @mode = ?, @params = ?", ["Upsert", $params]);
+
 
             return response()->json([
                 'status' => 'success',
@@ -293,6 +291,71 @@ public function update(Request $request)
         ], 500);
     }
 }
+
+public function generateGL(Request $request)
+    {
+        try {
+            $jsonData = $request->input('json_data');
+
+            if (!$jsonData) {
+                return response()->json(['error' => 'Missing json_data'], 400);
+            }
+
+            // Keep same structure as your MSAJController
+            $jsonString = json_encode(['json_data' => $jsonData], JSON_UNESCAPED_UNICODE);
+
+            $results = DB::select(
+                "EXEC sproc_PHP_MSRR @mode = ?, @params = ?",
+                ['GenerateEntries', $jsonString]
+            );
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $results
+            ], 200);
+
+        } catch (\Exception $e) {
+            Log::error('Error executing sproc_PHP_MSRR GenerateEntries: ' . $e->getMessage());
+
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Failed to generate entries.',
+                'details' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    public function find(Request $request)
+    {
+        $validated = $request->validate([
+            'json_data' => 'required|array'
+        ]);
+
+        try {
+            $params = json_encode(['json_data' => $validated['json_data']]);
+            $mode = 'Find';
+
+            $results = DB::select(
+                'EXEC sproc_PHP_MSRR @mode = ?, @params = ?',
+                [$mode, $params]
+            );
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $results
+            ], 200);
+
+        } catch (\Throwable $e) {
+            Log::error('Error executing sproc_PHP_MSRR Find: ' . $e->getMessage());
+
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Error executing MSRR Find.',
+                'details' => $e->getMessage()
+            ], 500);
+        }
+    }
 
 
 }
