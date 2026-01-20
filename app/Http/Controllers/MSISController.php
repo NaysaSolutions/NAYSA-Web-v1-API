@@ -268,6 +268,7 @@ public function msLookup(Request $request)
             'whouseCode' => 'nullable|string|max:100',
             'locCode'    => 'nullable|string|max:100',
             'docType'    => 'required|string|max:20', // expect "MSIS"
+            'tranType'   => 'nullable', // can
             'userCode'   => 'nullable|string|max:50',
             'dt1'        => 'nullable', // can be array or omitted
             'mode'       => 'nullable|string|max:20', // optional
@@ -280,7 +281,8 @@ public function msLookup(Request $request)
                 'userCode'   => $validated['userCode'] ?? '',     // parsed but not used
                 'whouseCode' => $validated['whouseCode'] ?? '',
                 'locCode'    => $validated['locCode'] ?? '',
-                'docType'    => $validated['docType'],            // must be MSIS to run
+                'docType'    => $validated['docType'],     
+                'tranType'    => $validated['tranType'],         // must be MSIS to run
             ],
         ];
 
