@@ -305,12 +305,12 @@ Route::middleware('tenant')->group(function () {
     Route::post('/getPROpen', [PRController::class, 'getPROpen']);
     Route::post('/po/update', [POController::class, 'updatePrFromPO']);
 
-    Route::get('/RR', [MSRRController::class, 'index']);
-    Route::post('/upsertRR', [MSRRController::class, 'upsert']);
-    Route::post('/generateGLRR', [MSRRController::class, 'generateGL']);
-    Route::get('/getRR', [MSRRController::class, 'get']);
-    Route::get('/postingRR', [MSRRController::class, 'posting']);
-    
+    Route::get('/MSRR', [MSRRController::class, 'index']);
+    Route::post('/upsertMSRR', [MSRRController::class, 'upsert']);
+    Route::post('/generateGLMSRR', [MSRRController::class, 'generateGL']);
+    Route::get('/getMSRR', [MSRRController::class, 'get']);
+    Route::get('/postingMSRR', [MSRRController::class, 'posting']);
+    Route::get('/findMSRR', [MSRRController::class, 'find']);
 
     Route::get('/MSIS', [MSISController::class, 'index']);
     Route::post('/upsertMSIS', [MSISController::class, 'upsert']);
