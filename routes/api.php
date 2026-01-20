@@ -317,20 +317,21 @@ Route::middleware('tenant')->group(function () {
     Route::post('/generateGLMSIS', [MSISController::class, 'generateGL']);
     Route::get('/getMSIS', [MSISController::class, 'get']);
     Route::get('/postingMSIS', [MSISController::class, 'posting']);
+    Route::get('/findMSIS', [MSISController::class, 'find']);
 
     Route::get('/MSST', [MSSTController::class, 'index']);
     Route::post('/upsertMSST', [MSSTController::class, 'upsert']);
     Route::post('/generateGLMSST', [MSSTController::class, 'generateGL']);
     Route::get('/getMSST', [MSSTController::class, 'get']);
     Route::get('/postingMSST', [MSSTController::class, 'posting']);
-
+    Route::get('/findMSST', [MSSTController::class, 'find']);
 
     Route::get('/MSAJ', [MSAJController::class, 'index']);
     Route::post('/upsertMSAJ', [MSAJController::class, 'upsert']);
     Route::post('/generateGLMSAJ', [MSAJController::class, 'generateGL']);
     Route::get('/getMSAJ', [MSAJController::class, 'get']);
     Route::get('/postingMSAJ', [MSAJController::class, 'posting']);
-
+    Route::get('/findMSAJ', [MSAJController::class, 'find']);
 
 
     Route::prefix('warehouse')->group(function () {
@@ -393,6 +394,7 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getSOA', [SOAController::class, 'get']);
     Route::get('/postingSOA', [SOAController::class, 'posting']);
     Route::post('/getSOAHistory', [SOAController::class, 'history']);
+    Route::get('/findSOA', [SOAController::class, 'find']);
 
     Route::get('/aRCM', [ARCMController::class, 'index']);
     Route::post('/upsertARCM', [ARCMController::class, 'upsert']);
@@ -400,6 +402,8 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getARCM', [ARCMController::class, 'get']);
     Route::get('/postingARCM', [ARCMController::class, 'posting']);
     Route::post('/getARCMHistory', [ARCMController::class, 'history']);
+    Route::get('/findARCM', [ARCMController::class, 'find']);
+
 
     Route::get('/aRDM', [ARDMController::class, 'index']);
     Route::post('/upsertARDM', [ARDMController::class, 'upsert']);
@@ -407,6 +411,7 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getARDM', [ARDMController::class, 'get']);
     Route::get('/postingARDM', [ARDMController::class, 'posting']);
     Route::post('/getARDMHistory', [ARDMController::class, 'history']);
+    Route::get('/findARDM', [ARDMController::class, 'find']);
 
     Route::post('/cR', [CRController::class, 'index']);
     Route::post('/upsertCR', [CRController::class, 'upsert']);
@@ -415,6 +420,7 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getCR', [CRController::class, 'get']);
     Route::get('/postingCR', [CRController::class, 'posting']);
     Route::post('/getCRHistory', [CRController::class, 'history']);
+    Route::get('/findCR', [CRController::class, 'find']);
 
     Route::post('/aR', [ARController::class, 'index']);
     Route::post('/upsertAR', [ARController::class, 'upsert']);
@@ -423,6 +429,7 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getAR', [ARController::class, 'get']);
     Route::get('/postingAR', [ARController::class, 'posting']);
     Route::post('/getARHistory', [ARController::class, 'history']);
+    Route::get('/findAR', [ARController::class, 'find']);
 });
 
 Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
