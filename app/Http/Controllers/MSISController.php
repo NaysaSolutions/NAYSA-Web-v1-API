@@ -266,7 +266,8 @@ public function history(Request $request) {
         $validated = $request->validate([
             'whouseCode' => 'nullable|string|max:100',
             'locCode'    => 'nullable|string|max:100',
-            'docType'    => 'required|string|max:20',
+            'docType'    => 'required|string|max:20', // expect "MSIS"
+            'tranType'   => 'nullable', // can
             'userCode'   => 'nullable|string|max:50',
         ]);
 
@@ -278,7 +279,8 @@ public function history(Request $request) {
                 'userCode'   => $validated['userCode'] ?? '',
                 'whouseCode' => $validated['whouseCode'] ?? '',
                 'locCode'    => $validated['locCode'] ?? '',
-                'docType'    => $validated['docType'],
+                'docType'    => $validated['docType'],     
+                'tranType'    => $validated['tranType'],         // must be MSIS to run
             ],
         ];
 
