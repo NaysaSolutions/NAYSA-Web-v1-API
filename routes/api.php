@@ -64,6 +64,8 @@ use App\Http\Controllers\MSISController;
 use App\Http\Controllers\MSSTController;
 use App\Http\Controllers\MSAJController;
 use App\Http\Controllers\MSRRController;
+use App\Http\Controllers\MSInvBalanceController;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -272,6 +274,14 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsertMSMast', [MSMastController::class, 'upsert']);
     Route::get('/lookupMSMast', [MSMastController::class, 'lookup']);
     Route::get('/getMSMast', [MSMastController::class, 'get']);
+
+
+
+    Route::get('/getInvLookupMS', [MSInvBalanceController::class, 'getInvLookup']);
+
+
+
+
 
     // Transactions
     Route::get('/jV', [JournalVoucherController::class, 'index']);
