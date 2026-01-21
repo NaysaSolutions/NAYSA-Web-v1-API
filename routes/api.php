@@ -60,6 +60,7 @@ use App\Http\Controllers\JOController;
 use App\Http\Controllers\MSMastController;
 use App\Http\Controllers\WarehouseMastController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\QStatController;
 use App\Http\Controllers\MSISController;
 use App\Http\Controllers\MSSTController;
 use App\Http\Controllers\MSAJController;
@@ -311,6 +312,12 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getMSRR', [MSRRController::class, 'get']);
     Route::get('/postingMSRR', [MSRRController::class, 'posting']);
     Route::get('/findMSRR', [MSRRController::class, 'find']);
+
+    Route::get('/qstat', [QStatController::class, 'index']);          // Load
+    Route::get('/lookupQStat', [QStatController::class, 'lookup']);   // Lookup modal
+    Route::post('/getQStat', [QStatController::class, 'get']);        // Single
+    Route::post('/upsertQStat', [QStatController::class, 'upsert']);  // Save
+    Route::post('/deleteQStat', [QStatController::class, 'delete']);  // Delete
 
     Route::get('/MSIS', [MSISController::class, 'index']);
     Route::post('/upsertMSIS', [MSISController::class, 'upsert']);
