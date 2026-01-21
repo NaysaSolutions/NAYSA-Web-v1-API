@@ -348,6 +348,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/generateGLMSAJ', [MSAJController::class, 'generateGL']);
     Route::get('/getMSAJ', [MSAJController::class, 'get']);
     Route::get('/postingMSAJ', [MSAJController::class, 'posting']);
+    Route::post('/getMSAJHistory', [MSAJController::class, 'history']);
     Route::get('/findMSAJ', [MSAJController::class, 'find']);
 
 
