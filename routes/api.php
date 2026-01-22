@@ -80,6 +80,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/companies', [AuthController::class, 'companies']);
 Route::post('/send-mail', [MailController::class, 'send']);
 
+    // Route::get('/menu-items', [MenuController::class, 'items']);
+    // Route::get('/menu-routes', [MenuController::class, 'routes']);
+
 Route::middleware('tenant')->group(function () {
 
     Route::post('/register', [AuthController::class, 'register']);
