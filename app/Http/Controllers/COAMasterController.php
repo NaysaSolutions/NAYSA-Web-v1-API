@@ -35,22 +35,58 @@ public function index(Request $request) {
 
 
 
-public function lookup(Request $request) {
+// public function lookup(Request $request) {
 
-    $paramsString = $request->input('PARAMS');
-    $params = json_decode($paramsString, true);
+//     $paramsString = $request->input('PARAMS');
+//     $params = json_decode($paramsString, true);
    
 
+//     try {
+//         $results = DB::select(
+//             'EXEC sproc_PHP_COAMast @mode = ?, @params = ?',
+//             ['Lookup' ,$params['search']] 
+//         );
+
+//         return response()->json([
+//             'success' => true,
+//             'data' => $results,
+//         ], 200);
+//     } catch (\Exception $e) {
+//         return response()->json([
+//             'success' => false,
+//             'message' => $e->getMessage(),
+//         ], 500);
+//     }
+// }
+
+public function lookup(Request $request)
+{
+    $paramsString = $request->input('PARAMS');
+    $params = json_decode($paramsString, true);
+
     try {
-        $results = DB::select(
-            'EXEC sproc_PHP_COAMast @mode = ?, @params = ?',
-            ['Lookup' ,$params['search']] 
-        );
+        // ✅ SINGLE RECORD (double click / edit)
+        if (!empty($params['acctCode']) && ($params['search'] ?? '') === 'Single') {
+            $results = DB::select(
+                'EXEC sproc_PHP_COAMast @mode = ?, @params = ?',
+                ['Get', $params['acctCode']]
+            );
+        } 
+        // ✅ NORMAL LOOKUP (table load / search)
+        else {
+            // your sproc expects filter string in @params for Lookup
+            $filter = $params['filter'] ?? $params['search'] ?? '';
+            $results = DB::select(
+                'EXEC sproc_PHP_COAMast @mode = ?, @params = ?',
+                ['Lookup', $filter]
+            );
+        }
 
         return response()->json([
             'success' => true,
             'data' => $results,
         ], 200);
+
     } catch (\Exception $e) {
         return response()->json([
             'success' => false,
@@ -58,6 +94,7 @@ public function lookup(Request $request) {
         ], 500);
     }
 }
+
 
 
 
