@@ -141,28 +141,49 @@ public function upsert(Request $request)
 
         $params = $request->get('json_data');
 
-      
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Invalid JSON data provided.',
-            ], 400);
+        // (optional safety) ensure string json
+        if (!is_string($params)) {
+            $params = json_encode($params);
         }
 
+        // ✅ READ resultset from sproc (SVI style)
+        $rows = DB::select(
+            'EXEC sproc_PHP_COAMast @params = :json_data, @mode = :mode',
+            [
+                'json_data' => $params,
+                'mode' => 'Upsert', // keep same casing as sproc comparisons
+            ]
+        );
 
-        DB::statement('EXEC sproc_PHP_COAMast @params = :json_data, @mode = :mode', [
-            'json_data' => $params,
-            'mode' => 'upsert'
-        ]);
+        // If sproc returns: errorMsg, errorCount
+        if (!empty($rows)) {
+            $first = (array) $rows[0];
 
+            $errorCount = isset($first['errorCount']) ? (int) $first['errorCount'] : 0;
+            $errorMsg   = $first['errorMsg'] ?? '';
+
+            if ($errorCount > 0 && trim($errorMsg) !== '') {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => $errorMsg, // ✅ shows exact SVI formatted list
+                ], 422);
+            }
+        }
 
         return response()->json([
             'status' => 'success',
             'message' => 'Transaction saved successfully.',
         ], 200);
+
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->validator->errors()->first(),
+            'errors' => $e->validator->errors(),
+        ], 422);
+
     } catch (\Exception $e) {
-        Log::error('Transaction save failed:', ['error' => $e->getMessage()]);
+        Log::error('COA save failed:', ['error' => $e->getMessage()]);
 
         return response()->json([
             'status' => 'error',
@@ -170,6 +191,64 @@ public function upsert(Request $request)
         ], 500);
     }
 }
+
+public function deleteCOA(Request $request)
+{
+    try {
+        $request->validate([
+            'json_data' => 'required|json',
+        ]);
+
+        $params = $request->get('json_data');
+
+        if (!is_string($params)) {
+            $params = json_encode($params);
+        }
+
+        // Always use DB::select (SVI pattern)
+        $rows = DB::select(
+            'EXEC sproc_PHP_COAMast @params = :json_data, @mode = :mode',
+            [
+                'json_data' => $params,
+                'mode' => 'Delete',
+            ]
+        );
+
+        if (!empty($rows)) {
+            $first = (array) $rows[0];
+            $errorCount = (int) ($first['errorCount'] ?? 0);
+            $errorMsg   = $first['errorMsg'] ?? '';
+
+            if ($errorCount > 0 && trim($errorMsg) !== '') {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => $errorMsg,
+                ], 422);
+            }
+        }
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Account successfully deleted.',
+        ], 200);
+
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json([
+            'status'  => 'error',
+            'message' => $e->validator->errors()->first(),
+        ], 422);
+
+    } catch (\Exception $e) {
+        Log::error('COA delete failed:', ['error' => $e->getMessage()]);
+
+        return response()->json([
+            'status'  => 'error',
+            'message' => 'Failed to delete account: ' . $e->getMessage(),
+        ], 500);
+    }
+}
+
+
 
 
 
