@@ -20,7 +20,7 @@ public function index(Request $request) {
         $params = $request->get('json_data');
       
         $results = DB::select(
-            'EXEC sproc_PHP_PR @mode = ?, @params = ?',
+            'EXEC sproc_PHP_MSRR @mode = ?, @params = ?',
             ['get' ,$params] 
         );
 
@@ -47,7 +47,7 @@ public function get(Request $request) {
 
     try {
         $results = DB::select(
-            'EXEC sproc_PHP_PR @mode = ?, @params = ?',
+            'EXEC sproc_PHP_MSRR @mode = ?, @params = ?',
             ['Get' ,$jsonString] 
         );
 
@@ -68,30 +68,34 @@ public function get(Request $request) {
 
 public function upsert(Request $request)
 {
-        $validated = $request->validate([
-            'json_data' => 'required|array'
-        ]);
+    $validated = $request->validate([
+        'json_data' => 'required|array'
+    ]);
 
-        try {
-            $params = json_encode(['json_data' => $validated['json_data']]);
-            $mode = 'Upsert';
+    try {
+        $params = json_encode(['json_data' => $validated['json_data']]);
 
-            // Call the stored procedure
-            $result = DB::select("EXEC sproc_PHP_MSRR @mode = ?, @params = ?", ["Upsert", $params]);
+        $result = DB::select(
+            "EXEC sproc_PHP_MSRR @mode = ?, @params = ?",
+            ["Upsert", $params]
+        );
 
+        // Return same response structure as MSAJ
+        return response()->json([
+            'success' => true,
+            'mode'    => 'Upsert',
+            'data'    => $result
+        ], 200);
 
-            return response()->json([
-                'status' => 'success',
-                'data' => $result
-            ], 200);
-        } catch (\Throwable $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Error executing PR Upsert.',
-                'details' => $e->getMessage()
-            ], 500);
-        }
-}   
+    } catch (\Throwable $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error executing MSRR Upsert.',
+            'details' => $e->getMessage()
+        ], 500);
+    }
+}
+
 
     
 public function cancel(Request $request)
@@ -105,7 +109,7 @@ public function cancel(Request $request)
             $mode = 'Cancel';
 
             // Call the stored procedure
-            $result = DB::select('EXEC sproc_PHP_PR @mode = ?, @params = ?', [
+            $result = DB::select('EXEC sproc_PHP_MSRR @mode = ?, @params = ?', [
                 $mode,
                 $params
             ]);
@@ -135,7 +139,7 @@ public function history(Request $request) {
             $mode = 'History';
 
             // Call the stored procedure
-            $results = DB::select('EXEC sproc_PHP_PR @mode = ?, @params = ?', [
+            $results = DB::select('EXEC sproc_PHP_MSRR @mode = ?, @params = ?', [
                 $mode,
                 $params
             ]);
@@ -356,6 +360,35 @@ public function generateGL(Request $request)
             ], 500);
         }
     }
+
+    public function posting(Request $request)
+{
+    try {
+        // IMPORTANT: MSRR reads JSON_VALUE(@params, ...) at the top,
+        // so we must pass valid JSON even if Posting doesn't need it.
+        $params = '{"json_data":{}}';
+
+        $results = DB::select(
+            'EXEC sproc_PHP_MSRR @mode = ?, @params = ?',
+            ['Posting', $params]
+        );
+
+        // MSRR returns 1 row with column "result" (JSON string)
+        $json = $results[0]->result ?? '[]';
+
+        return response()->json([
+            'success' => true,
+            'data'    => json_decode($json, true),
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+}
+
 
 
 }

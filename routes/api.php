@@ -65,6 +65,7 @@ use App\Http\Controllers\MSISController;
 use App\Http\Controllers\MSSTController;
 use App\Http\Controllers\MSAJController;
 use App\Http\Controllers\MSRRController;
+use App\Http\Controllers\MSRTVController;
 use App\Http\Controllers\MSInvBalanceController;
 
 use Illuminate\Http\Request;
@@ -350,6 +351,14 @@ Route::middleware('tenant')->group(function () {
     Route::get('/postingMSAJ', [MSAJController::class, 'posting']);
     Route::post('/getMSAJHistory', [MSAJController::class, 'history']);
     Route::get('/findMSAJ', [MSAJController::class, 'find']);
+
+    Route::get('/MSRTV', [MSRTVController::class, 'index']);
+    Route::post('/upsertMSRTV', [MSRTVController::class, 'upsert']);
+    Route::post('/generateGLMSRTV', [MSRTVController::class, 'generateGL']);
+    Route::get('/getMSRTV', [MSRTVController::class, 'get']);
+    Route::get('/postingMSRTV', [MSRTVController::class, 'posting']);
+    Route::post('/getMSRTVHistory', [MSRTVController::class, 'history']);
+    Route::get('/findMSRTV', [MSRTVController::class, 'find']);
 
 
     Route::prefix('warehouse')->group(function () {
