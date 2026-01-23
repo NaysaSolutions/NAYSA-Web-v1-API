@@ -362,6 +362,7 @@ Route::middleware('tenant')->group(function () {
     Route::get('/postingMSRTV', [MSRTVController::class, 'posting']);
     Route::post('/getMSRTVHistory', [MSRTVController::class, 'history']);
     Route::get('/findMSRTV', [MSRTVController::class, 'find']);
+    Route::post('/cancelMSRTV ', [MSRTVController::class, 'cancel']);
 
 
     Route::prefix('warehouse')->group(function () {
@@ -475,6 +476,7 @@ Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
     Route::post('/finalizeAPDM', [APDMController::class, 'finalize']);
     Route::post('/finalizeAPCM', [APCMController::class, 'finalize']);
     Route::post('/finalizeMSRR', [MSRRController::class, 'finalize']);
+    Route::post('/finalizeMSRTV', [MSRTVController::class, 'finalize']);
 
     Route::post('/cancelARDM', [ARDMController::class, 'cancel']);
     Route::post('/cancelSOA', [SOAController::class, 'cancel']);
