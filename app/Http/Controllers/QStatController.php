@@ -16,7 +16,7 @@ class QStatController extends Controller
     {
         try {
             $results = DB::select(
-                'EXEC sproc_PHP_QUALITYSTATREF @mode = ?',
+                'EXEC sproc_PHP_QStatRef @mode = ?',
                 ['Load']
             );
 
@@ -57,7 +57,7 @@ class QStatController extends Controller
 
         try {
             $results = DB::select(
-                'EXEC sproc_PHP_QUALITYSTATREF @mode = ?, @params = ?',
+                'EXEC sproc_PHP_QStatRef @mode = ?, @params = ?',
                 ['Lookup', $search]
             );
 
@@ -93,7 +93,7 @@ class QStatController extends Controller
 
         try {
             $results = DB::select(
-                'EXEC sproc_PHP_QUALITYSTATREF @mode = ?, @params = ?',
+                'EXEC sproc_PHP_QStatRef @mode = ?, @params = ?',
                 ['Get', $code]
             );
 
@@ -134,7 +134,7 @@ class QStatController extends Controller
             Log::info('Upsert QStat params:', ['params' => $params]);
 
             DB::statement(
-                'EXEC sproc_PHP_QUALITYSTATREF @params = :params, @mode = :mode',
+                'EXEC sproc_PHP_QStatRef @params = :params, @mode = :mode',
                 [
                     'params' => $params,
                     'mode'   => 'Upsert',
@@ -174,7 +174,7 @@ class QStatController extends Controller
             Log::info('Deleting QStat with params:', ['params' => $params]);
 
             DB::statement(
-                'EXEC sproc_PHP_QUALITYSTATREF @params = :params, @mode = :mode',
+                'EXEC sproc_PHP_QStatRef @params = :params, @mode = :mode',
                 [
                     'params' => $params,
                     'mode'   => 'Delete',
