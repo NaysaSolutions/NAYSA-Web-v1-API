@@ -101,45 +101,27 @@ public function get(Request $request) {
 
 
 
-
 public function upsert(Request $request)
 {
     try {
-        $request->validate([
-            'json_data' => 'required|json',
-        ]);
+        $rows = DB::select(
+            'exec dbo.sproc_PHP_VendMast @mode = ?, @params = ?',
+            ['upsert', json_encode($request->all())]
+        );
 
-        $params = $request->get('json_data');
-
-      
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Invalid JSON data provided.',
-            ], 400);
-        }
-
-
-        DB::statement('EXEC sproc_PHP_VendMast @params = :json_data, @mode = :mode', [
-            'json_data' => $params,
-            'mode' => 'upsert'
-        ]);
-
-
+        // ✅ return raw SQL output (COAMast standard)
         return response()->json([
-            'status' => 'success',
-            'message' => 'Transaction saved successfully.',
-        ], 200);
-    } catch (\Exception $e) {
-        Log::error('Transaction save failed:', ['error' => $e->getMessage()]);
-
+            'success' => true,
+            'data' => $rows,
+        ]);
+    } catch (\Throwable $e) {
         return response()->json([
-            'status' => 'error',
-            'message' => 'Failed to save transaction: ' . $e->getMessage(),
+            'success' => false,
+            'message' => $e->getMessage(),
         ], 500);
     }
 }
+
 
 
 
@@ -189,7 +171,7 @@ public function delete(Request $request)
         DB::statement(
             "EXEC sproc_PHP_VendMast @mode = ?, @params = ?",
             [
-                'Delete',
+                'delete',
                 json_encode($params),
             ]
         );
