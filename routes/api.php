@@ -472,6 +472,8 @@ Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
     Route::post('/finalizeAPDM', [APDMController::class, 'finalize']);
     Route::post('/finalizeAPCM', [APCMController::class, 'finalize']);
     Route::post('/finalizeMSRR', [MSRRController::class, 'finalize']);
+    Route::post('/finalizeMSAJ', [MSAJController::class, 'finalize']);
+
 
     Route::post('/cancelARDM', [ARDMController::class, 'cancel']);
     Route::post('/cancelSOA', [SOAController::class, 'cancel']);
@@ -485,7 +487,7 @@ Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
     Route::post('/cancelAR',  [ARController::class, 'cancel']);
     Route::post('/cancelAPDM', [APDMController::class, 'cancel']);
     Route::post('/cancelAPCM', [APCMController::class, 'cancel']);
-
+    Route::post('/cancelMSAJ', [APCMController::class, 'cancel']);
     Route::post('/cancelPR',  [PRController::class, 'cancel']);
 
     Route::post('/generateJVARCWLCL', [ARBalanceController::class, 'generateJVARCWLCL']);
