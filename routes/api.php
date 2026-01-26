@@ -373,6 +373,7 @@ Route::middleware('tenant')->group(function () {
         Route::get('/getLocation',    [LocationController::class, 'get']);           // ?locCode=L001
         Route::get('/lookupLocation', [LocationController::class, 'lookup']);        // ?filter=ActiveAll
         Route::post('/upsertLocation', [LocationController::class, 'upsert']);
+        Route::post('/getByWarehouse', [LocationController::class, 'byWarehouse']);
     });
 
     Route::post('/msLookup', [MSISController::class, 'msLookup']);

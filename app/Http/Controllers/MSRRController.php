@@ -260,40 +260,33 @@ public function update(Request $request)
         }
     }
 
-    public function finalize(Request $request)
-{
-    $request->validate([
-        'tranId' => 'required|string|max:40',
-        'mode'   => 'nullable|string',
-    ]);
+    public function finalize(Request $request) {
 
     try {
-        $tranId   = $request->tranId;
-        $mode     = $request->mode ?? 'Finalize';
-        $userCode = optional($request->user())->USER_CODE ?? $request->userCode;
 
-        $params = json_encode([
-            'json_data' => [
-                'userCode' => $userCode
-            ]
+       $validated = $request->validate([
+            'json_data'     => 'required|array'
         ]);
 
-        $result = DB::connection('sqlsrv')->select(
-            'EXEC dbo.sproc_PHP_Posting_MSRR @tranId = ?, @mode = ?, @userCode = ?, @params = ?',
-            [$tranId, $mode, $userCode, $params]
+        $params = json_encode(['json_data' => $validated['json_data']]);
+
+          
+        $results = DB::select(
+            'EXEC sproc_PHP_Posting_MSRR @mode = ?, @params = ?',
+            ['Finalize', $params]
         );
 
         return response()->json([
             'success' => true,
-            'result'  => $result[0]->result ?? null
-        ]);
-
-    } catch (\Throwable $e) {
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
         return response()->json([
             'success' => false,
-            'message' => $e->getMessage()
+            'message' => $e->getMessage(),
         ], 500);
     }
+
 }
 
 public function generateGL(Request $request)
