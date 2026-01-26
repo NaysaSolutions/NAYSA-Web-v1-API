@@ -488,7 +488,7 @@ Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
     Route::post('/cancelAR',  [ARController::class, 'cancel']);
     Route::post('/cancelAPDM', [APDMController::class, 'cancel']);
     Route::post('/cancelAPCM', [APCMController::class, 'cancel']);
-    Route::post('/cancelMSAJ', [APCMController::class, 'cancel']);
+    Route::post('/cancelMSAJ', [MSAJController::class, 'cancel']);
     Route::post('/cancelPR',  [PRController::class, 'cancel']);
 
     Route::post('/generateJVARCWLCL', [ARBalanceController::class, 'generateJVARCWLCL']);
