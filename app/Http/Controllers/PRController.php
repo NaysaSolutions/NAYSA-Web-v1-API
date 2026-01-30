@@ -157,6 +157,8 @@ public function history(Request $request) {
 
 }
 
+
+
 public function getPROpen(Request $request)
 {
     Log::info('getPROpen request', $request->all());
