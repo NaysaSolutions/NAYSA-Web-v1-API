@@ -10,11 +10,17 @@ class TempPasswordMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public string $purpose;   // 'release' | 'reset'
+    /**
+     * Purpose of the email:
+     * - reset      : password reset (NO temp password)
+     * - release    : approve self-registered user (NO temp password)
+     * - admin_add  : admin-created user (WITH temp password)
+     */
+    public string $purpose;
     public string $name;
     public string $userCode;
-    public ?string $temp;     // used only for 'release'
-    public ?string $company;  // ✅ tenant / company code
+    public ?string $temp;
+    public ?string $company;
 
     public function __construct(
         string $purpose,
@@ -26,15 +32,19 @@ class TempPasswordMail extends Mailable
         $this->purpose  = $purpose;
         $this->name     = $name;
         $this->userCode = $userCode;
-        $this->temp     = $temp;     // null for reset
-        $this->company  = $company;  // ✅ REQUIRED
+        $this->temp     = $temp;      // ONLY for admin_add
+        $this->company  = $company;   // tenant / company code
     }
 
     public function build()
     {
-        $subject = $this->purpose === 'reset'
-            ? 'Password Reset Request'
-            : 'Your Account Has Been Released';
+        // 📌 Subject line based on scenario
+        $subject = match ($this->purpose) {
+            'reset'     => 'Password Reset Request',
+            'admin_add' => 'Your NAYSA Account Has Been Created',
+            'release'   => 'Your NAYSA Account Has Been Approved',
+            default     => 'NAYSA Account Notification',
+        };
 
         return $this->subject($subject)
             ->view('emails.temp_password')
@@ -42,8 +52,8 @@ class TempPasswordMail extends Mailable
                 'purpose'  => $this->purpose,
                 'name'     => $this->name,
                 'userCode' => $this->userCode,
-                'temp'     => $this->temp,
-                'company'  => $this->company, // ✅ THIS ENABLES &company=
+                'temp'     => $this->temp,     // null unless admin_add
+                'company'  => $this->company,  // enables &company=
             ]);
     }
 }
