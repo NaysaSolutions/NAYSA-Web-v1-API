@@ -304,8 +304,9 @@ Route::middleware('tenant')->group(function () {
 
     Route::get('/PO', [POController::class, 'index']);
     Route::post('/upsertPO', [POController::class, 'upsert']);
-    Route::post('/getPO', [POController::class, 'get']);
+    Route::get('/getPO', [POController::class, 'get']);
     Route::post('/getPOOpen', [POController::class, 'getPOOpen']);
+    Route::post('/getPOHistory', [POController::class, 'history']);
 
     Route::get('/JO', [JOController::class, 'index']);
     Route::post('/upsertJO', [JOController::class, 'upsert']);
@@ -316,6 +317,7 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getPR', [PRController::class, 'get']);
     Route::post('/getPROpen', [PRController::class, 'getPROpen']);
     Route::post('/po/update', [POController::class, 'updatePrFromPO']);
+    Route::post('/getPRHistory', [PRController::class, 'history']);
 
     Route::get('/MSRR', [MSRRController::class, 'index']);
     Route::post('/upsertMSRR', [MSRRController::class, 'upsert']);
