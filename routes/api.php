@@ -225,9 +225,12 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getCOA', [COAMasterController::class, 'get']);
     Route::post('/lookupGL', [COAMasterController::class, 'lookupGL']);
     Route::post('/editEntries', [COAMasterController::class, 'editEntries']);
+    Route::post('/deleteCOA', [COAMasterController::class, 'deleteCOA']);
 
     Route::get('/cOAClass', [COAClassController::class, 'index']);
     Route::post('/upsertCOAClass', [COAClassController::class, 'upsert']);
+    Route::post('/lookupCOAClass', [COAClassController::class, 'lookup']);
+
 
     Route::get('/branch', [BranchController::class, 'index']);
     Route::post('/upsertBranch', [BranchController::class, 'upsert']);
@@ -244,6 +247,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsertPayterm', [PayTermController::class, 'upsert']);
     Route::get('/lookupPayterm', [PayTermController::class, 'lookup']);
     Route::get('/getPayterm', [PayTermController::class, 'get']);
+    Route::post('/deletePayterm', [PayTermController::class, 'delete']);
 
     Route::get('/billterm', [BillTermController::class, 'index']);
     Route::post('/upsertBillterm', [BillTermController::class, 'upsert']);
@@ -260,6 +264,7 @@ Route::middleware('tenant')->group(function () {
     Route::get('/lookupPayee', [VendMasterController::class, 'lookup']);
     Route::post('/getPayee', [VendMasterController::class, 'get']);
     Route::post('/addPayeeDetail', [VendMasterController::class, 'addDetail']);
+    Route::post('/deletePayee', [VendMasterController::class, 'delete']);
 
     Route::get('/customer', [CustMasterController::class, 'index']);
     Route::post('/upsertCustomer', [CustMasterController::class, 'upsert']);
@@ -475,6 +480,8 @@ Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
     Route::post('/finalizeAPDM', [APDMController::class, 'finalize']);
     Route::post('/finalizeAPCM', [APCMController::class, 'finalize']);
     Route::post('/finalizeMSRR', [MSRRController::class, 'finalize']);
+    Route::post('/finalizeMSAJ', [MSAJController::class, 'finalize']);
+
 
     Route::post('/cancelARDM', [ARDMController::class, 'cancel']);
     Route::post('/cancelSOA', [SOAController::class, 'cancel']);
@@ -488,7 +495,7 @@ Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
     Route::post('/cancelAR',  [ARController::class, 'cancel']);
     Route::post('/cancelAPDM', [APDMController::class, 'cancel']);
     Route::post('/cancelAPCM', [APCMController::class, 'cancel']);
-
+    Route::post('/cancelMSAJ', [MSAJController::class, 'cancel']);
     Route::post('/cancelPR',  [PRController::class, 'cancel']);
 
     Route::post('/generateJVARCWLCL', [ARBalanceController::class, 'generateJVARCWLCL']);

@@ -8,6 +8,11 @@ use Illuminate\Support\Facades\Log;
 
 class QStatController extends Controller
 {
+<<<<<<< Updated upstream
+    
+    
+public function lookup(Request $request) {
+=======
     /**
      * LOAD (list)
      * GET /qstat (or whatever route you assign)
@@ -19,21 +24,30 @@ class QStatController extends Controller
                 'EXEC sproc_PHP_QStatRef @mode = ?',
                 ['Load']
             );
+>>>>>>> Stashed changes
 
-            return response()->json([
-                'success' => true,
-                'data' => $results,
-            ], 200);
-        } catch (\Exception $e) {
-            Log::error('QSTAT Load failed:', ['error' => $e->getMessage()]);
+    $request->validate([
+        'PARAMS' => 'required',
+    ]);
+    $params = $request->input('PARAMS');
 
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
-        }
-    }
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_QStatRef @mode = ?, @params = ?',
+            ['Lookup' ,$params] 
+        );
 
+<<<<<<< Updated upstream
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+=======
     /**
      * LOOKUP (modal / filtering)
      * GET /lookupQStat with params: PARAMS (JSON string)
@@ -193,5 +207,12 @@ class QStatController extends Controller
                 'message' => 'Failed to delete record: ' . $e->getMessage(),
             ], 500);
         }
+>>>>>>> Stashed changes
     }
+}
+
+
+    
+    
+
 }

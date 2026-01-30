@@ -105,8 +105,6 @@ public function get(Request $request) {
 }
 
 
-
-
 public function upsert(Request $request)
 {
     try {
@@ -120,11 +118,13 @@ public function upsert(Request $request)
             $params = json_encode($params);
         }
 
-        // use select so we can read errorCount/errorMsg from sproc
+        // ✅ IMPORTANT: wrap to match SQL path $.json_data.*
+        $wrapped = '{"json_data":' . $params . '}';
+
         $rows = DB::select(
             'EXEC sproc_PHP_PayTermRef @params = :json_data, @mode = :mode',
             [
-                'json_data' => $params,
+                'json_data' => $wrapped,
                 'mode'      => 'Upsert',
             ]
         );
@@ -162,6 +162,7 @@ public function upsert(Request $request)
         ], 500);
     }
 }
+
 
 
 public function delete(Request $request)

@@ -10,16 +10,13 @@ class HSColConfigController extends Controller
 {
     public function get(Request $request) {
 
-    $request->validate([
-        'endpoint' => 'required|string',
-    ]);
 
-    $params = $request->input('endpoint');
+    $jsonData = $request->input('json_data');
 
     try {
         $results = DB::select(
             'EXEC sproc_PHP_HSColConfig @mode = ?, @params = ?',
-            ['get' ,$params] 
+            ['get' ,$jsonData] 
         );
 
         return response()->json([

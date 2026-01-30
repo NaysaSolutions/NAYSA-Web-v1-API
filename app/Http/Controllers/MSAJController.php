@@ -139,7 +139,7 @@ public function finalize(Request $request) {
 
           
         $results = DB::select(
-            'EXEC sproc_PHP_Posting_SVI @mode = ?, @params = ?',
+            'EXEC sproc_PHP_Posting_MSAJ @mode = ?, @params = ?',
             ['Finalize', $params]
         );
 
