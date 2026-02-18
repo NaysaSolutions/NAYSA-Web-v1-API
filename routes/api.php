@@ -323,6 +323,8 @@ Route::middleware('tenant')->group(function () {
     Route::post('/getPROpen', [PRController::class, 'getPROpen']);
     Route::post('/po/update', [POController::class, 'updatePrFromPO']);
     Route::post('/getPRHistory', [PRController::class, 'history']);
+    Route::post('/getBranchItemBalance', [PRController::class, 'getBranchItemBalance']);
+
 
     Route::get('/MSRR', [MSRRController::class, 'index']);
     Route::post('/upsertMSRR', [MSRRController::class, 'upsert']);

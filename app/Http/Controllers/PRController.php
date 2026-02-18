@@ -159,6 +159,38 @@ public function history(Request $request) {
 
 
 
+
+public function getBranchItemBalance(Request $request)
+{
+        $validated = $request->validate([
+            'json_data' => 'required|array'
+        ]);
+
+        try {
+            $params = json_encode(['json_data' => $validated['json_data']]);
+            $mode = 'GetBranchBalance';
+
+            // Call the stored procedure
+            $result = DB::select('EXEC sproc_PHP_PR @mode = ?, @params = ?', [
+                $mode,
+                $params
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $result
+            ], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error executing PR GetBranchBalance.',
+                'details' => $e->getMessage()
+            ], 500);
+        }
+}   
+
+
+
 public function getPROpen(Request $request)
 {
     Log::info('getPROpen request', $request->all());
