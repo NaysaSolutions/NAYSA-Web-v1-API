@@ -258,7 +258,7 @@ Route::middleware('tenant')->group(function () {
     Route::get('/vendMast', [VendMasterController::class, 'index']);
     Route::post('/upsertVendMast', [VendMasterController::class, 'upsert']);
     Route::get('/lookupVendMast', [VendMasterController::class, 'lookup']);
-    Route::post('/getVendMast', [VendMasterController::class, 'get']);
+    Route::get('/getVendMast', [VendMasterController::class, 'get']);
 
     Route::get('/payee', [VendMasterController::class, 'index']);
     Route::post('/upsertPayee', [VendMasterController::class, 'upsert']);
