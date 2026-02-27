@@ -226,7 +226,13 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getCOA', [COAMasterController::class, 'get']);
     Route::post('/lookupGL', [COAMasterController::class, 'lookupGL']);
     Route::post('/editEntries', [COAMasterController::class, 'editEntries']);
-    Route::post('/deleteCOA', [COAMasterController::class, 'deleteCOA']);
+    Route::post('/deleteCOA', [COAMasterController::class, 'delete']);
+    Route::post('/checkDuplicateCOA', [COAMasterController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedCOA', [COAMasterController::class, 'checkInUsed']);
+
+
+
+
 
     Route::get('/cOAClass', [COAClassController::class, 'index']);
     Route::post('/upsertCOAClass', [COAClassController::class, 'upsert']);
@@ -314,9 +320,13 @@ Route::middleware('tenant')->group(function () {
     Route::post('/getPOOpen', [POController::class, 'getPOOpen']);
     Route::post('/getPOHistory', [POController::class, 'history']);
 
+
     Route::get('/JO', [JOController::class, 'index']);
     Route::post('/upsertJO', [JOController::class, 'upsert']);
-    Route::post('/getJO', [JOController::class, 'get']);
+    Route::get('/getJO', [JOController::class, 'get']);
+    Route::post('/getJOHistory', [JOController::class, 'history']);
+
+
 
     Route::get('/PR', [PRController::class, 'index']);
     Route::post('/upsertPR', [PRController::class, 'upsert']);
@@ -365,6 +375,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/getMSAJHistory', [MSAJController::class, 'history']);
     Route::get('/findMSAJ', [MSAJController::class, 'find']);
 
+    
     Route::get('/MSRTV', [MSRTVController::class, 'index']);
     Route::post('/upsertMSRTV', [MSRTVController::class, 'upsert']);
     Route::post('/generateGLMSRTV', [MSRTVController::class, 'generateGL']);
@@ -503,6 +514,7 @@ Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
     Route::post('/cancelAPCM', [APCMController::class, 'cancel']);
     Route::post('/cancelMSAJ', [MSAJController::class, 'cancel']);
     Route::post('/cancelPR',  [PRController::class, 'cancel']);
+    Route::post('/cancelJO',  [JOController::class, 'cancel']);
 
     Route::post('/generateJVARCWLCL', [ARBalanceController::class, 'generateJVARCWLCL']);
 });
