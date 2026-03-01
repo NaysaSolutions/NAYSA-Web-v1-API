@@ -293,6 +293,64 @@ public function update(Request $request)
         }
     }
 
+
+
+
+
+
+
+public function getPRJO_OpenSummary(Request $request) {
+
+   $jsonString = $request->input('json_data');
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_PR @mode = ?, @params = ?',
+            ['getPRJO_OpenSummary' ,$jsonString] 
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+
+}
+
+
+
+
+public function getPRJO_OpenDetail(Request $request) {
+    
+    $jsonString = $request->input('json_data');
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_PR @mode = ?, @params = ?',
+            ['getPRJO_OpenDetail' ,$jsonString] 
+        );
+
+
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+
+}
+
+
 }
 
 

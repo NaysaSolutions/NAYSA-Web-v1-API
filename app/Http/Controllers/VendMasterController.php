@@ -39,13 +39,13 @@ public function index(Request $request) {
 
 public function lookup(Request $request) {
 
-    $paramsString = $request->input('PARAMS');
-    $params = json_decode($paramsString, true);
-   
+        $jsonString = $request->input('json_data');
+
     try {
+        
         $results = DB::select(
             'EXEC sproc_PHP_VendMast @mode = ?, @params = ?',
-            ['Lookup' ,$params['search']] 
+            ['Lookup', $jsonString] 
         );
 
        return response()->json([
