@@ -301,7 +301,7 @@ public function update(Request $request)
 
 public function getPRJO_OpenSummary(Request $request) {
 
-   $jsonString = $request->input('json_data');
+   $jsonString = $request->input('PARAMS');
 
     try {
         $results = DB::select(
