@@ -38,25 +38,21 @@ public function index(Request $request) {
 
 
 public function lookup(Request $request) {
-    $paramsString = $request->input('PARAMS');
-    $params = json_decode($paramsString, true);
-   
+
+        $jsonString = $request->input('json_data');
+
     try {
+        
         $results = DB::select(
             'EXEC sproc_PHP_VendMast @mode = ?, @params = ?',
-            ['Lookup' ,$params['search']] 
+            ['Lookup', $jsonString] 
         );
 
-        return response()->json([
+       return response()->json([
             'success' => true,
             'data' => $results,
         ], 200);
 
-
-        // return response()->json([
-        //     'success' => true,
-        //     'data' => json_encode($results)
-        // ],200);
 
     } catch (\Exception $e) {
         return response()->json([
@@ -65,8 +61,6 @@ public function lookup(Request $request) {
         ], 500);
     }
 }
-
-
 
 
 

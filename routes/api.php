@@ -78,6 +78,11 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
+Route::options('{any}', function () {
+    return response()->noContent();
+})->where('any', '.*');
+
+
 Route::get('/companies', [AuthController::class, 'companies']);
 Route::post('/send-mail', [MailController::class, 'send']);
 
@@ -143,6 +148,14 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsertDocSign', [PrintingController::class, 'upsertDocSign']);
     Route::get('/getDocSign', [PrintingController::class, 'getDocSign']);
 
+
+    // --Revised export using React
+    Route::post('/getARReport', [PrintingController::class, 'getAR_Report']);
+    Route::post('/getAPReport', [PrintingController::class, 'getAP_Report']);
+    Route::post('/getGLReport', [PrintingController::class, 'getGL_Report']);
+
+
+    
     Route::post('/attachFile', [FileAttachmentController::class, 'attachFile']);
     Route::delete('/deleteFile/{id}', [FileAttachmentController::class, 'deleteFile']);
     Route::get('/downloadAll/{documentID}', [FileAttachmentController::class, 'downloadAll']);
@@ -226,7 +239,13 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getCOA', [COAMasterController::class, 'get']);
     Route::post('/lookupGL', [COAMasterController::class, 'lookupGL']);
     Route::post('/editEntries', [COAMasterController::class, 'editEntries']);
-    Route::post('/deleteCOA', [COAMasterController::class, 'deleteCOA']);
+    Route::post('/deleteCOA', [COAMasterController::class, 'delete']);
+    Route::post('/checkDuplicateCOA', [COAMasterController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedCOA', [COAMasterController::class, 'checkInUsed']);
+
+
+
+
 
     Route::get('/cOAClass', [COAClassController::class, 'index']);
     Route::post('/upsertCOAClass', [COAClassController::class, 'upsert']);
@@ -254,6 +273,9 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsertBillterm', [BillTermController::class, 'upsert']);
     Route::get('/lookupBillterm', [BillTermController::class, 'lookup']);
     Route::get('/getBillterm', [BillTermController::class, 'get']);
+    Route::post('/checkDuplicateBillterm', [BillTermController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedBillterm', [BillTermController::class, 'checkInUsed']);
+    Route::post('/deleteBillterm', [BillTermController::class, 'delete']);
 
     Route::get('/vendMast', [VendMasterController::class, 'index']);
     Route::post('/upsertVendMast', [VendMasterController::class, 'upsert']);
@@ -314,10 +336,12 @@ Route::middleware('tenant')->group(function () {
     Route::post('/getPOOpen', [POController::class, 'getPOOpen']);
     Route::post('/getPOHistory', [POController::class, 'history']);
 
+
     Route::get('/JO', [JOController::class, 'index']);
     Route::post('/upsertJO', [JOController::class, 'upsert']);
     Route::get('/getJO', [JOController::class, 'get']);
-    Route::get('/getJOHistory', [JOController::class, 'history']);
+    Route::post('/getJOHistory', [JOController::class, 'history']);
+
 
 
     Route::get('/PR', [PRController::class, 'index']);
@@ -327,6 +351,11 @@ Route::middleware('tenant')->group(function () {
     Route::post('/po/update', [POController::class, 'updatePrFromPO']);
     Route::post('/getPRHistory', [PRController::class, 'history']);
     Route::post('/getBranchItemBalance', [PRController::class, 'getBranchItemBalance']);
+    Route::get('/getPRJO_OpenSummary', [PRController::class, 'getPRJO_OpenSummary']);
+    Route::post('/getPRJO_OpenDetail', [PRController::class, 'getPRJO_OpenDetail']);
+
+
+
 
 
     Route::get('/MSRR', [MSRRController::class, 'index']);
@@ -367,6 +396,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/getMSAJHistory', [MSAJController::class, 'history']);
     Route::get('/findMSAJ', [MSAJController::class, 'find']);
 
+    
     Route::get('/MSRTV', [MSRTVController::class, 'index']);
     Route::post('/upsertMSRTV', [MSRTVController::class, 'upsert']);
     Route::post('/generateGLMSRTV', [MSRTVController::class, 'generateGL']);
@@ -505,6 +535,7 @@ Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
     Route::post('/cancelAPCM', [APCMController::class, 'cancel']);
     Route::post('/cancelMSAJ', [MSAJController::class, 'cancel']);
     Route::post('/cancelPR',  [PRController::class, 'cancel']);
+    Route::post('/cancelJO',  [JOController::class, 'cancel']);
 
     Route::post('/generateJVARCWLCL', [ARBalanceController::class, 'generateJVARCWLCL']);
 });

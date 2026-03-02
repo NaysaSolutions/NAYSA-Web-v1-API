@@ -44,8 +44,6 @@ public function index(Request $request) {
 
 public function get(Request $request) {
 
-
-
     $jsonData = $request->all(); 
     $jsonString = json_encode($jsonData); 
 

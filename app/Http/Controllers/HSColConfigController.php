@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\Log;
 
 class HSColConfigController extends Controller
 {
-    public function get(Request $request) {
+   
+
+public function get(Request $request) {
 
 
     $jsonData = $request->input('json_data');
