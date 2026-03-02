@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 use hisorange\BrowserDetect\Parser as Browser;
 use App\Support\TenantCatalog;
@@ -125,13 +126,14 @@ class AuthController extends Controller
     //     }
     // }
 
+
     public function register(Request $req)
     {
         $v = Validator::make($req->all(), [
             'USER_CODE' => ['required', 'string', 'max:10'],
             'USER_NAME' => ['required', 'string', 'max:100'],
             'EMAIL_ADD' => ['required', 'email', 'max:255'],
-            'PASSWORD'  => ['required', 'string', 'min:6'],
+            // ❌ NO PASSWORD
         ]);
 
         if ($v->fails()) {
@@ -144,68 +146,59 @@ class AuthController extends Controller
         $userId   = trim($req->input('USER_CODE'));
         $username = trim($req->input('USER_NAME'));
         $email    = trim($req->input('EMAIL_ADD'));
-        $password = $req->input('PASSWORD');
 
         try {
-            // Uniqueness checks are performed against the CURRENT tenant DB
-            $existsUsername = DB::table('USERS')->where('USER_NAME', $username)->exists();
-            if ($existsUsername) {
+            // --------------------------------------------------
+            // Uniqueness checks (per tenant DB)
+            // --------------------------------------------------
+            if (DB::table('users')->where('user_code', $userId)->exists()) {
                 return response()->json([
                     'status'  => 'error',
-                    'message' => 'Username already taken.',
+                    'message' => 'User ID already exists.',
                 ], 409);
             }
 
-            $existsEmail = DB::table('USERS')->where('EMAIL_ADD', $email)->exists();
-            if ($existsEmail) {
+            if (DB::table('users')->where('email_add', $email)->exists()) {
                 return response()->json([
                     'status'  => 'error',
                     'message' => 'Email already registered.',
                 ], 409);
             }
 
-            // DB::table('USERS')->insert([
-            //     'USER_CODE'  => $userId,
-            //     'USER_NAME'  => $username,
-            //     'EMAIL_ADD'  => $email,
-            //     'PASSWORD'   => Hash::make($password), // bcrypt
-            // ]);
-
-            DB::table('USERS')->insert([
-                'USER_CODE'   => $userId,
-                'USER_NAME'   => $username,
-                'EMAIL_ADD'   => $email,
-                'PASSWORD'    => Hash::make($password),   // bcrypt
-                'USER_TYPE'   => 'R',                     // <- make everyone "Regular" on signup
-                'ACTIVE'      => 'P',                     // (optional) mark active on creation
-                'VIEW_COSTAMT' => 'N',                     // (optional) sensible defaults
-                'EDIT_UPRICE' => 'N',                     // (optional) sensible defaults
-                // 'CREATED_AT' => now(),                  // if you have timestamps
-                // 'UPDATED_AT' => now(),
+            // --------------------------------------------------
+            // Insert PENDING user (NO PASSWORD)
+            // --------------------------------------------------
+            DB::table('users')->insert([
+                'user_code'    => $userId,
+                'user_name'    => $username,
+                'email_add'    => $email,
+                'user_type'    => 'R',     // Regular user
+                'active'       => 'P',     // ⬅ PENDING
+                'view_costamt' => 'N',
+                'edit_uprice'  => 'N',
+                'password'     => null,    // ⬅ IMPORTANT
+                'tpword_date'  => null,
+                'cpword_date'  => null,
             ]);
-
-            $user = DB::table('USERS')
-                ->select('USER_CODE', 'USER_NAME', 'EMAIL_ADD')
-                ->where('USER_NAME', $username)
-                ->first();
 
             return response()->json([
                 'status'  => 'success',
-                'message' => 'Registration successful.',
-                'data'    => $user,
-                'tenant'  => [
-                    'database' => $req->attributes->get('tenant.database'),
-                    'code'     => $req->attributes->get('tenant.code'),
-                    'company'  => $req->attributes->get('tenant.company'),
+                'message' => 'Registration submitted. Awaiting admin approval.',
+                'data'    => [
+                    'USER_CODE' => $userId,
+                    'USER_NAME' => $username,
+                    'EMAIL_ADD' => $email,
                 ],
             ], 201);
         } catch (Throwable $e) {
+            report($e);
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Registration failed. ' . $e->getMessage(),
             ], 500);
         }
     }
+
 
     /**
      * Session (cookie) login + SingleSession (kick old session).

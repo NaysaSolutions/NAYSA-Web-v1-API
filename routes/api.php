@@ -61,6 +61,7 @@ use App\Http\Controllers\MSMastController;
 use App\Http\Controllers\WarehouseMastController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\QStatController;
+use App\Http\Controllers\JobCodesController;
 use App\Http\Controllers\MSISController;
 use App\Http\Controllers\MSSTController;
 use App\Http\Controllers\MSAJController;
@@ -79,9 +80,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/companies', [AuthController::class, 'companies']);
 Route::post('/send-mail', [MailController::class, 'send']);
-
-    // Route::get('/menu-items', [MenuController::class, 'items']);
-    // Route::get('/menu-routes', [MenuController::class, 'routes']);
 
 Route::middleware('tenant')->group(function () {
 
@@ -228,9 +226,18 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getCOA', [COAMasterController::class, 'get']);
     Route::post('/lookupGL', [COAMasterController::class, 'lookupGL']);
     Route::post('/editEntries', [COAMasterController::class, 'editEntries']);
+    Route::post('/deleteCOA', [COAMasterController::class, 'delete']);
+    Route::post('/checkDuplicateCOA', [COAMasterController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedCOA', [COAMasterController::class, 'checkInUsed']);
+
+
+
+
 
     Route::get('/cOAClass', [COAClassController::class, 'index']);
     Route::post('/upsertCOAClass', [COAClassController::class, 'upsert']);
+    Route::post('/lookupCOAClass', [COAClassController::class, 'lookup']);
+
 
     Route::get('/branch', [BranchController::class, 'index']);
     Route::post('/upsertBranch', [BranchController::class, 'upsert']);
@@ -247,22 +254,27 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsertPayterm', [PayTermController::class, 'upsert']);
     Route::get('/lookupPayterm', [PayTermController::class, 'lookup']);
     Route::get('/getPayterm', [PayTermController::class, 'get']);
+    Route::post('/deletePayterm', [PayTermController::class, 'delete']);
 
     Route::get('/billterm', [BillTermController::class, 'index']);
     Route::post('/upsertBillterm', [BillTermController::class, 'upsert']);
     Route::get('/lookupBillterm', [BillTermController::class, 'lookup']);
     Route::get('/getBillterm', [BillTermController::class, 'get']);
+    Route::post('/checkDuplicateBillterm', [BillTermController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedBillterm', [BillTermController::class, 'checkInUsed']);
+    Route::post('/deleteBillterm', [BillTermController::class, 'delete']);
 
     Route::get('/vendMast', [VendMasterController::class, 'index']);
     Route::post('/upsertVendMast', [VendMasterController::class, 'upsert']);
     Route::get('/lookupVendMast', [VendMasterController::class, 'lookup']);
-    Route::post('/getVendMast', [VendMasterController::class, 'get']);
+    Route::get('/getVendMast', [VendMasterController::class, 'get']);
 
     Route::get('/payee', [VendMasterController::class, 'index']);
     Route::post('/upsertPayee', [VendMasterController::class, 'upsert']);
     Route::get('/lookupPayee', [VendMasterController::class, 'lookup']);
     Route::post('/getPayee', [VendMasterController::class, 'get']);
     Route::post('/addPayeeDetail', [VendMasterController::class, 'addDetail']);
+    Route::post('/deletePayee', [VendMasterController::class, 'delete']);
 
     Route::get('/customer', [CustMasterController::class, 'index']);
     Route::post('/upsertCustomer', [CustMasterController::class, 'upsert']);
@@ -307,18 +319,31 @@ Route::middleware('tenant')->group(function () {
 
     Route::get('/PO', [POController::class, 'index']);
     Route::post('/upsertPO', [POController::class, 'upsert']);
-    Route::post('/getPO', [POController::class, 'get']);
+    Route::get('/getPO', [POController::class, 'get']);
     Route::post('/getPOOpen', [POController::class, 'getPOOpen']);
+    Route::post('/getPOHistory', [POController::class, 'history']);
+
 
     Route::get('/JO', [JOController::class, 'index']);
     Route::post('/upsertJO', [JOController::class, 'upsert']);
-    Route::post('/getJO', [JOController::class, 'get']);
+    Route::get('/getJO', [JOController::class, 'get']);
+    Route::post('/getJOHistory', [JOController::class, 'history']);
+
+
 
     Route::get('/PR', [PRController::class, 'index']);
     Route::post('/upsertPR', [PRController::class, 'upsert']);
     Route::get('/getPR', [PRController::class, 'get']);
     Route::post('/getPROpen', [PRController::class, 'getPROpen']);
     Route::post('/po/update', [POController::class, 'updatePrFromPO']);
+    Route::post('/getPRHistory', [PRController::class, 'history']);
+    Route::post('/getBranchItemBalance', [PRController::class, 'getBranchItemBalance']);
+    Route::get('/getPRJO_OpenSummary', [PRController::class, 'getPRJO_OpenSummary']);
+    Route::post('/getPRJO_OpenDetail', [PRController::class, 'getPRJO_OpenDetail']);
+
+
+
+
 
     Route::get('/MSRR', [MSRRController::class, 'index']);
     Route::post('/upsertMSRR', [MSRRController::class, 'upsert']);
@@ -332,6 +357,9 @@ Route::middleware('tenant')->group(function () {
     Route::post('/getQStat', [QStatController::class, 'get']);        // Single
     Route::post('/upsertQStat', [QStatController::class, 'upsert']);  // Save
     Route::post('/deleteQStat', [QStatController::class, 'delete']);  // Delete
+
+     Route::get('/lookupJobCode', [JobCodesController::class, 'lookup']);   // Lookup modal
+
 
     Route::get('/MSIS', [MSISController::class, 'index']);
     Route::post('/upsertMSIS', [MSISController::class, 'upsert']);
@@ -355,6 +383,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/getMSAJHistory', [MSAJController::class, 'history']);
     Route::get('/findMSAJ', [MSAJController::class, 'find']);
 
+    
     Route::get('/MSRTV', [MSRTVController::class, 'index']);
     Route::post('/upsertMSRTV', [MSRTVController::class, 'upsert']);
     Route::post('/generateGLMSRTV', [MSRTVController::class, 'generateGL']);
@@ -362,7 +391,6 @@ Route::middleware('tenant')->group(function () {
     Route::get('/postingMSRTV', [MSRTVController::class, 'posting']);
     Route::post('/getMSRTVHistory', [MSRTVController::class, 'history']);
     Route::get('/findMSRTV', [MSRTVController::class, 'find']);
-    Route::post('/cancelMSRTV ', [MSRTVController::class, 'cancel']);
 
 
     Route::prefix('warehouse')->group(function () {
@@ -377,6 +405,7 @@ Route::middleware('tenant')->group(function () {
         Route::get('/getLocation',    [LocationController::class, 'get']);           // ?locCode=L001
         Route::get('/lookupLocation', [LocationController::class, 'lookup']);        // ?filter=ActiveAll
         Route::post('/upsertLocation', [LocationController::class, 'upsert']);
+        Route::post('/getByWarehouse', [LocationController::class, 'byWarehouse']);
     });
 
     Route::post('/msLookup', [MSISController::class, 'msLookup']);
@@ -476,7 +505,8 @@ Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
     Route::post('/finalizeAPDM', [APDMController::class, 'finalize']);
     Route::post('/finalizeAPCM', [APCMController::class, 'finalize']);
     Route::post('/finalizeMSRR', [MSRRController::class, 'finalize']);
-    Route::post('/finalizeMSRTV', [MSRTVController::class, 'finalize']);
+    Route::post('/finalizeMSAJ', [MSAJController::class, 'finalize']);
+
 
     Route::post('/cancelARDM', [ARDMController::class, 'cancel']);
     Route::post('/cancelSOA', [SOAController::class, 'cancel']);
@@ -490,8 +520,9 @@ Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
     Route::post('/cancelAR',  [ARController::class, 'cancel']);
     Route::post('/cancelAPDM', [APDMController::class, 'cancel']);
     Route::post('/cancelAPCM', [APCMController::class, 'cancel']);
-
+    Route::post('/cancelMSAJ', [MSAJController::class, 'cancel']);
     Route::post('/cancelPR',  [PRController::class, 'cancel']);
+    Route::post('/cancelJO',  [JOController::class, 'cancel']);
 
     Route::post('/generateJVARCWLCL', [ARBalanceController::class, 'generateJVARCWLCL']);
 });
