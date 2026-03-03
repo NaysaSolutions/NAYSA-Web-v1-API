@@ -9,13 +9,32 @@ class MenuController extends Controller
 {
 
         
-    public function items(Request $req)
-    {
+    // public function items(Request $req)
+    // {
         
-        $userCode      = $req->query('USER_CODE');            
+    //     $userCode      = $req->query('USER_CODE');            
+    //     $includeHidden = (int) $req->query('include_hidden', 0);
+    //     $mode          = $req->query('mode', 'ReturnJson');
+
+
+    //     $rows = DB::select(
+    //         'EXEC dbo.sproc_PHP_HSMenu @IncludeHidden = ?, @mode = ?, @userCode = ?',
+    //         [$includeHidden, $mode, $userCode]
+    //     );
+
+    //     $row  = $rows[0] ?? null;
+    //     $json = $row->JsonResult ?? '[]';      
+    //     return response()->json([
+    //         'menuItems' => json_decode($json, true) ?? []
+    //     ]);
+    // }
+
+    public function items(Request $req)
+{
+    try {
+        $userCode      = $req->query('USER_CODE');
         $includeHidden = (int) $req->query('include_hidden', 0);
         $mode          = $req->query('mode', 'ReturnJson');
-
 
         $rows = DB::select(
             'EXEC dbo.sproc_PHP_HSMenu @IncludeHidden = ?, @mode = ?, @userCode = ?',
@@ -23,11 +42,20 @@ class MenuController extends Controller
         );
 
         $row  = $rows[0] ?? null;
-        $json = $row->JsonResult ?? '[]';      
+        $json = $row->JsonResult ?? '[]';
+
         return response()->json([
-            'menuItems' => json_decode($json, true) ?? []
+            'success'   => true,
+            'menuItems' => json_decode($json, true) ?? [],
         ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
     }
+}
+
 
 
 

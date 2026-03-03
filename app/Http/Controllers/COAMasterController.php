@@ -35,58 +35,22 @@ public function index(Request $request) {
 
 
 
-// public function lookup(Request $request) {
+public function lookup(Request $request) {
 
-//     $paramsString = $request->input('PARAMS');
-//     $params = json_decode($paramsString, true);
-   
-
-//     try {
-//         $results = DB::select(
-//             'EXEC sproc_PHP_COAMast @mode = ?, @params = ?',
-//             ['Lookup' ,$params['search']] 
-//         );
-
-//         return response()->json([
-//             'success' => true,
-//             'data' => $results,
-//         ], 200);
-//     } catch (\Exception $e) {
-//         return response()->json([
-//             'success' => false,
-//             'message' => $e->getMessage(),
-//         ], 500);
-//     }
-// }
-
-public function lookup(Request $request)
-{
     $paramsString = $request->input('PARAMS');
     $params = json_decode($paramsString, true);
+   
 
     try {
-        // ✅ SINGLE RECORD (double click / edit)
-        if (!empty($params['acctCode']) && ($params['search'] ?? '') === 'Single') {
-            $results = DB::select(
-                'EXEC sproc_PHP_COAMast @mode = ?, @params = ?',
-                ['Get', $params['acctCode']]
-            );
-        } 
-        // ✅ NORMAL LOOKUP (table load / search)
-        else {
-            // your sproc expects filter string in @params for Lookup
-            $filter = $params['filter'] ?? $params['search'] ?? '';
-            $results = DB::select(
-                'EXEC sproc_PHP_COAMast @mode = ?, @params = ?',
-                ['Lookup', $filter]
-            );
-        }
+        $results = DB::select(
+            'EXEC sproc_PHP_COAMast @mode = ?, @params = ?',
+            ['Lookup' ,$params['search']] 
+        );
 
         return response()->json([
             'success' => true,
             'data' => $results,
         ], 200);
-
     } catch (\Exception $e) {
         return response()->json([
             'success' => false,
@@ -94,11 +58,6 @@ public function lookup(Request $request)
         ], 500);
     }
 }
-
-
-
-
-
 
 
 
@@ -114,7 +73,7 @@ public function get(Request $request) {
     try {
         $results = DB::select(
             'EXEC sproc_PHP_COAMast @mode = ?, @params = ?',
-            ['get' ,$params] 
+            ['Get' ,$params] 
         );
 
         return response()->json([
@@ -141,34 +100,149 @@ public function upsert(Request $request)
 
         $params = $request->get('json_data');
 
-      
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Invalid JSON data provided.',
-            ], 400);
+        // (optional safety) ensure string json
+        if (!is_string($params)) {
+            $params = json_encode($params);
         }
 
+        // ✅ READ resultset from sproc (SVI style)
+        $rows = DB::select(
+            'EXEC sproc_PHP_COAMast @params = :json_data, @mode = :mode',
+            [
+                'json_data' => $params,
+                'mode' => 'Upsert', // keep same casing as sproc comparisons
+            ]
+        );
 
-        DB::statement('EXEC sproc_PHP_COAMast @params = :json_data, @mode = :mode', [
-            'json_data' => $params,
-            'mode' => 'upsert'
-        ]);
+        // If sproc returns: errorMsg, errorCount
+        if (!empty($rows)) {
+            $first = (array) $rows[0];
 
+            $errorCount = isset($first['errorCount']) ? (int) $first['errorCount'] : 0;
+            $errorMsg   = $first['errorMsg'] ?? '';
+
+            if ($errorCount > 0 && trim($errorMsg) !== '') {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => $errorMsg, // ✅ shows exact SVI formatted list
+                ], 422);
+            }
+        }
 
         return response()->json([
             'status' => 'success',
             'message' => 'Transaction saved successfully.',
         ], 200);
+
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->validator->errors()->first(),
+            'errors' => $e->validator->errors(),
+        ], 422);
+
     } catch (\Exception $e) {
-        Log::error('Transaction save failed:', ['error' => $e->getMessage()]);
+        Log::error('COA save failed:', ['error' => $e->getMessage()]);
 
         return response()->json([
             'status' => 'error',
             'message' => 'Failed to save transaction: ' . $e->getMessage(),
         ], 500);
     }
+}
+
+
+
+
+public function delete(Request $request) {
+
+    try {
+
+      $validated = $request->validate([
+            'json_data' => 'required|array'
+        ]);
+
+        $params = json_encode(['json_data' => $validated['json_data']]);
+      
+
+        $results = DB::select(
+            'EXEC sproc_PHP_COAMast @mode = ?, @params = ?',
+            ['Delete', $params]
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+}
+
+
+
+
+
+public function checkInUsed(Request $request) {
+
+        $validated = $request->validate([
+            'json_data' => 'required|array'
+        ]);
+
+        $params = json_encode(['json_data' => $validated['json_data']]);
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_COAMast @mode = ?, @params = ?',
+            ['CheckInUsed' ,$params] 
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+
+}
+
+
+
+
+
+
+public function checkDuplicate(Request $request) {
+
+        $validated = $request->validate([
+            'json_data' => 'required|array'
+        ]);
+
+        $params = json_encode(['json_data' => $validated['json_data']]);
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_COAMast @mode = ?, @params = ?',
+            ['CheckDuplicate' ,$params] 
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+
 }
 
 

@@ -6,17 +6,23 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class HSColConfigController extends Controller
+
+class JobCodesController extends Controller
 {
-    public function get(Request $request) {
+    
+public function lookup(Request $request) {
 
+    $request->validate([
+        'PARAMS' => 'required|string',
+    ]);
 
-    $jsonData = $request->input('json_data');
+    $params = $request->input('PARAMS');
+
 
     try {
         $results = DB::select(
-            'EXEC sproc_PHP_HSColConfig @mode = ?, @params = ?',
-            ['get' ,$jsonData] 
+            'EXEC sproc_PHP_JobCodeRef @mode = ?, @params = ?',
+            ['Lookup' ,$params] 
         );
 
         return response()->json([
@@ -30,4 +36,5 @@ class HSColConfigController extends Controller
         ], 500);
     }
 }
+
 }

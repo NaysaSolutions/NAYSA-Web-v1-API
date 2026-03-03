@@ -108,4 +108,29 @@ class LocationController extends Controller
             ], 500);
         }
     }
+
+    public function byWarehouse(Request $request)
+{
+    $whCode = $request->input('json_data.whCode', ''); // ✅ FIX
+
+    $params = json_encode([
+        "json_data" => [
+            "whCode" => $whCode
+        ]
+    ]);
+
+    $rows = DB::select('EXEC dbo.sproc_PHP_Location @mode = ?, @params = ?', [
+        'ByWarehouse',
+        $params
+    ]);
+
+    $json = $rows[0]->result ?? '[]';
+
+    return response()->json([
+        'success' => true,
+        'data' => json_decode($json, true),
+    ]);
+}
+
+
 }
