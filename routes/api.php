@@ -77,6 +77,11 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
+Route::options('{any}', function () {
+    return response()->noContent();
+})->where('any', '.*');
+
+
 Route::get('/companies', [AuthController::class, 'companies']);
 Route::post('/send-mail', [MailController::class, 'send']);
 
