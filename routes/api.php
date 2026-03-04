@@ -143,6 +143,14 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsertDocSign', [PrintingController::class, 'upsertDocSign']);
     Route::get('/getDocSign', [PrintingController::class, 'getDocSign']);
 
+
+    // --Revised export using React
+    Route::post('/getARReport', [PrintingController::class, 'getAR_Report']);
+    Route::post('/getAPReport', [PrintingController::class, 'getAP_Report']);
+    Route::post('/getGLReport', [PrintingController::class, 'getGL_Report']);
+
+
+    
     Route::post('/attachFile', [FileAttachmentController::class, 'attachFile']);
     Route::delete('/deleteFile/{id}', [FileAttachmentController::class, 'deleteFile']);
     Route::get('/downloadAll/{documentID}', [FileAttachmentController::class, 'downloadAll']);
