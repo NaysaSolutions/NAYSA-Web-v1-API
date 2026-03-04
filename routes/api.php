@@ -78,6 +78,11 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
+Route::options('{any}', function () {
+    return response()->noContent();
+})->where('any', '.*');
+
+
 Route::get('/companies', [AuthController::class, 'companies']);
 Route::post('/send-mail', [MailController::class, 'send']);
 
@@ -268,6 +273,9 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsertBillterm', [BillTermController::class, 'upsert']);
     Route::get('/lookupBillterm', [BillTermController::class, 'lookup']);
     Route::get('/getBillterm', [BillTermController::class, 'get']);
+    Route::post('/checkDuplicateBillterm', [BillTermController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedBillterm', [BillTermController::class, 'checkInUsed']);
+    Route::post('/deleteBillterm', [BillTermController::class, 'delete']);
 
     Route::get('/vendMast', [VendMasterController::class, 'index']);
     Route::post('/upsertVendMast', [VendMasterController::class, 'upsert']);
