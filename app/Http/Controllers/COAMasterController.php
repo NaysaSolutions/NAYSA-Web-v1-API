@@ -91,6 +91,67 @@ public function get(Request $request) {
 
 
 
+// public function upsert(Request $request)
+// {
+//     try {
+//         $request->validate([
+//             'json_data' => 'required|json',
+//         ]);
+
+//         $params = $request->get('json_data');
+
+//         // (optional safety) ensure string json
+//         if (!is_string($params)) {
+//             $params = json_encode($params);
+//         }
+
+//         // ✅ READ resultset from sproc (SVI style)
+//         $rows = DB::select(
+//             'EXEC sproc_PHP_COAMast @params = :json_data, @mode = :mode',
+//             [
+//                 'json_data' => $params,
+//                 'mode' => 'Upsert', // keep same casing as sproc comparisons
+//             ]
+//         );
+
+//         // If sproc returns: errorMsg, errorCount
+//         if (!empty($rows)) {
+//             $first = (array) $rows[0];
+
+//             $errorCount = isset($first['errorCount']) ? (int) $first['errorCount'] : 0;
+//             $errorMsg   = $first['errorMsg'] ?? '';
+
+//             if ($errorCount > 0 && trim($errorMsg) !== '') {
+//                 return response()->json([
+//                     'status'  => 'error',
+//                     'message' => $errorMsg, // ✅ shows exact SVI formatted list
+//                 ], 422);
+//             }
+//         }
+
+//         return response()->json([
+//             'status' => 'success',
+//             'message' => 'Transaction saved successfully.',
+//         ], 200);
+
+//     } catch (\Illuminate\Validation\ValidationException $e) {
+//         return response()->json([
+//             'status' => 'error',
+//             'message' => $e->validator->errors()->first(),
+//             'errors' => $e->validator->errors(),
+//         ], 422);
+
+//     } catch (\Exception $e) {
+//         Log::error('COA save failed:', ['error' => $e->getMessage()]);
+
+//         return response()->json([
+//             'status' => 'error',
+//             'message' => 'Failed to save transaction: ' . $e->getMessage(),
+//         ], 500);
+//     }
+// }
+
+
 public function upsert(Request $request)
 {
     try {
@@ -100,50 +161,20 @@ public function upsert(Request $request)
 
         $params = $request->get('json_data');
 
-        // (optional safety) ensure string json
-        if (!is_string($params)) {
-            $params = json_encode($params);
-        }
+        // 1. Use DB::select to capture the Sproc's output (errormsg, errorcount)
+        $results = DB::select('EXEC sproc_PHP_COAMast @params = :json_data, @mode = :mode', [
+            'json_data' => $params,
+            'mode' => 'upsert'
+        ]);
 
-        // ✅ READ resultset from sproc (SVI style)
-        $rows = DB::select(
-            'EXEC sproc_PHP_COAMast @params = :json_data, @mode = :mode',
-            [
-                'json_data' => $params,
-                'mode' => 'Upsert', // keep same casing as sproc comparisons
-            ]
-        );
-
-        // If sproc returns: errorMsg, errorCount
-        if (!empty($rows)) {
-            $first = (array) $rows[0];
-
-            $errorCount = isset($first['errorCount']) ? (int) $first['errorCount'] : 0;
-            $errorMsg   = $first['errorMsg'] ?? '';
-
-            if ($errorCount > 0 && trim($errorMsg) !== '') {
-                return response()->json([
-                    'status'  => 'error',
-                    'message' => $errorMsg, // ✅ shows exact SVI formatted list
-                ], 422);
-            }
-        }
-
+        // 2. Return the SQL results so React can read them
         return response()->json([
             'status' => 'success',
-            'message' => 'Transaction saved successfully.',
+            'data' => $results, // <--- This contains your validation table
         ], 200);
 
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => $e->validator->errors()->first(),
-            'errors' => $e->validator->errors(),
-        ], 422);
-
     } catch (\Exception $e) {
-        Log::error('COA save failed:', ['error' => $e->getMessage()]);
-
+        Log::error('Saving failed:', ['error' => $e->getMessage()]);
         return response()->json([
             'status' => 'error',
             'message' => 'Failed to save transaction: ' . $e->getMessage(),
