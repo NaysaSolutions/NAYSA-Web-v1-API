@@ -109,6 +109,7 @@ Route::middleware('tenant')->group(function () {
     // Heart Strong
     Route::get('/getHSDoc', [HSDocController::class, 'get']);
     Route::post('/getHSDropdown', [HSDropdownController::class, 'get']);
+    Route::post('/getHSDropdownAll', [HSDropdownController::class, 'getAll']);
     Route::get('/getHSOption', [HSOptionController::class, 'get']);
     Route::get('/getHSColConfig', [HSColConfigController::class, 'get']);
 
