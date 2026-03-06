@@ -258,6 +258,9 @@ Route::middleware('tenant')->group(function () {
     Route::get('/lookupBranch', [BranchController::class, 'lookup']);
     Route::get('/getBranch', [BranchController::class, 'get']);
     Route::post('/deleteBranch', [BranchController::class, 'delete']);
+    Route::post('/checkDuplicateBranch', [BranchController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedBranch', [BranchController::class, 'checkInUsed']);
+
 
     Route::get('/billcode', [BillCodeController::class, 'index']);
     Route::post('/upsertBillcode', [BillCodeController::class, 'upsert']);
