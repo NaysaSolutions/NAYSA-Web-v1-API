@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Log;
 class HSDropdownController extends Controller
 {
     
+
+
 public function get(Request $request) {
 
 
@@ -34,6 +36,31 @@ public function get(Request $request) {
         ], 500);
     }
 }
+
+
+
+
+public function getAll(Request $request) {
+
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_HSDropdown @mode = ?',
+            ['getAll' ] 
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+}
+
 
 
 }
