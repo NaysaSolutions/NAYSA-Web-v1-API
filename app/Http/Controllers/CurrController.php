@@ -6,183 +6,227 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-
 class CurrController extends Controller
 {
-    
-public function index(Request $request) {
 
-    try {
-        $results = DB::select(
-            'EXEC sproc_PHP_CurrRef @mode = ?',
-            ['Load' ] 
-        );
+    public function index(Request $request)
+    {
 
-        return response()->json([
-            'success' => true,
-            'data' => $results,
-        ], 200);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage(),
-        ], 500);
+        try {
+            $results = DB::select(
+                'EXEC sproc_PHP_CurrRef @mode = ?',
+                ['Load']
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $results,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
     }
 
 
-}
+
+
+
+
+    public function lookup(Request $request)
+    {
+
+        $request->validate([
+            'PARAMS' => 'required|string',
+        ]);
+
+        $params = $request->input('PARAMS');
+
+
+        try {
+            $results = DB::select(
+                'EXEC sproc_PHP_CurrRef @mode = ?, @params = ?',
+                ['Lookup', $params]
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $results,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    public function get(Request $request)
+    {
+
+        $request->validate([
+            'CURR_CODE' => 'required|string',
+        ]);
+
+        try {
+            $results = DB::select(
+                'EXEC sproc_PHP_CurrRef @mode = ?, @params = ?',
+                ['Get', $request->CURR_CODE]
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $results,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
+
+
+
+
 
 
 public function upsert(Request $request)
 {
-    try {
-        $request->validate([
-            'currCode' => 'required|string',
-            'currName' => 'required|string',
-            'userCode' => 'required|string',
-        ]);
+    $data = $request->json_data; // Array from React
 
-        // Build the JSON structure exactly as the stored procedure expects
-        $jsonData = [
-            'json_data' => [
-                'currCode' => $request->input('currCode'),
-                'currName' => $request->input('currName'),
-                'userCode' => $request->input('userCode')
-            ]
-        ];
+    try {
+        $params = json_encode(['json_data' => $data]);
+
+        // Use select to get the result set (errormsg, errorcount)
+        $result = DB::select('EXEC sproc_PHP_CurrRef @mode = ?, @params = ?', ['Upsert', $params]);
         
-        // Convert to JSON string
-        $params = json_encode($jsonData);
-
-        // Log the params for debugging
-        Log::info('Currency upsert params:', ['params' => $params]);
-
-        DB::statement('EXEC sproc_PHP_CurrRef @params = :json_data, @mode = :mode', [
-            'json_data' => $params,
-            'mode' => 'Upsert'
+        // Return the first row of the result directly to React
+        return response()->json([
+            'errormsg'   => $result[0]->errormsg ?? '',
+            'errorcount' => $result[0]->errorcount ?? 0,
         ]);
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Currency saved successfully.',
-        ], 200);
     } catch (\Exception $e) {
-        Log::error('Currency save failed:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Failed to save currency: ' . $e->getMessage(),
-        ], 500);
-    }
-}
-
-
-public function lookup(Request $request) {
-
- 
-    try {
-        $results = DB::select(
-            'EXEC sproc_PHP_CurrRef @mode = ?',
-            ['Lookup' ] 
-        );
-
-        return response()->json([
-            'success' => true,
-            'data' => $results,
-        ], 200);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage(),
-        ], 500);
+        return response()->json(['errormsg' => $e->getMessage(), 'errorcount' => 1], 500);
     }
 }
 
 
 
 
-public function get(Request $request) {
 
-    $request->validate([
-        'CURR_CODE' => 'required|string',
+
+    public function checkInUsed(Request $request) {
+    $validated = $request->validate([
+        'json_data' => 'required|array',
+        'json_data.currCode' => 'required|string',
     ]);
 
-    $params = $request->input('CURR_CODE');
-
+    $params = json_encode($validated);
 
     try {
-        $results = DB::select(
-            'EXEC sproc_PHP_CurrRef @mode = ?, @params = ?',
-            ['Get' ,$params] 
-        );
+        $results = DB::select('EXEC sproc_PHP_CurrRef @mode = ?, @params = ?', ['CheckInUsed', $params]);
+
+        // Decode the internal JSON string from SQL for a cleaner API response
+        $raw = $results[0]->result ?? '{"result":"0"}';
+        $decoded = json_decode($raw, true);
 
         return response()->json([
             'success' => true,
-            'data' => $results,
+            'isInUsed' => ($decoded['result'] ?? "0") === "1",
         ], 200);
     } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage(),
-        ], 500);
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
     }
 }
 
 
-public function delete(Request $request)
+
+
+
+
+public function checkDuplicate(Request $request)
 {
+    $validated = $request->validate([
+        'json_data' => 'required|array',
+        'json_data.currCode' => 'required|string',
+    ]);
+
+    $params = json_encode($validated); // Just encode the validated array
+
     try {
-        $request->validate([
-            'json_data' => 'required|string',
-        ]);
+        $results = DB::select('EXEC sproc_PHP_CurrRef @mode = ?, @params = ?', ['CheckDuplicate', $params]);
 
-        $jsonData = json_decode($request->input('json_data'), true);
-        
-        if (!is_array($jsonData) || empty($jsonData)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid JSON data format',
-            ], 400);
-        }
-        
-        // Get the first item in the array
-        $item = $jsonData[0];
-        $currCode = $item['currCode'] ?? $item['CURR_CODE'] ?? null;
-        
-        if (!$currCode) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Currency code is required',
-            ], 400);
-        }
-        
-        // Format data for stored procedure
-        $params = json_encode([
-            'json_data' => [
-                'currCode' => $currCode,
-                'userCode' => $request->input('userCode', 'SYSTEM')
-            ]
-        ]);
-
-        Log::info('Currency delete params:', ['params' => $params]);
-
-        DB::statement('EXEC sproc_PHP_CurrRef @params = :json_data, @mode = :mode', [
-            'json_data' => $params,
-            'mode' => 'Delete'
-        ]);
+        // Access the 'result' column we aliased in the Sproc
+        $raw = $results[0]->result ?? '{"result":"0"}';
+        $decoded = json_decode($raw, true);
 
         return response()->json([
             'success' => true,
-            'message' => 'Currency deleted successfully.',
+            'result' => $decoded['result'] ?? "0",
         ], 200);
-    } catch (\Exception $e) {
-        Log::error('Currency delete failed:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
 
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to delete currency: ' . $e->getMessage(),
-        ], 500);
+    } catch (\Exception $e) {
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
     }
 }
 
+
+
+ public function delete(Request $request)
+{
+    $request->validate([
+        'json_data' => 'required|array',
+    ]);
+
+    $data = $request->json_data;
+    $code = $data['currCode'] ?? null;
+
+    if (!$code) {
+        return response()->json(['success' => false, 'message' => 'Code is required.'], 400);
+    }
+
+    try {
+        // Wrap the array into the structure the SPROC expects
+        $params = json_encode(['json_data' => $data]);
+
+        // Use DB::select to get the row returned by the SPROC
+        $result = DB::select('EXEC sproc_PHP_CurrRef @mode = ?, @params = ?', ['Delete', $params]);
+        
+        $errorCount = $result[0]->errorcount ?? 0;
+        $errorMsg = $result[0]->errormsg ?? 'Unknown error';
+
+        if ($errorCount > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => $errorMsg
+            ], 400);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Deleted successfully.'
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 500);
+    }
+}
 }
