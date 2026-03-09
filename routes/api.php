@@ -100,6 +100,7 @@ Route::middleware('tenant')->group(function () {
 
     Route::get('/getUser', [UserController::class, 'get']);
     Route::get('/load', [UserController::class, 'load']);
+    Route::get('/lookupUserAll', [UserController::class, 'lookupAll']);
     Route::post('/users/upsert', [UserController::class, 'upsert']);
     Route::post('/users/approve', [UserController::class, 'approveAccount']);
     Route::post('/users/delete', [UserController::class, 'delete']);
