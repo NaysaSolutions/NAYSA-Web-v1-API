@@ -140,6 +140,10 @@ Route::middleware('tenant')->group(function () {
     Route::get('/hsrpt', [HSRptController::class, 'index']);
     Route::get('/getHsrpt', [HSRptController::class, 'get']);
     Route::get('/getHSTblColLen', [HSToolsController::class, 'getTblGetFieldLenght']);
+    Route::post('/getDocTrail', [HSToolsController::class, 'getDocTrail']);
+    Route::post('/getRefTrail', [HSToolsController::class, 'getRefTrail']);
+
+
 
     Route::post('/printForm', [PrintingController::class, 'printForm']);
     Route::post('/printARReport', [PrintingController::class, 'printARReport']);

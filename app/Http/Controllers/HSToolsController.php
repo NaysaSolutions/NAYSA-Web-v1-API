@@ -48,4 +48,83 @@ public function getTblGetFieldLenght(Request $request) {
 }
 
 
+
+
+    public function getDocTrail(Request $request) {
+    // 1. Get the raw JSON and decode it
+    $params = json_decode($request->input('PARAMS'), true);
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_DocTrail 
+                @_mode = "GetDocTrail" , 
+                @_startdate = ?, 
+                @_enddate = ?, 
+                @_usercode = ?, 
+                @_doccode = ?, 
+                @_docNo =?,
+                @_branchcode = ?',
+            [
+                $params['startDate'] ?? null,
+                $params['endDate'] ?? null,
+                $params['userCode'] ?? null,
+                $params['docCode'] ?? null,
+                $params['docNo'] ?? null,
+                $params['branchCode'] ?? null
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+    }
+
+
+
+    
+  public function getRefTrail(Request $request) {
+    // 1. Get the raw JSON and decode it
+    
+    $params = json_decode($request->input('PARAMS'), true);
+
+   
+    try {
+      
+        $results = DB::select(
+            'EXEC sproc_PHP_DocTrail 
+                @_mode = "GetRefTrail", 
+                @_startdate = ?, 
+                @_enddate = ?, 
+                @_usercode = ?, 
+                @_tblCode = ?', 
+            [
+                $params['startDate'] ?? null,
+                $params['endDate'] ?? null,
+                $params['userCode'] ?? '',
+                $params['refFile'] ?? ''
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+}
+
+
 }
