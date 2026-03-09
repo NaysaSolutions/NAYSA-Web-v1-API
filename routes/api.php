@@ -21,6 +21,7 @@ use App\Http\Controllers\DForexController;
 use App\Http\Controllers\BankMasterController;
 use App\Http\Controllers\COAMasterController;
 use App\Http\Controllers\COAClassController;
+use App\Http\Controllers\FSConsolidationController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\BillCodeController;
 use App\Http\Controllers\PayTermController;
@@ -243,6 +244,16 @@ Route::middleware('tenant')->group(function () {
     Route::post('/deleteCOA', [COAMasterController::class, 'delete']);
     Route::post('/checkDuplicateCOA', [COAMasterController::class, 'checkDuplicate']);
     Route::post('/checkInUsedCOA', [COAMasterController::class, 'checkInUsed']);
+
+    
+    Route::get('/fsconso', [FSConsolidationController::class, 'index']);
+    Route::post('/upsertFSConso', [FSConsolidationController::class, 'upsert']);
+    Route::post('/lookupFSConso', [FSConsolidationController::class, 'lookup']);
+    Route::get('/getFSConso', [FSConsolidationController::class, 'get']);
+    Route::post('/lookupGL', [FSConsolidationController::class, 'lookupGL']);
+    Route::post('/deleteFSConso', [FSConsolidationController::class, 'delete']);
+    Route::post('/checkDuplicateFSConso', [FSConsolidationController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedFSConso', [FSConsolidationController::class, 'checkInUsed']);
 
 
 
