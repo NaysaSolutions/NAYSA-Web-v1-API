@@ -109,6 +109,8 @@ Route::middleware('tenant')->group(function () {
 
     // Heart Strong
     Route::get('/getHSDoc', [HSDocController::class, 'get']);
+    Route::get('/lookupHSDoc', [HSDocController::class, 'lookup']);
+
     Route::post('/getHSDropdown', [HSDropdownController::class, 'get']);
     Route::post('/getHSDropdownAll', [HSDropdownController::class, 'getAll']);
     Route::get('/getHSOption', [HSOptionController::class, 'get']);
@@ -192,6 +194,7 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getCWTInquiry', [AllBIRController::class, 'getCWTInquiry']);
     Route::get('/getINTAXInquiry', [AllBIRController::class, 'getINTAXInquiry']);
     Route::get('/getOUTAXInquiry', [AllBIRController::class, 'getOUTAXInquiry']);
+    Route::post('/generateBIRBooks', [AllBIRController::class, 'generateBIRBooks']);
 
     Route::get('/bankType', [BankTypeController::class, 'index']);
     Route::post('/upsertBankType', [BankTypeController::class, 'upsert']);
