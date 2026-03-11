@@ -161,7 +161,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/getGLReport', [PrintingController::class, 'getGL_Report']);
 
 
-    
+
     Route::post('/attachFile', [FileAttachmentController::class, 'attachFile']);
     Route::delete('/deleteFile/{id}', [FileAttachmentController::class, 'deleteFile']);
     Route::get('/downloadAll/{documentID}', [FileAttachmentController::class, 'downloadAll']);
@@ -273,10 +273,13 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getBillcode', [BillCodeController::class, 'get']);
 
     Route::get('/payterm', [PayTermController::class, 'index']);
-    Route::post('/upsertPayterm', [PayTermController::class, 'upsert']);
     Route::get('/lookupPayterm', [PayTermController::class, 'lookup']);
     Route::get('/getPayterm', [PayTermController::class, 'get']);
+
+    Route::post('/upsertPayterm', [PayTermController::class, 'upsert']);
     Route::post('/deletePayterm', [PayTermController::class, 'delete']);
+    Route::post('/checkDuplicatePayterm', [PayTermController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedPayterm', [PayTermController::class, 'checkInUsed']);
 
     Route::get('/billterm', [BillTermController::class, 'index']);
     Route::post('/upsertBillterm', [BillTermController::class, 'upsert']);
@@ -302,7 +305,10 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsertCustomer', [CustMasterController::class, 'upsert']);
     Route::get('/lookupCustomer', [CustMasterController::class, 'lookup']);
     Route::post('/getCustomer', [CustMasterController::class, 'get']);
+    Route::post('/deleteCustomer', [CustMasterController::class, 'delete']);
     Route::post('/addCustomerDetail', [CustMasterController::class, 'addDetail']);
+    Route::post('/checkDuplicateCustomer', [CustMasterController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedCustomer', [CustMasterController::class, 'checkInUsed']);
 
     Route::get('/sl', [SLMasterController::class, 'index']);
     Route::post('/upsertSL', [SLMasterController::class, 'upsert']);
@@ -380,7 +386,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsertQStat', [QStatController::class, 'upsert']);  // Save
     Route::post('/deleteQStat', [QStatController::class, 'delete']);  // Delete
 
-     Route::get('/lookupJobCode', [JobCodesController::class, 'lookup']);   // Lookup modal
+    Route::get('/lookupJobCode', [JobCodesController::class, 'lookup']);   // Lookup modal
 
 
     Route::get('/MSIS', [MSISController::class, 'index']);
@@ -405,7 +411,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/getMSAJHistory', [MSAJController::class, 'history']);
     Route::get('/findMSAJ', [MSAJController::class, 'find']);
 
-    
+
     Route::get('/MSRTV', [MSRTVController::class, 'index']);
     Route::post('/upsertMSRTV', [MSRTVController::class, 'upsert']);
     Route::post('/generateGLMSRTV', [MSRTVController::class, 'generateGL']);
