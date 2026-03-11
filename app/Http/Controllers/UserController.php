@@ -314,7 +314,7 @@ public function lookupAll(Request $request)
     try {
         $results = DB::select(
             'EXEC sproc_PHP_Users @mode = ?',
-            ['Lookup']
+            ['LookupAll']
         );
 
         return response()->json([

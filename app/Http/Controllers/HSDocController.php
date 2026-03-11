@@ -35,4 +35,26 @@ public function get(Request $request) {
     }
 }
 
+
+
+public function lookup(Request $request)
+{
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_HSDoc @mode = ?',
+            ['Lookup']
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results, // no more `json_encode`
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+}
+
 }
