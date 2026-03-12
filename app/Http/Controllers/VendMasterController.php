@@ -97,10 +97,17 @@ public function get(Request $request) {
 
 public function upsert(Request $request)
 {
+     $request->validate([
+        'json_data' => 'required|json',
+    ]);
+
     try {
+        $params = $request->input('json_data');
+   
+        
         $rows = DB::select(
             'exec dbo.sproc_PHP_VendMast @mode = ?, @params = ?',
-            ['upsert', json_encode($request->all())]
+            ['upsert', $params ]
         );
 
         // ✅ return raw SQL output (COAMast standard)
