@@ -34,17 +34,14 @@ public function index(Request $request) {
    
 
 
-
-public function lookup(Request $request) {
-
-    $paramsString = $request->input('PARAMS');
-    $params = json_decode($paramsString, true);
-   
+public function lookup(Request $request)
+{
+    $params = $request->input('PARAMS', '');
 
     try {
         $results = DB::select(
             'EXEC sproc_PHP_FSConso @mode = ?, @params = ?',
-            ['Lookup' ,$params['search']] 
+            ['lookup', $params]
         );
 
         return response()->json([
@@ -251,7 +248,6 @@ public function lookupGL(Request $request)
             ], 500);
         }
     }
-
 
 
 

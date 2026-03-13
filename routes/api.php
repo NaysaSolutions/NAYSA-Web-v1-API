@@ -261,7 +261,7 @@ Route::middleware('tenant')->group(function () {
     
     Route::get('/fsconso', [FSConsolidationController::class, 'index']);
     Route::post('/upsertFSConso', [FSConsolidationController::class, 'upsert']);
-    Route::post('/lookupFSConso', [FSConsolidationController::class, 'lookup']);
+    Route::get('/lookupFSConso', [FSConsolidationController::class, 'lookup']);
     Route::get('/getFSConso', [FSConsolidationController::class, 'get']);
     Route::post('/lookupGL', [FSConsolidationController::class, 'lookupGL']);
     Route::post('/deleteFSConso', [FSConsolidationController::class, 'delete']);
