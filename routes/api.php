@@ -201,17 +201,22 @@ Route::middleware('tenant')->group(function () {
     Route::get('/lookupBankType', [BankTypeController::class, 'lookup']);
     Route::post('/deleteBankType', [BankTypeController::class, 'delete']);
 
-    Route::get('/curr', [CurrController::class, 'index']);
+	Route::get('/curr', [CurrController::class, 'index']);
     Route::post('/upsertCurr', [CurrController::class, 'upsert']);
     Route::get('/lookupCurr', [CurrController::class, 'lookup']);
     Route::get('/getCurr', [CurrController::class, 'get']);
     Route::post('/deleteCurr', [CurrController::class, 'delete']);
+    Route::post('/checkDuplicateCurr', [CurrController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedCurr', [CurrController::class, 'checkInUsed']);
 
     Route::get('/vat', [VATController::class, 'index']);
     Route::post('/upsertVat', [VATController::class, 'upsert']);
     Route::get('/lookupVat', [VATController::class, 'lookup']);
     Route::get('/getVat', [VATController::class, 'get']);
     Route::post('/deleteVat', [VATController::class, 'delete']);
+    Route::post('/checkInUsedVat', [VATController::class, 'checkInUsed']);
+    Route::post('/checkDuplicateVat', [VATController::class, 'checkDuplicate']);
+    Route::get('/loadVATClass', [VATController::class, 'LoadVATClass']);
 
     Route::get('/atc', [ATCController::class, 'index']);
     Route::post('/upsertATC', [ATCController::class, 'upsert']);
