@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 
 class RCMastController extends Controller
 {
-   
+  
 public function index(Request $request) {
 
     try {
@@ -29,6 +29,7 @@ public function index(Request $request) {
     }
 
 
+
 }
 
 
@@ -43,11 +44,10 @@ public function lookup(Request $request) {
     $params = json_decode($paramsString, true);
    
 
-
     try {
         $results = DB::select(
             'EXEC sproc_PHP_RCMast @mode = ?, @params = ?',
-            ['Lookup',$params['search']] 
+            ['Lookup' ,$params['search']] 
         );
 
         return response()->json([
@@ -107,34 +107,148 @@ public function upsert(Request $request)
 
         $params = $request->get('json_data');
 
-      
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Invalid JSON data provided.',
-            ], 400);
-        }
-
-
-        DB::statement('EXEC sproc_PHP_RCMast @params = :json_data, @mode = :mode', [
+        // 1. Use DB::select to capture the Sproc's output (errormsg, errorcount)
+        $results = DB::select('EXEC sproc_PHP_RCMast @params = :json_data, @mode = :mode', [
             'json_data' => $params,
             'mode' => 'upsert'
         ]);
 
-
+        
+        // 2. Return the SQL results so React can read them
         return response()->json([
             'status' => 'success',
-            'message' => 'Transaction saved successfully.',
+            'data' => $results, // <--- This contains your validation table
         ], 200);
-    } catch (\Exception $e) {
-        Log::error('Transaction save failed:', ['error' => $e->getMessage()]);
 
+    } catch (\Exception $e) {
+        Log::error('Saving failed:', ['error' => $e->getMessage()]);
         return response()->json([
             'status' => 'error',
             'message' => 'Failed to save transaction: ' . $e->getMessage(),
         ], 500);
     }
 }
+
+
+
+// public function delete(Request $request){
+
+//     try {
+
+//       $validated = $request->validate([
+//             'json_data' => 'required|array'
+//         ]);
+
+//         $params = json_encode(['json_data' => $validated['json_data']]);
+      
+
+//         $results = DB::select(
+//             'EXEC sproc_PHP_RCMast @mode = ?, @params = ?',
+//             ['Delete', $params]
+//         );
+
+//         return response()->json([
+//             'success' => true,
+//             'data' => $results,
+//         ], 200);
+//     } catch (\Exception $e) {
+//         return response()->json([
+//             'success' => false,
+//             'message' => $e->getMessage(),
+//         ], 500);
+//     }
+// }
+
+
+public function delete(Request $request) {
+
+    try {
+
+      $validated = $request->validate([
+            'json_data' => 'required|array'
+        ]);
+
+        $params = json_encode(['json_data' => $validated['json_data']]);
+      
+
+        $results = DB::select(
+            'EXEC sproc_PHP_RCMast @mode = ?, @params = ?',
+            ['Delete', $params]
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+}
+
+
+public function checkInUsed(Request $request) {
+
+        $validated = $request->validate([
+            'json_data' => 'required|array'
+        ]);
+
+        $params = json_encode(['json_data' => $validated['json_data']]);
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_RCMast @mode = ?, @params = ?',
+            ['CheckInUsed' ,$params] 
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+
+}
+
+
+
+
+
+
+public function checkDuplicate(Request $request) {
+
+        $validated = $request->validate([
+            'json_data' => 'required|array'
+        ]);
+
+        $params = json_encode(['json_data' => $validated['json_data']]);
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_RCMast @mode = ?, @params = ?',
+            ['CheckDuplicate' ,$params] 
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+
+}
+
+
+
 
 }
