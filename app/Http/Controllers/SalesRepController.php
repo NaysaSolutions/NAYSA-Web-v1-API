@@ -7,16 +7,15 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 
-class ATCController extends Controller
+class SalesRepController extends Controller
 {
-   
 
-    public function index(Request $request)
+ public function index(Request $request)
     {
 
         try {
             $results = DB::select(
-                'EXEC sproc_PHP_ATCRef @mode = ?',
+                'EXEC sproc_PHP_SalesRep @mode = ?',
                 ['Load']
             );
 
@@ -49,7 +48,7 @@ class ATCController extends Controller
 
         try {
             $results = DB::select(
-                'EXEC sproc_PHP_ATCRef @mode = ?, @params = ?',
+                'EXEC sproc_PHP_SalesRep @mode = ?, @params = ?',
                 ['Lookup', $params]
             );
 
@@ -66,33 +65,39 @@ class ATCController extends Controller
     }
 
 
-    public function get(Request $request)
-    {
-
-        $request->validate([
-            'atcCode' => 'required|string',
-        ]);
-
-        $params = $request->input('atcCode');
 
 
-        try {
-            $results = DB::select(
-                'EXEC sproc_PHP_ATCRef @mode = ?, @params = ?',
-                ['get', $params]
-            );
 
-            return response()->json([
-                'success' => true,
-                'data' => $results,
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
-        }
+
+public function get(Request $request)
+{
+    $request->validate([
+        'salesRepCode' => 'required|string',
+    ]);
+
+    $params = json_encode([
+        'json_data' => [
+            'salesRepCode' => $request->input('salesRepCode')
+        ]
+    ]);
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_SalesRep @mode = ?, @params = ?',
+            ['Get', $params]
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
     }
+}
 
 
     public function checkDuplicate(Request $request)
@@ -106,7 +111,7 @@ class ATCController extends Controller
 
         try {
             $results = DB::select(
-                'EXEC sproc_PHP_ATCRef @mode = ?, @params = ?',
+                'EXEC sproc_PHP_SalesRep @mode = ?, @params = ?',
                 ['CheckDuplicate', $params]
             );
 
@@ -123,51 +128,44 @@ class ATCController extends Controller
     }
 
 
-   public function upsert(Request $request)
+  public function upsert(Request $request)
 {
     try {
-        $request->validate([
-            'json_data' => 'required', // <-- remove 'json' rule
-        ]);
-
         $params = $request->input('json_data');
 
-        // If React sends object, convert to JSON string WITH wrapper
+        // Handle array conversion
         if (is_array($params)) {
             $params = json_encode(['json_data' => $params]);
         }
 
-        // If React sends string, ensure it is the wrapped format
-        // (optional but safe)
-        if (is_string($params)) {
-            $decoded = json_decode($params, true);
-            if (json_last_error() === JSON_ERROR_NONE) {
-                if (!isset($decoded['json_data'])) {
-                    $params = json_encode(['json_data' => $decoded]);
-                }
-            } else {
-                throw new \Exception("json_data is not valid JSON.");
-            }
-        }
-
+        // Execute the procedure
         $results = DB::select(
-            'EXEC sproc_PHP_ATCRef @params = :json_data, @mode = :mode',
+            'EXEC sproc_PHP_SalesRep @mode = :mode, @params = :json_data',
             [
+                'mode' => 'Upsert',
                 'json_data' => $params,
-                'mode' => 'Upsert', // <-- must match sproc
             ]
         );
 
+        // Check if the SP returned our custom validation error
+        // $results will contain the row selected in the SPROC
+        if (!empty($results) && isset($results[0]->errorcount) && $results[0]->errorcount > 0) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $results[0]->errormsg,
+            ], 422); // 422 Unprocessable Entity is best for validation errors
+        }
+
         return response()->json([
             'status' => 'success',
-            'data' => $results,
+            'message' => 'Saved successfully.',
         ], 200);
 
     } catch (\Exception $e) {
         Log::error('Transaction save failed:', ['error' => $e->getMessage()]);
         return response()->json([
             'status' => 'error',
-            'message' => 'Failed to save transaction: ' . $e->getMessage(),
+            'message' => 'An unexpected error occurred.',
         ], 500);
     }
 }
@@ -179,12 +177,12 @@ class ATCController extends Controller
     ]);
 
     $data = $request->json_data;   // ← already array
-    $code = $data['atcCode'] ?? null;
+    $code = $data['salesRepCode'] ?? null;
 
     if (!$code) {
         return response()->json([
             'success' => false,
-            'message' => 'ATC Code is required.',
+            'message' => 'Sales Rep Code is required.',
         ], 400);
     }
 
@@ -194,7 +192,7 @@ class ATCController extends Controller
         ]);
 
         DB::statement(
-            'EXEC sproc_PHP_ATCRef @mode = ?, @params = ?',
+            'EXEC sproc_PHP_SalesRep @mode = ?, @params = ?',
             ['Delete', $params]
         );
 
@@ -221,7 +219,7 @@ public function checkInUsed(Request $request) {
 
     try {
         $results = DB::select(
-            'EXEC sproc_PHP_ATCRef @mode = ?, @params = ?',
+            'EXEC sproc_PHP_SalesRep @mode = ?, @params = ?',
             ['CheckInUsed' ,$params] 
         );
 
@@ -237,5 +235,6 @@ public function checkInUsed(Request $request) {
     }
 
 }
+
 
 }

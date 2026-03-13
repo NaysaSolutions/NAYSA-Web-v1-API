@@ -332,6 +332,8 @@ public function printARReport(Request $request)
 
 
 
+
+
 public function printAPReport(Request $request)
 {
     $baseUrl   = rtrim(config('services.crystal.base'), '/');
@@ -938,6 +940,139 @@ public function upsertDocSign(Request $request)
         ], 500);
     }
     }
+
+
+
+
+
+
+
+    public function getAR_Report(Request $request) {
+    // 1. Get the raw JSON and decode it
+    $params = json_decode($request->input('PARAMS'), true);
+
+    try {
+        // 2. Map the JSON keys to the SPROC parameters
+        // We use null coalescing (??) to handle missing filters safely
+        $results = DB::select(
+            'EXEC sproc_PHP_ExportReport_AR 
+                @mode = ?, 
+                @branchcode = ?, 
+                @startdate = ?, 
+                @enddate = ?, 
+                @scustomer = ?, 
+                @ecustomer = ?',
+            [
+                $params['mode'] ?? 'SVIListing',
+                $params['branchcode'] ?? null,
+                $params['startdate'] ?? null,
+                $params['enddate'] ?? null,
+                $params['scustomer'] ?? null,
+                $params['ecustomer'] ?? null
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+    }
+
+
+
+
+
+    public function getGL_Report(Request $request) {
+    // 1. Decode the JSON string from the PARAMS input
+    $params = json_decode($request->input('PARAMS'), true);
+
+    try {
+        // 2. Map all 10 parameters required by sproc_PHP_ExportReport_GL
+        $results = DB::select(
+            'EXEC sproc_PHP_ExportReport_GL 
+                @mode = ?, 
+                @branchcode = ?, 
+                @startdate = ?, 
+                @enddate = ?, 
+                @sGL = ?, 
+                @eGL = ?, 
+                @sSL = ?, 
+                @eSL = ?, 
+                @sRC = ?, 
+                @eRC = ?',
+            [
+                $params['mode'] ?? 'GLListing',
+                $params['branchcode'] ?? null,
+                $params['startDate'] ?? null,
+                $params['endDate'] ?? null,
+                $params['sGL'] ?? null,
+                $params['eGL'] ?? null,
+                $params['sSL'] ?? null,
+                $params['eSL'] ?? null,
+                $params['sRC'] ?? null,
+                $params['eRC'] ?? null
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error generating GL Report: ' . $e->getMessage(),
+        ], 500);
+    }
+    }
+
+
+
+
+
+    public function getAP_Report(Request $request) {
+    // 1. Get the raw JSON and decode it
+    $params = json_decode($request->input('PARAMS'), true);
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_ExportReport_AR 
+                @mode = ?, 
+                @branchcode = ?, 
+                @startdate = ?, 
+                @enddate = ?, 
+                @spayeeCode = ?, 
+                @epayeeCode = ?',
+            [
+                $params['mode'] ?? 'SVIListing',
+                $params['branchcode'] ?? null,
+                $params['startdate'] ?? null,
+                $params['enddate'] ?? null,
+                $params['spayeeCode'] ?? null, 
+                $params['epayeeCode'] ?? null
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+}
 
 }
 

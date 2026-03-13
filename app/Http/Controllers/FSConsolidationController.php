@@ -5,14 +5,16 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-class BranchController extends Controller
+
+
+class FSConsolidationController extends Controller
 {
-  
+   
 public function index(Request $request) {
 
     try {
         $results = DB::select(
-            'EXEC sproc_PHP_BranchRef @mode = ?',
+            'EXEC sproc_PHP_FSConso @mode = ?',
             ['Load' ] 
         );
 
@@ -26,25 +28,23 @@ public function index(Request $request) {
             'message' => $e->getMessage(),
         ], 500);
     }
-
-
 }
+
+
+   
 
 
 
 public function lookup(Request $request) {
 
-    $request->validate([
-        'PARAMS' => 'required',
-    ]);
-
-    $params = $request->input('PARAMS');
-
+    $paramsString = $request->input('PARAMS');
+    $params = json_decode($paramsString, true);
+   
 
     try {
         $results = DB::select(
-            'EXEC sproc_PHP_BranchRef @mode = ?, @params = ?',
-            ['Lookup' ,$params] 
+            'EXEC sproc_PHP_FSConso @mode = ?, @params = ?',
+            ['Lookup' ,$params['search']] 
         );
 
         return response()->json([
@@ -64,16 +64,16 @@ public function lookup(Request $request) {
 public function get(Request $request) {
 
     $request->validate([
-        'BRANCH_CODE' => 'required|string',
+        'ACCT_CODE' => 'required|string',
     ]);
 
-    $params = $request->input('BRANCH_CODE');
+    $params = $request->input('ACCT_CODE');
 
 
     try {
         $results = DB::select(
-            'EXEC sproc_PHP_BranchRef @mode = ?, @params = ?',
-            ['get' ,$params] 
+            'EXEC sproc_PHP_FSConso @mode = ?, @params = ?',
+            ['Get' ,$params] 
         );
 
         return response()->json([
@@ -90,51 +90,6 @@ public function get(Request $request) {
 
 
 
-
-// public function upsert(Request $request)
-// {
-//     try {
-//         // Expect an associative array for json_data
-//         $request->validate([
-//             'json_data' => 'required|array',
-//         ]);
-
-//         // Get the payload the client sent
-//         $jsonData = $request->input('json_data');
-
-//         // If the client already wrapped it, keep it; otherwise wrap it
-//         $toSend = array_key_exists('json_data', $jsonData)
-//             ? $jsonData
-//             : ['json_data' => $jsonData];
-
-//         $params = json_encode($toSend);
-
-//         Log::info('Upsert BranchRef params:', ['params' => $params]);
-
-//         DB::statement(
-//             'EXEC sproc_PHP_BranchRef @params = :params, @mode = :mode',
-//             [
-//                 'params' => $params,
-//                 'mode'   => 'upsert',
-//             ]
-//         );
-
-//         return response()->json([
-//             'status'  => 'success',
-//             'message' => 'Transaction saved successfully.',
-//         ], 200);
-
-//     } catch (\Exception $e) {
-//         Log::error('Transaction save failed:', ['error' => $e->getMessage()]);
-
-//         return response()->json([
-//             'status'  => 'error',
-//             'message' => 'Failed to save transaction: ' . $e->getMessage(),
-//         ], 500);
-//     }
-// }
-
-
 public function upsert(Request $request)
 {
     try {
@@ -145,7 +100,7 @@ public function upsert(Request $request)
         $params = $request->get('json_data');
 
         // 1. Use DB::select to capture the Sproc's output (errormsg, errorcount)
-        $results = DB::select('EXEC sproc_PHP_BranchRef @params = :json_data, @mode = :mode', [
+        $results = DB::select('EXEC sproc_PHP_FSConso @params = :json_data, @mode = :mode', [
             'json_data' => $params,
             'mode' => 'upsert'
         ]);
@@ -166,40 +121,6 @@ public function upsert(Request $request)
 }
 
 
-// public function delete(Request $request)
-// {
-//     try {
-//         $request->validate([
-//             'json_data' => 'required|array',
-//         ]);
-
-//         $jsonData = $request->get('json_data');
-
-//         // Convert to JSON string
-//         $params = json_encode(['json_data' => $jsonData]);
-
-//         Log::info('Deleting branch with params:', ['params' => $params]);
-
-//         // Call stored procedure
-//         DB::statement('EXEC sproc_PHP_BranchRef @params = :params, @mode = :mode', [
-//             'params' => $params,
-//             'mode' => 'Delete'
-//         ]);
-
-//         return response()->json([
-//             'status' => 'success',
-//             'message' => 'Branch deleted successfully.',
-//         ], 200);
-
-//     } catch (\Exception $e) {
-//         Log::error('Branch deletion failed:', ['error' => $e->getMessage()]);
-
-//         return response()->json([
-//             'status' => 'error',
-//             'message' => 'Failed to delete branch: ' . $e->getMessage(),
-//         ], 500);
-//     }
-// }
 
 
 public function delete(Request $request) {
@@ -214,7 +135,7 @@ public function delete(Request $request) {
       
 
         $results = DB::select(
-            'EXEC sproc_PHP_BranchRef @mode = ?, @params = ?',
+            'EXEC sproc_PHP_FSConso @mode = ?, @params = ?',
             ['Delete', $params]
         );
 
@@ -232,6 +153,8 @@ public function delete(Request $request) {
 
 
 
+
+
 public function checkInUsed(Request $request) {
 
         $validated = $request->validate([
@@ -242,7 +165,7 @@ public function checkInUsed(Request $request) {
 
     try {
         $results = DB::select(
-            'EXEC sproc_PHP_BranchRef @mode = ?, @params = ?',
+            'EXEC sproc_PHP_FSConso @mode = ?, @params = ?',
             ['CheckInUsed' ,$params] 
         );
 
@@ -274,7 +197,7 @@ public function checkDuplicate(Request $request) {
 
     try {
         $results = DB::select(
-            'EXEC sproc_PHP_BranchRef @mode = ?, @params = ?',
+            'EXEC sproc_PHP_FSConso @mode = ?, @params = ?',
             ['CheckDuplicate' ,$params] 
         );
 
@@ -290,5 +213,47 @@ public function checkDuplicate(Request $request) {
     }
 
 }
+
+
+
+
+
+public function lookupGL(Request $request)
+    {
+        try {
+            // Expecting json_data to be passed from client
+            $jsonData = $request->input('json_data');
+
+            if (!$jsonData) {
+                return response()->json(['error' => 'Missing json_data'], 400);
+            }
+
+            // Convert JSON to string format
+            $jsonString = json_encode(['json_data' => $jsonData], JSON_UNESCAPED_UNICODE);
+
+            // Execute the stored procedure
+            $results = DB::select("EXEC sproc_PHP_FSConso @mode = ?, @params = ?", [
+                'lookupGL',
+                $jsonString
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $results
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error executing sproc_PHP_FSConso: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to generate entries.',
+                'details' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+
+
 
 }
