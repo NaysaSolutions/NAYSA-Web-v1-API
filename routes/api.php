@@ -210,12 +210,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/deleteCurr', [CurrController::class, 'delete']);
     Route::post('/checkDuplicateCurr', [CurrController::class, 'checkDuplicate']);
     Route::post('/checkInUsedCurr', [CurrController::class, 'checkInUsed']);
-<<<<<<< Updated upstream
-=======
-
     
->>>>>>> Stashed changes
-
     Route::get('/vat', [VATController::class, 'index']);
     Route::post('/upsertVat', [VATController::class, 'upsert']);
     Route::get('/lookupVat', [VATController::class, 'lookup']);
@@ -224,8 +219,6 @@ Route::middleware('tenant')->group(function () {
     Route::post('/checkInUsedVat', [VATController::class, 'checkInUsed']);
     Route::post('/checkDuplicateVat', [VATController::class, 'checkDuplicate']);
     Route::get('/loadVATClass', [VATController::class, 'LoadVATClass']);
-<<<<<<< Updated upstream
-=======
 
 
     Route::get('/rcMast', [RCMastController::class, 'index']);
@@ -254,7 +247,6 @@ Route::middleware('tenant')->group(function () {
 
 
     
->>>>>>> Stashed changes
 
     Route::get('/atc', [ATCController::class, 'index']);
     Route::post('/upsertATC', [ATCController::class, 'upsert']);
@@ -291,6 +283,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/deleteCOA', [COAMasterController::class, 'delete']);
     Route::post('/checkDuplicateCOA', [COAMasterController::class, 'checkDuplicate']);
     Route::post('/checkInUsedCOA', [COAMasterController::class, 'checkInUsed']);
+    Route::get('/glfsmatching', [COAMasterController::class, 'index']);
 
     
     Route::get('/fsconso', [FSConsolidationController::class, 'index']);
@@ -301,6 +294,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/deleteFSConso', [FSConsolidationController::class, 'delete']);
     Route::post('/checkDuplicateFSConso', [FSConsolidationController::class, 'checkDuplicate']);
     Route::post('/checkInUsedFSConso', [FSConsolidationController::class, 'checkInUsed']);
+    Route::post('/upsertGLFSMatching', [FSConsolidationController::class, 'upsertGLFSMatching']);
 
 
 
@@ -363,7 +357,9 @@ Route::middleware('tenant')->group(function () {
     Route::post('/checkDuplicateCustomer', [CustMasterController::class, 'checkDuplicate']);
     Route::post('/checkInUsedCustomer', [CustMasterController::class, 'checkInUsed']);
 
-    Route::get('/sl', [SLMasterController::class, 'index']);
+    Route::get('/slType', [SLMasterController::class, 'index']);
+    Route::get('/sLMast', [SLMasterController::class, 'index_sLMast']);
+    Route::get('/sLCoa', [SLMasterController::class, 'index_sLCoa']);
     Route::post('/upsertSL', [SLMasterController::class, 'upsert']);
     Route::get('/lookupSL', [SLMasterController::class, 'lookup']);
     Route::get('/getSL', [SLMasterController::class, 'get']);
