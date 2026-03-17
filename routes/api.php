@@ -187,9 +187,13 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getARAdvances', [ARBalanceController::class, 'getARAdvances']);
     Route::get('/getARCWLCLInquiry', [ARBalanceController::class, 'getARCWLCLInquiry']);
 
+
     Route::get('/getGLInquiry', [GLBalanceController::class, 'getGLInquiry']);
     Route::get('/getSLInquiry', [GLBalanceController::class, 'getSLInquiry']);
     Route::get('/getTBSummary', [GLBalanceController::class, 'getTBSummary']);
+    Route::get('/getUnpostedperMonth', [GLBalanceController::class, 'getUnpostedperMonth']);
+    Route::get('/getBSIS_YTD', [GLBalanceController::class, 'getBSIS_YTD']);
+
 
     Route::get('/getEWTInquiry', [AllBIRController::class, 'getEWTInquiry']);
     Route::get('/getCWTInquiry', [AllBIRController::class, 'getCWTInquiry']);
@@ -221,7 +225,7 @@ Route::middleware('tenant')->group(function () {
 
     Route::get('/atc', [ATCController::class, 'index']);
     Route::post('/upsertATC', [ATCController::class, 'upsert']);
-    Route::post('/lookupATC', [ATCController::class, 'lookup']);
+    Route::get('/lookupATC', [ATCController::class, 'lookup']);
     Route::get('/getATC', [ATCController::class, 'get']);
 
     Route::get('/cutOff', [CutoffController::class, 'index']);
@@ -572,4 +576,5 @@ Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
     Route::post('/cancelJO',  [JOController::class, 'cancel']);
 
     Route::post('/generateJVARCWLCL', [ARBalanceController::class, 'generateJVARCWLCL']);
+    Route::post('/processGLMonthEnd', [GLBalanceController::class, 'processGLMonthEnd']);
 });
