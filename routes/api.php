@@ -357,10 +357,14 @@ Route::middleware('tenant')->group(function () {
     Route::post('/checkDuplicateCustomer', [CustMasterController::class, 'checkDuplicate']);
     Route::post('/checkInUsedCustomer', [CustMasterController::class, 'checkInUsed']);
 
-    Route::get('/slType', [SLMasterController::class, 'index']);
-    Route::get('/sLMast', [SLMasterController::class, 'index_sLMast']);
-    Route::get('/sLCoa', [SLMasterController::class, 'index_sLCoa']);
-    Route::post('/upsertSL', [SLMasterController::class, 'upsert']);
+    Route::get('/slType', [SLMasterController::class, 'slType']);
+    Route::get('/sLMast', [SLMasterController::class, 'sLMast']);
+    Route::get('/sLCoa', [SLMasterController::class, 'sLCoa']);
+    Route::post('/upsertSLMast', [SLMasterController::class, 'upsertSLMast']);
+    Route::post('/upsertSLType', [SLMasterController::class, 'upsertSLType']);
+    Route::post('/upsertSLTypeGLMatching', [SLMasterController::class, 'upsertSLTypeGLMatching']);
+    Route::post('/deleteSLMast', [SLMasterController::class, 'deleteSLMast']);
+    Route::post('/deleteSLType', [SLMasterController::class, 'deleteSLType']);
     Route::get('/lookupSL', [SLMasterController::class, 'lookup']);
     Route::get('/getSL', [SLMasterController::class, 'get']);
 
