@@ -34,17 +34,14 @@ public function index(Request $request) {
    
 
 
-
-public function lookup(Request $request) {
-
-    $paramsString = $request->input('PARAMS');
-    $params = json_decode($paramsString, true);
-   
+public function lookup(Request $request)
+{
+    $params = $request->input('PARAMS', '');
 
     try {
         $results = DB::select(
             'EXEC sproc_PHP_FSConso @mode = ?, @params = ?',
-            ['Lookup' ,$params['search']] 
+            ['lookup', $params]
         );
 
         return response()->json([
@@ -122,6 +119,35 @@ public function upsert(Request $request)
 
 
 
+public function upsertGLFSMatching(Request $request)
+{
+    try {
+        $request->validate([
+            'json_data' => 'required|json',
+        ]);
+
+        $params = $request->get('json_data');
+
+        // 1. Use DB::select to capture the Sproc's output (errormsg, errorcount)
+        $results = DB::select('EXEC sproc_PHP_FSConso @params = :json_data, @mode = :mode', [
+            'json_data' => $params,
+            'mode' => 'upsertGLFSMatching'
+        ]);
+
+        // 2. Return the SQL results so React can read them
+        return response()->json([
+            'status' => 'success',
+            'data' => $results, // <--- This contains your validation table
+        ], 200);
+
+    } catch (\Exception $e) {
+        Log::error('Saving failed:', ['error' => $e->getMessage()]);
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Failed to save transaction: ' . $e->getMessage(),
+        ], 500);
+    }
+}
 
 public function delete(Request $request) {
 
@@ -251,7 +277,6 @@ public function lookupGL(Request $request)
             ], 500);
         }
     }
-
 
 
 
