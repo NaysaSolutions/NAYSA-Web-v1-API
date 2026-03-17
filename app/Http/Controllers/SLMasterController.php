@@ -125,17 +125,6 @@ class SLMasterController extends Controller
         try {
             $payload = $this->normalizeJsonData($request);
 
-            if (isset($payload['json_data']) && is_array($payload['json_data'])) {
-                $payload['json_data'] = [
-                    'slTypeCode'   => $payload['json_data']['slTypeCode'] ?? '',
-                    'slTypeName'   => $payload['json_data']['slTypeName'] ?? '',
-                    'slTypeIncSu'  => $payload['json_data']['incSu'] ?? 'N',
-                    'slTypeIncCu'  => $payload['json_data']['incCu'] ?? 'N',
-                    'active'       => $payload['json_data']['active'] ?? 'Y',
-                    'userCode'     => $payload['json_data']['userCode'] ?? '',
-                ];
-            }
-
             $results = $this->execSproc(
                 'Upsert_slType',
                 json_encode($payload)
@@ -176,14 +165,6 @@ class SLMasterController extends Controller
         try {
             $payload = $this->normalizeJsonData($request);
 
-            if (isset($payload['json_data']) && is_array($payload['json_data'])) {
-                $payload['json_data'] = [
-                    'slTypeCode' => $payload['json_data']['slTypeCode'] ?? '',
-                    'slCode'     => $payload['json_data']['slCode'] ?? '',
-                    'userCode'   => $payload['json_data']['userCode'] ?? '',
-                ];
-            }
-
             $results = $this->execSproc(
                 'Delete_slMast',
                 json_encode($payload)
@@ -195,28 +176,52 @@ class SLMasterController extends Controller
         }
     }
 
-    public function deleteSLType(Request $request)
-    {
-        try {
-            $payload = $this->normalizeJsonData($request);
+    // public function deleteSLType(Request $request)
 
-            if (isset($payload['json_data']) && is_array($payload['json_data'])) {
-                $payload['json_data'] = [
-                    'slTypeCode' => $payload['json_data']['slTypeCode'] ?? '',
-                    'userCode'   => $payload['json_data']['userCode'] ?? '',
-                ];
-            }
+    // {
+    //     try {
+    //         $payload = $this->normalizeJsonData($request);
 
-            $results = $this->execSproc(
-                'Delete_slType',
-                json_encode($payload)
-            );
+    //         $results = $this->execSproc(
+    //             'Delete_slType',
+    //             json_encode($payload)
+    //         );
 
-            return $this->successResponse($results, 'SL Type deleted successfully.');
-        } catch (\Throwable $e) {
-            return $this->errorResponse($e, 'Failed to delete SL Type.');
-        }
+    //         return $this->successResponse($results, 'SL Type deleted successfully.');
+    //     } catch (\Throwable $e) {
+    //         return $this->errorResponse($e, 'Failed to delete SL Type.');
+    //     }
+    // }
+
+    
+public function deleteSLType(Request $request) {
+
+    try {
+
+      $validated = $request->validate([
+            'json_data' => 'required|array'
+        ]);
+
+        $params = json_encode(['json_data' => $validated['json_data']]);
+      
+
+        $results = DB::select(
+            'EXEC sproc_PHP_SLMast @mode = ?, @params = ?',
+            ['Delete_slType', $params]
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
     }
+}
+
 
     public function lookup(Request $request)
     {
