@@ -133,6 +133,8 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsert', [AccessRightsController::class, 'upsert']);
     Route::post('/deleteUserRole', [AccessRightsController::class, 'deleteUserRole']);
     Route::get('/getUserRoles', [AccessRightsController::class, 'getUserRoles']);
+     Route::get('/checkDuplicateRole', [AccessRightsController::class, 'checkDuplicate']);
+    Route::get('/checkInUsedRole', [AccessRightsController::class, 'checkInUsed']);
 
     //Printing
     Route::prefix('printing')->group(function () {
@@ -351,6 +353,8 @@ Route::middleware('tenant')->group(function () {
     Route::post('/getPayee', [VendMasterController::class, 'get']);
     Route::post('/addPayeeDetail', [VendMasterController::class, 'addDetail']);
     Route::post('/deletePayee', [VendMasterController::class, 'delete']);
+    Route::post('/checkDuplicatePayee', [VendMasterController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedPayee', [VendMasterController::class, 'checkInUsed']);
 
     Route::get('/customer', [CustMasterController::class, 'index']);
     Route::post('/upsertCustomer', [CustMasterController::class, 'upsert']);
