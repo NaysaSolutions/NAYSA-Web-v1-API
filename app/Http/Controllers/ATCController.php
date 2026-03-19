@@ -67,32 +67,37 @@ class ATCController extends Controller
 
 
     public function get(Request $request)
-    {
+{
+    $request->validate([
+        'atcCode' => 'required|string',
+    ]);
 
-        $request->validate([
-            'atcCode' => 'required|string',
-        ]);
+    $atcCode = $request->input('atcCode');
 
-        $params = $request->input('atcCode');
+    // WRAP the code in the JSON structure the Sproc expects
+    $params = json_encode([
+        'json_data' => [
+            'atcCode' => $atcCode
+        ]
+    ]);
 
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_ATCRef @mode = ?, @params = ?',
+            ['Get', $params] // Use 'Get' (sproc is case-sensitive usually)
+        );
 
-        try {
-            $results = DB::select(
-                'EXEC sproc_PHP_ATCRef @mode = ?, @params = ?',
-                ['get', $params]
-            );
-
-            return response()->json([
-                'success' => true,
-                'data' => $results,
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
     }
+}
 
 
     public function checkDuplicate(Request $request)

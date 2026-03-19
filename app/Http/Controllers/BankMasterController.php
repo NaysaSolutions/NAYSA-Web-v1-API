@@ -127,7 +127,7 @@ class BankMasterController extends Controller
 {
     try {
         $request->validate([
-            'json_data' => 'required', // <-- remove 'json' rule
+            'json_data' => 'required',
         ]);
 
         $params = $request->input('json_data');
