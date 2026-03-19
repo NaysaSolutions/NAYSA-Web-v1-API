@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TempPasswordMail;
@@ -12,252 +13,61 @@ use Throwable;
 class UserController extends Controller
 {
     /* ============================================================
-     * GET / LOAD / LOOKUP
+     * GET / LOOKUP
      * ============================================================
      */
 
     public function get(Request $request)
     {
         $request->validate([
-            'userCode' => 'required|string',
+            'USER_CODE' => 'required|string',
         ]);
 
         try {
             $results = DB::select(
-                'exec dbo.sproc_PHP_Users @mode = ?, @params = ?',
-                ['Get', $request->input('userCode')]
+                'EXEC sproc_PHP_Users @mode = ?, @params = ?',
+                ['Get', $request->input('USER_CODE')]
             );
 
-            return response()->json([
-                'success' => true,
-                'data' => $results,
-            ], 200);
+            return response()->json(['success' => true, 'data' => $results], 200);
         } catch (Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
-    public function load(Request $request)
+    public function lookup()
     {
         try {
-            $status = $request->query('Status', 'Active');
-
-            $rows = DB::select(
-                'exec dbo.sproc_PHP_Users @mode = ?, @params = ?',
-                ['Load', $status]
-            );
-
-            return response()->json([
-                'success' => true,
-                'data' => $rows,
-            ], 200);
+            $results = DB::select('EXEC sproc_PHP_USERS @mode = ?', ['Lookup']);
+            return response()->json(['success' => true, 'data' => $results], 200);
         } catch (Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    public function lookupAll(Request $request)
-    {
-        try {
-            $results = DB::select(
-                'exec dbo.sproc_PHP_Users @mode = ?',
-                ['lookupAll']
-            );
-
-            return response()->json([
-                'success' => true,
-                'data' => $results,
-            ], 200);
-        } catch (Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /* ============================================================
-     * CHECK DUPLICATE / CHECK IN USED
-     * ============================================================
-     */
-
-    public function checkDuplicate(Request $request)
-    {
-        $request->validate([
-            'userCode' => 'required|string',
-        ]);
-
-        try {
-            $results = DB::select(
-                'exec dbo.sproc_PHP_Users @mode = ?, @params = ?',
-                ['CheckDuplicate', $request->input('userCode')]
-            );
-
-            return response()->json([
-                'success' => true,
-                'data' => $results,
-            ], 200);
-        } catch (Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    public function checkInUsed(Request $request)
-    {
-        $request->validate([
-            'userCode' => 'required|string',
-        ]);
-
-        try {
-            $results = DB::select(
-                'exec dbo.sproc_PHP_Users @mode = ?, @params = ?',
-                ['CheckInUsed', $request->input('userCode')]
-            );
-
-            return response()->json([
-                'success' => true,
-                'data' => $results,
-            ], 200);
-        } catch (Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /* ============================================================
-     * UPSERT
-     * ============================================================
-     */
-
-    public function upsert(Request $request)
-    {
-        try {
-            $json = $request->getContent();
-
-            if (!$json && $request->all()) {
-                $json = json_encode($request->all(), JSON_UNESCAPED_UNICODE);
-            }
-
-            json_decode($json);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid JSON body.',
-                ], 422);
-            }
-
-            $rows = DB::select(
-                'exec dbo.sproc_PHP_Users @mode = ?, @params = ?',
-                ['Upsert', $json]
-            );
-
-            $row0 = $rows[0] ?? null;
-            $errorcount = isset($row0->errorcount) ? (int) $row0->errorcount : 0;
-            $errormsg = isset($row0->errormsg) ? (string) $row0->errormsg : '';
-
-            if ($errorcount > 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => $errormsg ?: 'Validation failed.',
-                    'data' => $rows,
-                ], 422);
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'User saved successfully.',
-                'data' => $rows,
-            ], 200);
-        } catch (Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /* ============================================================
-     * DELETE
-     * used    -> set inactive
-     * unused  -> hard delete
-     * ============================================================
-     */
-
-    public function delete(Request $request)
-    {
-        $request->validate([
-            'json_data.userCode' => 'required|string',
-        ]);
-
-        try {
-            $json = $request->getContent();
-
-            if (!$json && $request->all()) {
-                $json = json_encode($request->all(), JSON_UNESCAPED_UNICODE);
-            }
-
-            $rows = DB::select(
-                'exec dbo.sproc_PHP_Users @mode = ?, @params = ?',
-                ['Delete', $json]
-            );
-
-            $resultText =
-                $rows[0]->result
-                ?? null;
-
-            $parsed = null;
-            if ($resultText) {
-                $parsed = json_decode($resultText, true);
-            }
-
-            return response()->json([
-                'success' => true,
-                'result' => $parsed['result'] ?? 'success',
-                'message' => $parsed['message'] ?? 'User delete completed.',
-                'deleteMode' => $parsed['deleteMode'] ?? null,
-                'data' => $rows,
-            ], 200);
-        } catch (Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     /* ============================================================
      * APPROVE / ADMIN ADD
-     * mode:
-     * - admin_add -> generate temp password
-     * - release   -> approve self-register
      * ============================================================
+     *
+     * mode:
+     * - admin_add → generate TEMP password
+     * - release   → approve self-register (NO temp)
      */
 
     public function approveAccount(Request $req)
     {
         $req->validate([
             'userCode' => 'required|string',
-            'mode' => 'required|string|in:admin_add,release',
+            'mode'     => 'required|string|in:admin_add,release',
         ]);
 
         $userCode = trim($req->input('userCode'));
-        $mode = $req->input('mode');
-        $company = $req->header('X-Company-DB');
+        $mode     = $req->input('mode');
+        $company  = $req->header('X-Company-DB');
 
         try {
-            $row = collect(DB::select(
-                'exec dbo.sproc_PHP_Users @mode = ?, @params = ?',
+            $row  = collect(DB::select(
+                "exec sproc_PHP_Users ?, ?",
                 ['Get', $userCode]
             ))->first();
 
@@ -267,12 +77,16 @@ class UserController extends Controller
 
             if (!$user || empty($user['emailAdd'])) {
                 return response()->json([
-                    'status' => 'error',
-                    'message' => 'User not found or email missing.',
+                    'status'  => 'error',
+                    'message' => 'User not found or email missing.'
                 ], 422);
             }
 
+            /* ======================================================
+         * ADMIN ADD → TEMP PASSWORD + ACTIVATE
+         * ====================================================== */
             if ($mode === 'admin_add') {
+
                 $temp = substr(
                     str_shuffle('ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'),
                     0,
@@ -282,15 +96,15 @@ class UserController extends Controller
                 $hash = Hash::make($temp);
 
                 DB::statement(
-                    'exec dbo.sproc_PHP_Users @mode = ?, @params = ?',
+                    "exec sproc_PHP_Users ?, ?",
                     [
                         'SetTempPassword',
                         json_encode([
                             'json_data' => [
-                                'userCode' => $userCode,
+                                'userCode'     => $userCode,
                                 'passwordHash' => $hash,
-                            ],
-                        ]),
+                            ]
+                        ])
                     ]
                 );
 
@@ -305,29 +119,33 @@ class UserController extends Controller
                 );
 
                 return response()->json([
-                    'status' => 'success',
-                    'message' => 'User activated. Temporary password sent.',
+                    'status'  => 'success',
+                    'message' => 'User activated. Temporary password sent.'
                 ]);
             }
 
+            /* ======================================================
+         * RELEASE → APPROVE SELF-REGISTER (SET ACTIVE = Y)
+         * ====================================================== */
+
             DB::statement(
-                'exec dbo.sproc_PHP_Users @mode = ?, @params = ?',
+                "exec sproc_PHP_Users ?, ?",
                 [
                     'Upsert',
                     json_encode([
                         'json_data' => [
-                            'userCode' => $userCode,
-                            'userName' => $user['userName'] ?? '',
-                            'userType' => $user['userType'] ?? 'R',
-                            'branchCode' => $user['branchCode'] ?? '',
-                            'rcCode' => $user['rcCode'] ?? '',
-                            'viewCostamt' => $user['viewCostamt'] ?? 'N',
-                            'editUprice' => $user['editUprice'] ?? 'N',
-                            'emailAdd' => $user['emailAdd'] ?? '',
-                            'position' => $user['position'] ?? '',
-                            'active' => 'Y',
-                        ],
-                    ]),
+                            'userCode'     => $userCode,
+                            'userName'     => $user['userName'] ?? '',
+                            'userType'     => $user['userType'] ?? 'R',
+                            'branchCode'   => $user['branchCode'] ?? '',
+                            'rcCode'       => $user['rcCode'] ?? '',
+                            'viewCostamt'  => $user['viewCostamt'] ?? 'N',
+                            'editUprice'   => $user['editUprice'] ?? 'N',
+                            'emailAdd'     => $user['emailAdd'],
+                            'position'     => $user['position'] ?? '',
+                            'active'       => 'Y',   // ✅ THIS FIXES YOUR ISSUE
+                        ]
+                    ])
                 ]
             );
 
@@ -342,18 +160,19 @@ class UserController extends Controller
             );
 
             return response()->json([
-                'status' => 'success',
-                'message' => 'Account approved. Password setup link sent.',
+                'status'  => 'success',
+                'message' => 'Account approved. Password setup link sent.'
             ]);
         } catch (Throwable $e) {
             report($e);
-
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => 'Approve failed: ' . $e->getMessage(),
             ], 500);
         }
     }
+
+
 
     /* ============================================================
      * RESET PASSWORD (EMAIL LINK ONLY)
@@ -362,51 +181,30 @@ class UserController extends Controller
 
     public function requestPasswordReset(Request $req)
     {
-        $req->validate([
-            'userCode' => 'required|string',
-        ]);
-
+        $req->validate(['userCode' => 'required|string']);
         $userCode = trim($req->input('userCode'));
-        $company = $req->header('X-Company-DB');
+        $company  = $req->header('X-Company-DB');
 
         try {
-            $row = collect(DB::select(
-                'exec dbo.sproc_PHP_Users @mode = ?, @params = ?',
-                ['Get', $userCode]
-            ))->first();
-
-            $user = ($row && isset($row->result))
-                ? (json_decode($row->result, true)[0] ?? null)
-                : null;
+            $row  = collect(DB::select("exec sproc_PHP_Users ?, ?", ['Get', $userCode]))->first();
+            $user = ($row && isset($row->result)) ? (json_decode($row->result, true)[0] ?? null) : null;
 
             if (!$user || empty($user['emailAdd'])) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'User not found or email missing.',
-                ], 422);
+                return response()->json(['status' => 'error', 'message' => 'User not found or email missing.'], 422);
             }
 
-            Mail::to($user['emailAdd'])->send(
-                new TempPasswordMail(
-                    'reset',
-                    $user['userName'] ?? $userCode,
-                    $userCode,
-                    null,
-                    $company
-                )
-            );
+            Mail::to($user['emailAdd'])->send(new TempPasswordMail(
+                'reset',
+                $user['userName'] ?? $userCode,
+                $userCode,
+                null,
+                $company
+            ));
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Password reset link sent.',
-            ]);
+            return response()->json(['status' => 'success', 'message' => 'Password reset link sent.']);
         } catch (Throwable $e) {
             report($e);
-
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Reset failed: ' . $e->getMessage(),
-            ], 500);
+            return response()->json(['status' => 'error', 'message' => 'Reset failed: ' . $e->getMessage()], 500);
         }
     }
 
@@ -417,10 +215,10 @@ class UserController extends Controller
 
     public function changePassword(Request $req)
     {
-        $mode = $req->input('mode');
+        $mode = $req->input('mode'); // admin_add | release | reset | null
 
         $rules = [
-            'userCode' => 'required|string',
+            'userCode'    => 'required|string',
             'newPassword' => [
                 'required',
                 'string',
@@ -438,54 +236,97 @@ class UserController extends Controller
         }
 
         $validated = $req->validate($rules);
-        $userCode = trim($validated['userCode']);
+        $userCode  = trim($validated['userCode']);
 
-        $row = DB::table('users')
-            ->select('password')
-            ->where('user_code', $userCode)
-            ->first();
-
+        $row = DB::table('users')->select('password')->where('user_code', $userCode)->first();
         if (!$row) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'User not found.',
-            ], 422);
+            return response()->json(['status' => 'error', 'message' => 'User not found.'], 422);
         }
 
         if (!in_array($mode, ['reset', 'release'], true)) {
             if (!Hash::check($req->input('oldPassword'), $row->password)) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Old password is incorrect.',
-                ], 422);
+                return response()->json(['status' => 'error', 'message' => 'Old password is incorrect.'], 422);
             }
         }
 
         if (Hash::check($validated['newPassword'], $row->password)) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'New password must differ from old password.',
-            ], 422);
+            return response()->json(['status' => 'error', 'message' => 'New password must differ from old password.'], 422);
         }
 
         $hash = Hash::make($validated['newPassword']);
 
-        DB::statement(
-            'exec dbo.sproc_PHP_Users @mode = ?, @params = ?',
-            [
-                'SetChangedPassword',
-                json_encode([
-                    'json_data' => [
-                        'userCode' => $userCode,
-                        'passwordHash' => $hash,
-                    ],
-                ]),
-            ]
-        );
+        DB::select("exec sproc_PHP_Users ?, ?", [
+            'SetChangedPassword',
+            json_encode(['json_data' => [
+                'userCode'     => $userCode,
+                'passwordHash' => $hash,
+            ]]),
+        ]);
 
         return response()->json([
-            'status' => 'success',
+            'status'  => 'success',
             'message' => 'Password updated successfully.',
         ]);
     }
+
+    /* ============================================================
+     * LOAD / UPSERT
+     * ============================================================
+     */
+
+    public function load(Request $request)
+    {
+        $base     = $request->query('Status', 'Active');
+        $userType = strtoupper($request->query('UserType', 'ALL'));
+        $params   = $userType === 'ALL' ? "{$base}All" : "{$base}:{$userType}";
+
+        $rows = DB::select(
+            'EXEC dbo.sproc_PHP_Users @mode = ?, @params = ?',
+            ['Load', $params]
+        );
+
+        return response()->json(['success' => true, 'data' => $rows]);
+    }
+
+    public function upsert(Request $request)
+    {
+        $json = $request->getContent();
+        if (!$json && $request->all()) {
+            $json = json_encode($request->all(), JSON_UNESCAPED_UNICODE);
+        }
+
+        json_decode($json);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return response()->json(['success' => false, 'message' => 'Invalid JSON body.'], 422);
+        }
+
+        DB::statement('EXEC dbo.sproc_PHP_Users @mode = ?, @params = ?', ['Upsert', $json]);
+
+        return response()->json(['success' => true, 'message' => 'User saved']);
+    }
+
+
+
+    
+
+public function lookupAll(Request $request)
+{
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_Users @mode = ?',
+            ['LookupAll']
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results, // no more `json_encode`
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+}
+
 }
