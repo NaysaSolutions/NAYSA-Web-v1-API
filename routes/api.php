@@ -108,6 +108,8 @@ Route::middleware('tenant')->group(function () {
     Route::post('/users/delete', [UserController::class, 'delete']);
     Route::post('/users/request-password-reset', [UserController::class, 'requestPasswordReset']);
     Route::post('/users/change-password', [UserController::class, 'changePassword']);
+    Route::post('/users/checkduplicate', [UserController::class, 'checkDuplicate']);
+    Route::post('/users/checkinused', [UserController::class, 'checkInUsed']);
 
     // Heart Strong
     Route::get('/getHSDoc', [HSDocController::class, 'get']);
@@ -133,7 +135,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsert', [AccessRightsController::class, 'upsert']);
     Route::post('/deleteUserRole', [AccessRightsController::class, 'deleteUserRole']);
     Route::get('/getUserRoles', [AccessRightsController::class, 'getUserRoles']);
-     Route::get('/checkDuplicateRole', [AccessRightsController::class, 'checkDuplicate']);
+    Route::get('/checkDuplicateRole', [AccessRightsController::class, 'checkDuplicate']);
     Route::get('/checkInUsedRole', [AccessRightsController::class, 'checkInUsed']);
 
     //Printing
@@ -209,14 +211,14 @@ Route::middleware('tenant')->group(function () {
     Route::get('/lookupBankType', [BankTypeController::class, 'lookup']);
     Route::post('/deleteBankType', [BankTypeController::class, 'delete']);
 
-	Route::get('/curr', [CurrController::class, 'index']);
+    Route::get('/curr', [CurrController::class, 'index']);
     Route::post('/upsertCurr', [CurrController::class, 'upsert']);
     Route::get('/lookupCurr', [CurrController::class, 'lookup']);
     Route::get('/getCurr', [CurrController::class, 'get']);
     Route::post('/deleteCurr', [CurrController::class, 'delete']);
     Route::post('/checkDuplicateCurr', [CurrController::class, 'checkDuplicate']);
     Route::post('/checkInUsedCurr', [CurrController::class, 'checkInUsed']);
-    
+
     Route::get('/vat', [VATController::class, 'index']);
     Route::post('/upsertVat', [VATController::class, 'upsert']);
     Route::get('/lookupVat', [VATController::class, 'lookup']);
@@ -252,7 +254,7 @@ Route::middleware('tenant')->group(function () {
 
 
 
-    
+
 
     Route::get('/atc', [ATCController::class, 'index']);
     Route::post('/upsertATC', [ATCController::class, 'upsert']);
@@ -291,7 +293,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/checkInUsedCOA', [COAMasterController::class, 'checkInUsed']);
     Route::get('/glfsmatching', [COAMasterController::class, 'index']);
 
-    
+
     Route::get('/fsconso', [FSConsolidationController::class, 'index']);
     Route::post('/upsertFSConso', [FSConsolidationController::class, 'upsert']);
     Route::get('/lookupFSConso', [FSConsolidationController::class, 'lookup']);
