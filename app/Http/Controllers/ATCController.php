@@ -40,17 +40,10 @@ class ATCController extends Controller
     public function lookup(Request $request)
     {
 
-        $request->validate([
-            'PARAMS' => 'required|string',
-        ]);
-
-        $params = $request->input('PARAMS');
-
-
         try {
             $results = DB::select(
-                'EXEC sproc_PHP_ATCRef @mode = ?, @params = ?',
-                ['Lookup', $params]
+                'EXEC sproc_PHP_ATCRef @mode = ?',
+                ['Lookup']
             );
 
             return response()->json([
@@ -68,18 +61,12 @@ class ATCController extends Controller
 
     public function get(Request $request)
 {
-    $request->validate([
+     $request->validate([
         'atcCode' => 'required|string',
     ]);
 
-    $atcCode = $request->input('atcCode');
+    $params = $request->input('atcCode');
 
-    // WRAP the code in the JSON structure the Sproc expects
-    $params = json_encode([
-        'json_data' => [
-            'atcCode' => $atcCode
-        ]
-    ]);
 
     try {
         $results = DB::select(
