@@ -133,6 +133,8 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsert', [AccessRightsController::class, 'upsert']);
     Route::post('/deleteUserRole', [AccessRightsController::class, 'deleteUserRole']);
     Route::get('/getUserRoles', [AccessRightsController::class, 'getUserRoles']);
+     Route::get('/checkDuplicateRole', [AccessRightsController::class, 'checkDuplicate']);
+    Route::get('/checkInUsedRole', [AccessRightsController::class, 'checkInUsed']);
 
     //Printing
     Route::prefix('printing')->group(function () {
@@ -294,6 +296,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsertFSConso', [FSConsolidationController::class, 'upsert']);
     Route::get('/lookupFSConso', [FSConsolidationController::class, 'lookup']);
     Route::get('/getFSConso', [FSConsolidationController::class, 'get']);
+    // Route::post('/lookupGL', [FSConsolidationController::class, 'lookupGL']);
     Route::post('/deleteFSConso', [FSConsolidationController::class, 'delete']);
     Route::post('/checkDuplicateFSConso', [FSConsolidationController::class, 'checkDuplicate']);
     Route::post('/checkInUsedFSConso', [FSConsolidationController::class, 'checkInUsed']);
@@ -350,6 +353,8 @@ Route::middleware('tenant')->group(function () {
     Route::post('/getPayee', [VendMasterController::class, 'get']);
     Route::post('/addPayeeDetail', [VendMasterController::class, 'addDetail']);
     Route::post('/deletePayee', [VendMasterController::class, 'delete']);
+    Route::post('/checkDuplicatePayee', [VendMasterController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedPayee', [VendMasterController::class, 'checkInUsed']);
 
     Route::get('/customer', [CustMasterController::class, 'index']);
     Route::post('/upsertCustomer', [CustMasterController::class, 'upsert']);
@@ -360,10 +365,14 @@ Route::middleware('tenant')->group(function () {
     Route::post('/checkDuplicateCustomer', [CustMasterController::class, 'checkDuplicate']);
     Route::post('/checkInUsedCustomer', [CustMasterController::class, 'checkInUsed']);
 
-    Route::get('/slType', [SLMasterController::class, 'index']);
-    Route::get('/sLMast', [SLMasterController::class, 'index_sLMast']);
-    Route::get('/sLCoa', [SLMasterController::class, 'index_sLCoa']);
-    Route::post('/upsertSL', [SLMasterController::class, 'upsert']);
+    Route::get('/slType', [SLMasterController::class, 'slType']);
+    Route::get('/sLMast', [SLMasterController::class, 'sLMast']);
+    Route::get('/sLCoa', [SLMasterController::class, 'sLCoa']);
+    Route::post('/upsertSLMast', [SLMasterController::class, 'upsertSLMast']);
+    Route::post('/upsertSLType', [SLMasterController::class, 'upsertSLType']);
+    Route::post('/upsertSLTypeGLMatching', [SLMasterController::class, 'upsertSLTypeGLMatching']);
+    Route::post('/deleteSLMast', [SLMasterController::class, 'deleteSLMast']);
+    Route::post('/deleteSLType', [SLMasterController::class, 'deleteSLType']);
     Route::get('/lookupSL', [SLMasterController::class, 'lookup']);
     Route::get('/getSL', [SLMasterController::class, 'get']);
 
