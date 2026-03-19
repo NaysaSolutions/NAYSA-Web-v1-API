@@ -444,19 +444,52 @@ class AuthController extends Controller
     /**
      * Return the currently authenticated user (for /api/me).
      */
-    public function me(Request $req)
-    {
-        if (!Auth::check()) {
-            return response()->json(['message' => 'Unauthenticated'], 401);
-        }
+    // public function me(Request $req)
+    // {
+    //     if (!Auth::check()) {
+    //         return response()->json(['message' => 'Unauthenticated'], 401);
+    //     }
 
-        $u = Auth::user();
-        return response()->json([
-            'USER_CODE' => $u->USER_CODE,
-            'USER_NAME' => $u->USER_NAME,
-            'EMAIL_ADD' => $u->EMAIL_ADD,
-        ]);
+    //     $u = Auth::user();
+    //     return response()->json([
+    //         'USER_CODE' => $u->USER_CODE,
+    //         'USER_NAME' => $u->USER_NAME,
+    //         'EMAIL_ADD' => $u->EMAIL_ADD,
+    //     ]);
+    // }
+
+
+    public function me(Request $req)
+{
+    if (!Auth::check()) {
+        return response()->json(['message' => 'Unauthenticated'], 401);
     }
+
+    $u = Auth::user();
+
+    $cacheKey = "user:active_session:{$u->USER_CODE}";
+    $currentSessionId = $req->session()->getId();
+    $mappedSessionId = Cache::get($cacheKey);
+
+    $loginStat = DB::connection('tenant')
+        ->table('USERS')
+        ->where('USER_CODE', $u->USER_CODE)
+        ->value('LOGIN_STAT');
+
+    if ((string)$loginStat !== '1' || ($mappedSessionId && $mappedSessionId !== $currentSessionId)) {
+        Auth::logout();
+        $req->session()->invalidate();
+        $req->session()->regenerateToken();
+
+        return response()->json(['message' => 'Session expired'], 401);
+    }
+
+    return response()->json([
+        'USER_CODE' => $u->USER_CODE,
+        'USER_NAME' => $u->USER_NAME,
+        'EMAIL_ADD' => $u->EMAIL_ADD,
+    ]);
+}
 
 
     public function heartbeat(Request $req)
@@ -477,7 +510,7 @@ class AuthController extends Controller
     {
         if (Auth::check()) {
             $user = Auth::user();
-            $cacheKey = "user:active_session:{$user->id}";
+            $cacheKey = "user:active_session:{$user->USER_CODE}";
             $current  = session()->getId();
             $mapped   = Cache::get($cacheKey);
 

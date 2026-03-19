@@ -261,6 +261,10 @@ Route::middleware('tenant')->group(function () {
     Route::get('/ATC', [ATCController::class, 'index']);
     Route::post('/upsertATC', [ATCController::class, 'upsert']);
     Route::post('/lookupATC', [ATCController::class, 'lookup']);
+    Route::post('/deleteATC', [ATCController::class, 'delete']);
+    Route::post('/checkDuplicateATC', [ATCController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedATC', [ATCController::class, 'checkInUsed']);
+>>>>>>>>> Temporary merge branch 2
     Route::get('/getATC', [ATCController::class, 'get']);
 
 
