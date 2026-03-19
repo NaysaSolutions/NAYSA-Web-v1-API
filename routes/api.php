@@ -294,7 +294,6 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsertFSConso', [FSConsolidationController::class, 'upsert']);
     Route::get('/lookupFSConso', [FSConsolidationController::class, 'lookup']);
     Route::get('/getFSConso', [FSConsolidationController::class, 'get']);
-    Route::post('/lookupGL', [FSConsolidationController::class, 'lookupGL']);
     Route::post('/deleteFSConso', [FSConsolidationController::class, 'delete']);
     Route::post('/checkDuplicateFSConso', [FSConsolidationController::class, 'checkDuplicate']);
     Route::post('/checkInUsedFSConso', [FSConsolidationController::class, 'checkInUsed']);

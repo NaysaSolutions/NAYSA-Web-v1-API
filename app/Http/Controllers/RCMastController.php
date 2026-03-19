@@ -47,7 +47,8 @@ public function lookup(Request $request) {
     try {
         $results = DB::select(
             'EXEC sproc_PHP_RCMast @mode = ?, @params = ?',
-            ['Lookup' ,$params['search']] 
+            ['Lookup',$params] 
+
         );
 
         return response()->json([
