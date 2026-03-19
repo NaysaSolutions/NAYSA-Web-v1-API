@@ -28,6 +28,7 @@ use App\Http\Controllers\BillTermController;
 use App\Http\Controllers\VendMasterController;
 use App\Http\Controllers\CustMasterController;
 use App\Http\Controllers\SLMasterController;
+use App\Http\Controllers\SalesRepController;
 
 use App\Http\Controllers\JournalVoucherController;
 use App\Http\Controllers\APVoucherController;
@@ -200,6 +201,9 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsertBankType', [BankTypeController::class, 'upsert']);
     Route::get('/lookupBankType', [BankTypeController::class, 'lookup']);
     Route::post('/deleteBankType', [BankTypeController::class, 'delete']);
+    Route::post('/checkDuplicateBankType', [BankTypeController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedBankType', [BankTypeController::class, 'checkInUsed']);
+    Route::get('/getBankType', [BankTypeController::class, 'get']);
 
     Route::get('/curr', [CurrController::class, 'index']);
     Route::post('/upsertCurr', [CurrController::class, 'upsert']);
@@ -213,10 +217,14 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getVat', [VATController::class, 'get']);
     Route::post('/deleteVat', [VATController::class, 'delete']);
 
-    Route::get('/atc', [ATCController::class, 'index']);
+    Route::get('/ATC', [ATCController::class, 'index']);
     Route::post('/upsertATC', [ATCController::class, 'upsert']);
     Route::post('/lookupATC', [ATCController::class, 'lookup']);
+    Route::post('/deleteATC', [ATCController::class, 'delete']);
+    Route::post('/checkDuplicateATC', [ATCController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedATC', [ATCController::class, 'checkInUsed']);
     Route::get('/getATC', [ATCController::class, 'get']);
+
 
     Route::get('/cutOff', [CutoffController::class, 'index']);
     Route::post('/upsertCutOff', [CutoffController::class, 'upsert']);
@@ -232,15 +240,33 @@ Route::middleware('tenant')->group(function () {
     Route::get('/lookupRCMast', [RCMastController::class, 'lookup']);
     Route::get('/getRCMast', [RCMastController::class, 'get']);
 
-    Route::get('/dForex', [DForexController::class, 'index']);
+    Route::get('/DForex', [DForexController::class, 'index']);
+    Route::get('/DForexSummary', [DForexController::class, 'loadSummary']);
     Route::post('/upsertDForex', [DForexController::class, 'upsert']);
-    Route::post('/getDForex', [DForexController::class, 'get']);
+    Route::get('/lookupDForex', [DForexController::class, 'lookup']);
+    Route::get('/getDForex', [DForexController::class, 'get']);
+    Route::post('/checkDuplicateDForex', [DForexController::class, 'checkDuplicate']);
+    Route::post('/deleteDForex', [DForexController::class, 'delete']);
 
+
+    Route::get('/salesRep', [SalesRepController::class, 'index']);
+    Route::post('/upsertsalesRep', [SalesRepController::class, 'upsert']);
+    Route::get('/lookupsalesRep', [SalesRepController::class, 'lookup']);
+    Route::post('/deletesalesRep', [SalesRepController::class, 'delete']);
+    Route::post('/checkDuplicatesalesRep', [SalesRepController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedsalesRep', [SalesRepController::class, 'checkInUsed']);
+    Route::get('/getsalesRep', [SalesRepController::class, 'get']);
+
+
+
+    
     Route::get('/bank', [BankMasterController::class, 'index']);
     Route::post('/upsertBank', [BankMasterController::class, 'upsert']);
     Route::get('/lookupBank', [BankMasterController::class, 'lookup']);
     Route::get('/getBank', [BankMasterController::class, 'get']);
-    Route::get('/getDuplicate', [BankMasterController::class, 'getDuplicateCheck']);
+    Route::post('/checkDuplicateBank', [BankMasterController::class, 'checkDuplicate']);
+    Route::post('/deleteBank', [BankMasterController::class, 'delete']);
+    Route::post('/checkInUsedBank', [BankMasterController::class, 'checkInUsed']);
 
     Route::get('/cOA', [COAMasterController::class, 'index']);
     Route::post('/upsertCOA', [COAMasterController::class, 'upsert']);
@@ -270,10 +296,13 @@ Route::middleware('tenant')->group(function () {
     Route::post('/checkInUsedBranch', [BranchController::class, 'checkInUsed']);
 
 
-    Route::get('/billcode', [BillCodeController::class, 'index']);
-    Route::post('/upsertBillcode', [BillCodeController::class, 'upsert']);
-    Route::get('/lookupBillcode', [BillCodeController::class, 'lookup']);
-    Route::get('/getBillcode', [BillCodeController::class, 'get']);
+    Route::get('/billCode', [BillCodeController::class, 'index']);
+    Route::post('/upsertbillCode', [BillCodeController::class, 'upsert']);
+    Route::get('/lookupsalesRep', [BillCodeController::class, 'lookup']);
+    Route::post('/deletebillCode', [BillCodeController::class, 'delete']);
+    Route::post('/checkDuplicatebillCode', [BillCodeController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedbillCode', [BillCodeController::class, 'checkInUsed']);
+    Route::get('/getbillCode', [BillCodeController::class, 'get']);
 
     Route::get('/payterm', [PayTermController::class, 'index']);
     Route::get('/lookupPayterm', [PayTermController::class, 'lookup']);
@@ -342,7 +371,7 @@ Route::middleware('tenant')->group(function () {
 
     Route::get('/APV', [APVoucherController::class, 'index']);
     Route::post('/upsertAPV', [APVoucherController::class, 'upsert']);
-    Route::post('/getAPV', [APVoucherController::class, 'get']);
+    Route::get('/getAPV', [APVoucherController::class, 'get']);
     Route::post('/generateGLAPV', [APVoucherController::class, 'generateGL']);
     Route::post('/load-history', [APVoucherController::class, 'load']);
     Route::post('/PostAPVTransaction', [APVoucherController::class, 'PostTransaction']);
