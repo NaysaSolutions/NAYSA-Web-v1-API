@@ -39,21 +39,27 @@ public function index(Request $request) {
 
 }
 
-public function get(Request $request) {
-    $jsonData = $request->all();
-    $jsonString = json_encode($jsonData);
-
+public function get(Request $request)
+{
     try {
+        $params = json_encode([
+            'json_data' => [
+                'branchCode' => $request->query('branchCode', ''),
+                'apvNo'      => $request->query('apvNo', ''),
+            ]
+        ], JSON_UNESCAPED_UNICODE);
+
+        Log::info('GET APV Params', ['params' => $params]);
+
         $results = DB::select(
             'EXEC sproc_PHP_APV @mode = ?, @params = ?',
-            ['get', $jsonString] 
+            ['Get', $params]
         );
 
-        // Check if results are empty
         if (empty($results)) {
             return response()->json([
                 'success' => true,
-                'data' => [['result' => '{}']], // Return empty JSON object
+                'data' => [['result' => '{}']],
             ], 200);
         }
 
@@ -61,7 +67,10 @@ public function get(Request $request) {
             'success' => true,
             'data' => $results,
         ], 200);
+
     } catch (\Exception $e) {
+        Log::error('GET APV Error: ' . $e->getMessage());
+
         return response()->json([
             'success' => false,
             'message' => $e->getMessage(),
