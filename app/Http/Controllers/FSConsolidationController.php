@@ -6,14 +6,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class RCMastController extends Controller
+
+class FSConsolidationController extends Controller
 {
-  
+   
 public function index(Request $request) {
 
     try {
         $results = DB::select(
-            'EXEC sproc_PHP_RCMast @mode = ?',
+            'EXEC sproc_PHP_FSConso @mode = ?',
             ['Load' ] 
         );
 
@@ -27,9 +28,6 @@ public function index(Request $request) {
             'message' => $e->getMessage(),
         ], 500);
     }
-
-
-
 }
 
 
@@ -39,14 +37,13 @@ public function index(Request $request) {
 
 public function lookup(Request $request) {
 
-  
     $paramsString = $request->input('PARAMS');
     $params = json_decode($paramsString, true);
    
 
     try {
         $results = DB::select(
-            'EXEC sproc_PHP_RCMast @mode = ?, @params = ?',
+            'EXEC sproc_PHP_FSConso @mode = ?, @params = ?',
             ['Lookup' ,$params['search']] 
         );
 
@@ -64,23 +61,19 @@ public function lookup(Request $request) {
 
 
 
-
-
-
-
 public function get(Request $request) {
 
     $request->validate([
-        'RC_CODE' => 'required|string',
+        'ACCT_CODE' => 'required|string',
     ]);
 
-    $params = $request->input('RC_CODE');
+    $params = $request->input('ACCT_CODE');
 
 
     try {
         $results = DB::select(
-            'EXEC sproc_PHP_RCMast @mode = ?, @params = ?',
-            ['get' ,$params] 
+            'EXEC sproc_PHP_FSConso @mode = ?, @params = ?',
+            ['Get' ,$params] 
         );
 
         return response()->json([
@@ -97,7 +90,6 @@ public function get(Request $request) {
 
 
 
-
 public function upsert(Request $request)
 {
     try {
@@ -108,12 +100,11 @@ public function upsert(Request $request)
         $params = $request->get('json_data');
 
         // 1. Use DB::select to capture the Sproc's output (errormsg, errorcount)
-        $results = DB::select('EXEC sproc_PHP_RCMast @params = :json_data, @mode = :mode', [
+        $results = DB::select('EXEC sproc_PHP_FSConso @params = :json_data, @mode = :mode', [
             'json_data' => $params,
             'mode' => 'upsert'
         ]);
 
-        
         // 2. Return the SQL results so React can read them
         return response()->json([
             'status' => 'success',
@@ -131,34 +122,6 @@ public function upsert(Request $request)
 
 
 
-// public function delete(Request $request){
-
-//     try {
-
-//       $validated = $request->validate([
-//             'json_data' => 'required|array'
-//         ]);
-
-//         $params = json_encode(['json_data' => $validated['json_data']]);
-      
-
-//         $results = DB::select(
-//             'EXEC sproc_PHP_RCMast @mode = ?, @params = ?',
-//             ['Delete', $params]
-//         );
-
-//         return response()->json([
-//             'success' => true,
-//             'data' => $results,
-//         ], 200);
-//     } catch (\Exception $e) {
-//         return response()->json([
-//             'success' => false,
-//             'message' => $e->getMessage(),
-//         ], 500);
-//     }
-// }
-
 
 public function delete(Request $request) {
 
@@ -172,7 +135,7 @@ public function delete(Request $request) {
       
 
         $results = DB::select(
-            'EXEC sproc_PHP_RCMast @mode = ?, @params = ?',
+            'EXEC sproc_PHP_FSConso @mode = ?, @params = ?',
             ['Delete', $params]
         );
 
@@ -189,6 +152,9 @@ public function delete(Request $request) {
 }
 
 
+
+
+
 public function checkInUsed(Request $request) {
 
         $validated = $request->validate([
@@ -199,7 +165,7 @@ public function checkInUsed(Request $request) {
 
     try {
         $results = DB::select(
-            'EXEC sproc_PHP_RCMast @mode = ?, @params = ?',
+            'EXEC sproc_PHP_FSConso @mode = ?, @params = ?',
             ['CheckInUsed' ,$params] 
         );
 
@@ -231,7 +197,7 @@ public function checkDuplicate(Request $request) {
 
     try {
         $results = DB::select(
-            'EXEC sproc_PHP_RCMast @mode = ?, @params = ?',
+            'EXEC sproc_PHP_FSConso @mode = ?, @params = ?',
             ['CheckDuplicate' ,$params] 
         );
 
@@ -247,6 +213,45 @@ public function checkDuplicate(Request $request) {
     }
 
 }
+
+
+
+
+
+public function lookupGL(Request $request)
+    {
+        try {
+            // Expecting json_data to be passed from client
+            $jsonData = $request->input('json_data');
+
+            if (!$jsonData) {
+                return response()->json(['error' => 'Missing json_data'], 400);
+            }
+
+            // Convert JSON to string format
+            $jsonString = json_encode(['json_data' => $jsonData], JSON_UNESCAPED_UNICODE);
+
+            // Execute the stored procedure
+            $results = DB::select("EXEC sproc_PHP_FSConso @mode = ?, @params = ?", [
+                'lookupGL',
+                $jsonString
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $results
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error executing sproc_PHP_FSConso: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to generate entries.',
+                'details' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 
 
 

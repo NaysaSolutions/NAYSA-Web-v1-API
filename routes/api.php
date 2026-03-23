@@ -29,6 +29,7 @@ use App\Http\Controllers\VendMasterController;
 use App\Http\Controllers\CustMasterController;
 use App\Http\Controllers\SLMasterController;
 
+
 use App\Http\Controllers\JournalVoucherController;
 use App\Http\Controllers\APVoucherController;
 use App\Http\Controllers\APDMController;
@@ -189,31 +190,69 @@ Route::middleware('tenant')->group(function () {
     Route::get('/lookupCurr', [CurrController::class, 'lookup']);
     Route::get('/getCurr', [CurrController::class, 'get']);
     Route::post('/deleteCurr', [CurrController::class, 'delete']);
+    Route::post('/checkDuplicateCurr', [CurrController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedCurr', [CurrController::class, 'checkInUsed']);
+
+    
 
     Route::get('/vat', [VATController::class, 'index']);
     Route::post('/upsertVat', [VATController::class, 'upsert']);
     Route::get('/lookupVat', [VATController::class, 'lookup']);
     Route::get('/getVat', [VATController::class, 'get']);
     Route::post('/deleteVat', [VATController::class, 'delete']);
+    Route::post('/checkInUsedVat', [VATController::class, 'checkInUsed']);
+    Route::post('/checkDuplicateVat', [VATController::class, 'checkDuplicate']);
+    Route::get('/loadVATClass', [VATController::class, 'LoadVATClass']);
+
+
+    Route::get('/rcMast', [RCMastController::class, 'index']);
+    Route::post('/upsertRCMast', [RCMastController::class, 'upsert']);
+    Route::get('/lookupRCMast', [RCMastController::class, 'lookup']);
+    Route::get('/getRCMast', [RCMastController::class, 'get']);
+    Route::post('/deleteRCMast', [RCMastController::class, 'delete']);
+    Route::post('/checkInUsedRCMast', [RCMastController::class, 'checkInUsed']);
+    Route::post('/checkDuplicateRCMast', [RCMastController::class, 'checkDuplicate']);
+    Route::get('/loadRCMast', [RCMastController::class, 'loadRCMast']);
+
+
+    Route::get('/rcType', [RCTypeController::class, 'index']);
+    Route::post('/upsertRcType', [RCTypeController::class, 'upsert']);
+    Route::get('/lookupRCType', [RCTypeController::class, 'lookup']);
+    Route::get('/getRcType', [RCTypeController::class, 'get']);
+    Route::post('/deleteRcType', [RCTypeController::class, 'delete']);
+    Route::post('/checkInUsedRcType', [RCTypeController::class, 'checkInUsed']);
+    Route::post('/checkDuplicateRcType', [RCTypeController::class, 'checkDuplicate']);
+    Route::get('/loadRCType', [RCTypeController::class, 'loadRcType']);
+
+
+
+
+    
 
     Route::get('/atc', [ATCController::class, 'index']);
     Route::post('/upsertATC', [ATCController::class, 'upsert']);
     Route::post('/lookupATC', [ATCController::class, 'lookup']);
     Route::get('/getATC', [ATCController::class, 'get']);
+    
 
     Route::get('/cutOff', [CutoffController::class, 'index']);
     Route::post('/upsertCutOff', [CutoffController::class, 'upsert']);
     Route::get('/lookupCutOff', [CutoffController::class, 'lookup']);
     Route::get('/getCutOff', [CutoffController::class, 'get']);
     Route::post('/deleteCutOff', [CutoffController::class, 'delete']);
+    Route::post('/checkInUsedCutOff', [CutoffController::class, 'checkInUsed']);
+    Route::post('/checkDuplicateCutOff', [CutoffController::class, 'checkDuplicate']);
+    Route::get('/loadCutOff', [CutoffController::class, 'loadRcType']);
 
-    Route::get('/rCType', [RCTypeController::class, 'index']);
-    Route::post('/upsertRCType', [RCTypeController::class, 'upsert']);
 
-    Route::get('/rCMast', [RCMastController::class, 'index']);
-    Route::post('/upsertRCMast', [RCMastController::class, 'upsert']);
-    Route::get('/lookupRCMast', [RCMastController::class, 'lookup']);
-    Route::get('/getRCMast', [RCMastController::class, 'get']);
+
+
+
+
+    // Route::get('/rCType', [RCTypeController::class, 'index']);
+    // Route::post('/upsertRCType', [RCTypeController::class, 'upsert']);
+
+
 
     Route::get('/dForex', [DForexController::class, 'index']);
     Route::post('/upsertDForex', [DForexController::class, 'upsert']);
