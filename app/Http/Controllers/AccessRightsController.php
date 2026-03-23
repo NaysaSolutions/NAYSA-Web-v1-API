@@ -6,11 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-
 class AccessRightsController extends Controller
 {
-
-
     public function upsertRole(Request $request)
     {
         try {
@@ -18,49 +15,78 @@ class AccessRightsController extends Controller
                 'json_data' => 'required|array',
             ]);
 
-            $jsonData = $request->get('json_data');
-            $params = json_encode($jsonData);
+            $jsonData = $request->input('json_data');
+            $params   = json_encode([
+                'json_data' => $jsonData
+            ], JSON_UNESCAPED_UNICODE);
 
-
-            DB::statement(
+            $results = DB::select(
                 'EXEC sproc_PHP_AccessRights @params = ?, @mode = ?',
                 [$params, 'UpsertRole']
             );
 
+            $row = $results[0] ?? null;
+            $arr = $row ? (array) $row : [];
+
+            $errorMsg   = $arr['errormsg'] ?? $arr['ERRORMSG'] ?? '';
+            $errorCount = (int)($arr['errorcount'] ?? $arr['ERRORCOUNT'] ?? 0);
+
+            if ($errorCount > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMsg ?: 'Unable to save role.',
+                    'data'    => [
+                        'status'     => 'error',
+                        'errormsg'   => $errorMsg,
+                        'errorcount' => $errorCount,
+                    ],
+                ], 422);
+            }
 
             return response()->json([
                 'success' => true,
-                'data'    => ['status' => 'success'],
                 'message' => 'Role saved successfully.',
+                'data'    => [
+                    'status'     => 'success',
+                    'errormsg'   => '',
+                    'errorcount' => 0,
+                ],
             ], 200);
         } catch (\Throwable $e) {
+            Log::error('upsertRole error', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'data'    => ['status' => 'error'],
                 'message' => 'Error executing Role Upsert.',
                 'details' => $e->getMessage(),
+                'data'    => [
+                    'status' => 'error',
+                ],
             ], 500);
         }
     }
 
-
-
-
     public function loadRole(Request $request)
     {
-
         try {
-
             $results = DB::select(
                 'EXEC sproc_PHP_AccessRights @mode = ?',
-                ['loadRole']
+                ['LoadRole']
             );
 
             return response()->json([
                 'success' => true,
-                'data' => $results,
+                'data'    => $results,
             ], 200);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            Log::error('loadRole error', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -68,11 +94,8 @@ class AccessRightsController extends Controller
         }
     }
 
-
-
-    public function deleteRole(Request $request)
+    public function getRole(Request $request)
     {
-
         $request->validate([
             'ROLE_CODE' => 'required|string',
         ]);
@@ -80,6 +103,43 @@ class AccessRightsController extends Controller
         $params = $request->input('ROLE_CODE');
 
         try {
+            $results = DB::select(
+                'EXEC sproc_PHP_AccessRights @mode = ?, @params = ?',
+                ['GetRole', $params]
+            );
+
+            return response()->json([
+                'success' => true,
+                'data'    => $results,
+            ], 200);
+        } catch (\Throwable $e) {
+            Log::error('getRole error', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function deleteRole(Request $request)
+    {
+        try {
+            $request->validate([
+                'json_data' => 'required|array',
+                'json_data.roleCode' => 'required|string',
+                'json_data.userCode' => 'nullable|string',
+                'json_data.roleName' => 'nullable|string',
+            ]);
+
+            $jsonData = $request->input('json_data');
+            $params   = json_encode([
+                'json_data' => $jsonData
+            ], JSON_UNESCAPED_UNICODE);
+
             $results = DB::select(
                 'EXEC sproc_PHP_AccessRights @mode = ?, @params = ?',
                 ['DeleteRole', $params]
@@ -87,10 +147,18 @@ class AccessRightsController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data'    => ['status' => 'success'],
                 'message' => 'Role deleted successfully.',
+                'data'    => [
+                    'status'  => 'success',
+                    'results' => $results,
+                ],
             ], 200);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            Log::error('deleteRole error', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -98,31 +166,8 @@ class AccessRightsController extends Controller
         }
     }
 
-
-    public function deleteUserRole(Request $request)
+    public function checkDuplicate(Request $request)
     {
-        $payload = $request->input('json_data.json_data'); // same as Upsert
-        $dt1 = $payload['dt1'] ?? []; // roles
-        $dt2 = $payload['dt2'] ?? []; // users
-
-        foreach ($dt1 as $r) {
-            foreach ($dt2 as $u) {
-                DB::table('USERROLE_REF')
-                    ->where('user_code', $u['userCode'])
-                    ->where('role_code', $r['roleCode'])
-                    ->delete();
-            }
-        }
-
-        return response()->json(['data' => ['status' => 'success']]);
-    }
-
-
-
-
-    public function getRole(Request $request)
-    {
-
         $request->validate([
             'ROLE_CODE' => 'required|string',
         ]);
@@ -132,14 +177,26 @@ class AccessRightsController extends Controller
         try {
             $results = DB::select(
                 'EXEC sproc_PHP_AccessRights @mode = ?, @params = ?',
-                ['Get', $params]
+                ['CheckDuplicate', $params]
             );
+
+            $raw = $results[0]->result ?? ($results[0]->RESULT ?? '{"result":"0"}');
+            $decoded = json_decode($raw, true);
 
             return response()->json([
                 'success' => true,
-                'data' => $results,
+                'data'    => [
+                    'result'      => $decoded['result'] ?? '0',
+                    'isDuplicate' => ($decoded['result'] ?? '0') === '1',
+                    'raw'         => $results,
+                ],
             ], 200);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            Log::error('checkDuplicate error', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -147,6 +204,287 @@ class AccessRightsController extends Controller
         }
     }
 
+    public function checkInUsed(Request $request)
+    {
+        $request->validate([
+            'ROLE_CODE' => 'required|string',
+        ]);
+
+        $params = $request->input('ROLE_CODE');
+
+        try {
+            $results = DB::select(
+                'EXEC sproc_PHP_AccessRights @mode = ?, @params = ?',
+                ['CheckInUsed', $params]
+            );
+
+            $raw = $results[0]->result ?? ($results[0]->RESULT ?? '{"result":"0"}');
+            $decoded = json_decode($raw, true);
+
+            return response()->json([
+                'success' => true,
+                'data'    => [
+                    'result' => $decoded['result'] ?? '0',
+                    'isUsed' => ($decoded['result'] ?? '0') === '1',
+                    'raw'    => $results,
+                ],
+            ], 200);
+        } catch (\Throwable $e) {
+            Log::error('checkInUsed error', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getRoleMenu(Request $request)
+    {
+        try {
+            $request->validate([
+                'ROLE_CODE' => 'required|string',
+            ]);
+
+            $params = $request->input('ROLE_CODE');
+
+            $results = DB::select(
+                'EXEC sproc_PHP_AccessRights @mode = ?, @params = ?',
+                ['GetRoleMenu', $params]
+            );
+
+            return response()->json([
+                'success' => true,
+                'data'    => $results,
+            ], 200);
+        } catch (\Throwable $e) {
+            Log::error('getRoleMenu error', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function upsertRoleMenu(Request $request)
+    {
+        try {
+            $request->validate([
+                'json_data.roleCode' => 'required_without:ROLE_CODE|string',
+                'ROLE_CODE'          => 'required_without:json_data.roleCode|string',
+                'json_data.dt1'      => 'array',
+            ]);
+
+            $roleCode = $request->input('json_data.roleCode') ?? $request->input('ROLE_CODE');
+            $dt1      = $request->input('json_data.dt1', []);
+
+            $params = json_encode([
+                'json_data' => [
+                    'roleCode' => $roleCode,
+                    'dt1'      => $dt1,
+                ]
+            ], JSON_UNESCAPED_UNICODE);
+
+            $results = DB::select(
+                'EXEC sproc_PHP_AccessRights @params = ?, @mode = ?',
+                [$params, 'UpsertRoleMenu']
+            );
+
+            $row = $results[0] ?? null;
+            $arr = $row ? (array) $row : [];
+
+            $errorMsg   = $arr['errormsg'] ?? $arr['ERRORMSG'] ?? '';
+            $errorCount = (int)($arr['errorcount'] ?? $arr['ERRORCOUNT'] ?? 0);
+
+            if ($errorCount > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMsg ?: 'Unable to save role menu.',
+                    'data'    => [
+                        'status'     => 'error',
+                        'errormsg'   => $errorMsg,
+                        'errorcount' => $errorCount,
+                    ],
+                ], 422);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Role menu saved successfully.',
+                'data'    => [
+                    'status'     => 'success',
+                    'errormsg'   => '',
+                    'errorcount' => 0,
+                ],
+            ], 200);
+        } catch (\Throwable $e) {
+            Log::error('upsertRoleMenu error', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error executing Role Menu Upsert.',
+                'details' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function upsertUserRole(Request $request)
+    {
+        try {
+            $request->validate([
+                'json_data' => 'required|array',
+            ]);
+
+            $jsonData = $request->input('json_data');
+            $params   = json_encode([
+                'json_data' => $jsonData
+            ], JSON_UNESCAPED_UNICODE);
+
+            $results = DB::select(
+                'EXEC sproc_PHP_AccessRights @params = ?, @mode = ?',
+                [$params, 'UpsertUserRole']
+            );
+
+            $row = $results[0] ?? null;
+            $arr = $row ? (array) $row : [];
+
+            $errorMsg   = $arr['errormsg'] ?? $arr['ERRORMSG'] ?? '';
+            $errorCount = (int)($arr['errorcount'] ?? $arr['ERRORCOUNT'] ?? 0);
+
+            if ($errorCount > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMsg ?: 'Unable to save user role.',
+                    'data'    => [
+                        'status'     => 'error',
+                        'errormsg'   => $errorMsg,
+                        'errorcount' => $errorCount,
+                    ],
+                ], 422);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User Role saved successfully.',
+                'data'    => [
+                    'status'     => 'success',
+                    'errormsg'   => '',
+                    'errorcount' => 0,
+                ],
+            ], 200);
+        } catch (\Throwable $e) {
+            Log::error('upsertUserRole error', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error executing User Role.',
+                'details' => $e->getMessage(),
+                'data'    => [
+                    'status' => 'error',
+                ],
+            ], 500);
+        }
+    }
+
+    public function getUserRoles(Request $request)
+    {
+        try {
+            $userCodesParam = $request->query('userCodes');
+            $userCodes = $userCodesParam
+                ? array_values(array_filter(array_map('trim', explode(',', $userCodesParam))))
+                : [];
+
+            if (!empty($userCodes)) {
+                $params = json_encode([
+                    'json_data' => [
+                        'dt1' => array_map(fn($code) => ['userCode' => $code], $userCodes)
+                    ]
+                ], JSON_UNESCAPED_UNICODE);
+
+                $results = DB::select(
+                    'EXEC sproc_PHP_AccessRights @mode = ?, @params = ?',
+                    ['GetUserRoles', $params]
+                );
+            } else {
+                $rows = DB::table('USERROLE_REF')
+                    ->selectRaw('user_code as userCode, role_code as roleCode')
+                    ->get();
+
+                return response()->json([
+                    'success' => true,
+                    'data'    => $rows,
+                ], 200);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data'    => $results,
+            ], 200);
+        } catch (\Throwable $e) {
+            Log::error('getUserRoles error', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function deleteUserRole(Request $request)
+    {
+        try {
+            $request->validate([
+                'json_data' => 'required|array',
+                'json_data.dt1' => 'required|array',
+                'json_data.dt2' => 'required|array',
+            ]);
+
+            $payload = $request->input('json_data');
+            $dt1 = $payload['dt1'] ?? [];
+            $dt2 = $payload['dt2'] ?? [];
+
+            foreach ($dt1 as $r) {
+                foreach ($dt2 as $u) {
+                    DB::table('USERROLE_REF')
+                        ->where('user_code', $u['userCode'] ?? '')
+                        ->where('role_code', $r['roleCode'] ?? '')
+                        ->delete();
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'data'    => ['status' => 'success'],
+                'message' => 'User role deleted successfully.',
+            ], 200);
+        } catch (\Throwable $e) {
+            Log::error('deleteUserRole error', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
 
     public function load(Request $request)
     {
@@ -158,213 +496,17 @@ class AccessRightsController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $results,
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
-        }
-    }
-
-
-    public function getRoleMenu(Request $request)
-    {
-
-        try {
-
-            $request->validate([
-                'ROLE_CODE' => 'required|string',
-            ]);
-            $params = $request->input('ROLE_CODE');
-
-
-
-            $results = DB::select(
-                'EXEC sproc_PHP_AccessRights @mode = ?, @params = ?',
-                ['getRoleMenu', $params]
-            );
-
-            return response()->json([
-                'success' => true,
-                'data' => $results,
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
-        }
-    }
-
-
-    public function getUserRoles(Request $request)
-    {
-        try {
-            // Check if specific users are requested via query params
-            $userCodesParam = $request->query('userCodes');
-            $userCodes = $userCodesParam ? explode(',', $userCodesParam) : [];
-
-            Log::info('getUserRoles called', [
-                'userCodesParam' => $userCodesParam,
-                'userCodes' => $userCodes
-            ]);
-
-            $rows = [];
-            if (!empty($userCodes)) {
-                // Filter by specific users using direct table query
-                $rows = DB::table('USERROLE_REF')
-                    ->select(['user_code as userCode', 'role_code as roleCode'])
-                    ->whereIn('user_code', $userCodes)
-                    ->get()
-                    ->toArray();
-            } else {
-                // Get all user roles
-                $rows = DB::table('USERROLE_REF')
-                    ->select(['user_code as userCode', 'role_code as roleCode'])
-                    ->get()
-                    ->toArray();
-            }
-
-            Log::info('getUserRoles query result', ['count' => count($rows)]);
-
-            // Convert objects to arrays for consistent format
-            $data = array_map(function ($r) {
-                $a = (array) $r;
-                return [
-                    'userCode' => $a['userCode'] ?? $a['USER_CODE'] ?? $a['user_code'] ?? null,
-                    'roleCode' => $a['roleCode'] ?? $a['ROLE_CODE'] ?? $a['role_code'] ?? null,
-                ];
-            }, $rows);
-
-            return response()->json([
-                'success' => true,
-                'data'    => $data,
+                'data'    => $results,
             ], 200);
         } catch (\Throwable $e) {
-            Log::error('getUserRoles error', [
+            Log::error('load users error', [
                 'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace'   => $e->getTraceAsString(),
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
-            ], 500);
-        }
-    }
-
-
-
-
-
-
-
-
-
-    // public function upsertRoleMenu(Request $request)
-    // {
-    //         $validated = $request->validate([
-    //             'json_data' => 'required|array'
-    //         ]);
-
-    //         try {
-    //             $params = json_encode(['json_data' => $validated['json_data']]);
-    //             $mode = 'UpsertRoleMenu';
-
-    //             // Call the stored procedure
-    //             $result = DB::select('EXEC sproc_PHP_AccessRights @mode = ?, @params = ?', [
-    //                 $mode,
-    //                 $params
-    //             ]);
-
-    //             return response()->json([
-    //                 'status' => 'success',
-    //                 'data' => $result
-    //             ], 200);
-    //         } catch (\Throwable $e) {
-    //             return response()->json([
-    //                 'status' => 'error',
-    //                 'message' => 'Error executing Role Menu Upsert.',
-    //                 'details' => $e->getMessage()
-    //             ], 500);
-    //         }
-    // }
-
-    public function upsertRoleMenu(Request $request)
-    {
-        // Accept either uppercase query key or json_data roleCode
-        $request->validate([
-            'json_data.roleCode' => 'required_without:ROLE_CODE|string',
-            'ROLE_CODE'          => 'required_without:json_data.roleCode|string',
-            'json_data.dt1'      => 'array', // allow empty to mean "remove all"
-        ]);
-
-        // Normalize roleCode and dt1 into the JSON envelope the sproc expects
-        $roleCode = $request->input('json_data.roleCode') ?? $request->input('ROLE_CODE');
-        $dt1      = $request->input('json_data.dt1', []); // may be []
-
-        $params = json_encode([
-            'json_data' => [
-                'roleCode' => $roleCode,
-                'dt1'      => $dt1,          // array of { menuCode }, can be empty
-            ]
-        ], JSON_UNESCAPED_UNICODE);
-
-        try {
-            DB::statement(
-                'EXEC sproc_PHP_AccessRights @params = ?, @mode = ?',
-                [$params, 'UpsertRoleMenu']
-            );
-
-            return response()->json([
-                'success' => true,
-                'data'    => ['status' => 'success'],
-                'message' => 'Role menu saved.',
-            ], 200);
-        } catch (\Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error executing Role Menu Upsert.',
-                'details' => $e->getMessage(),
-            ], 500);
-        }
-    }
-
-
-
-
-
-
-    public function UpsertUserRole(Request $request)
-    {
-        try {
-            $request->validate([
-                'json_data' => 'required|array',
-            ]);
-
-            $jsonData = $request->get('json_data');
-            $params = json_encode($jsonData);
-
-
-            DB::statement(
-                'EXEC sproc_PHP_AccessRights @params = ?, @mode = ?',
-                [$params, 'UpsertUserRole']
-            );
-
-
-            return response()->json([
-                'success' => true,
-                'data'    => ['status' => 'success'],
-                'message' => 'User Role saved successfully.',
-            ], 200);
-        } catch (\Throwable $e) {
-            return response()->json([
-                'success' => false,
-                'data'    => ['status' => 'error'],
-                'message' => 'Error executing User Role.',
-                'details' => $e->getMessage(),
             ], 500);
         }
     }
@@ -376,8 +518,8 @@ class AccessRightsController extends Controller
                 'json_data' => 'required|array',
             ]);
 
-            $jsonData = $request->get('json_data');
-            $params = json_encode($jsonData);
+            $jsonData = $request->input('json_data');
+            $params   = json_encode($jsonData);
 
             DB::statement(
                 'EXEC sproc_PHP_Users @params = ?, @mode = ?',
@@ -390,6 +532,11 @@ class AccessRightsController extends Controller
                 'message' => 'User saved successfully.',
             ], 200);
         } catch (\Throwable $e) {
+            Log::error('upsert user error', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'data'    => ['status' => 'error'],

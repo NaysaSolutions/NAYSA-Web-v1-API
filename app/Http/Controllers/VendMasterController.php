@@ -6,182 +6,171 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-
 class VendMasterController extends Controller
 {
-    
-public function index(Request $request) {
+    public function index(Request $request)
+    {
+        try {
+            $results = DB::select(
+                'EXEC sproc_PHP_VendMast @mode = ?',
+                ['Load']
+            );
 
-    try {
-        $results = DB::select(
-            'EXEC sproc_PHP_VendMast @mode = ?',
-            ['Load' ] 
-        );
-
-        return response()->json([
-            'success' => true,
-            'data' => $results,
-        ], 200);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage(),
-        ], 500);
-    }
-
-
-}
-
-
-   
-
-
-
-public function lookup(Request $request) {
-
-        $jsonString = $request->input('json_data');
-
-    try {
-        
-        $results = DB::select(
-            'EXEC sproc_PHP_VendMast @mode = ?, @params = ?',
-            ['Lookup', $jsonString] 
-        );
-
-       return response()->json([
-            'success' => true,
-            'data' => $results,
-        ], 200);
-
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage(),
-        ], 500);
-    }
-}
-
-
-
-
-
-public function get(Request $request) {
-
-    $request->validate([
-        'VEND_CODE' => 'required|string',
-    ]);
-
-    $params = $request->input('VEND_CODE');
-
-
-    try {
-        $results = DB::select(
-            'EXEC sproc_PHP_VendMast @mode = ?, @params = ?',
-            ['get' ,$params] 
-        );
-
-        return response()->json([
-            'success' => true,
-            'data' => $results,
-        ], 200);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage(),
-        ], 500);
-    }
-}
-
-
-
-public function upsert(Request $request)
-{
-    try {
-        $rows = DB::select(
-            'exec dbo.sproc_PHP_VendMast @mode = ?, @params = ?',
-            ['upsert', json_encode($request->all())]
-        );
-
-        // ✅ return raw SQL output (COAMast standard)
-        return response()->json([
-            'success' => true,
-            'data' => $rows,
-        ]);
-    } catch (\Throwable $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage(),
-        ], 500);
-    }
-}
-
-
-
-
-
-
-public function addDetail(Request $request) {
-
-    $jsonData = $request->all();
-    $jsonString = json_encode($jsonData);
-
-    try {
-        $results = DB::select(
-            'EXEC sproc_PHP_VendMast @mode = ?, @params = ?',
-            ['Add_Detail' ,$jsonString] 
-        );
-
-        return response()->json([
-            'success' => true,
-            'data' => $results,
-        ], 200);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage(),
-        ], 500);
-    }
-}
-
-public function delete(Request $request)
-{
-    try {
-        $vendCode = trim($request->input('VEND_CODE', ''));
-
-        if ($vendCode === '') {
+            return response()->json([
+                'success' => true,
+                'data' => $results,
+            ], 200);
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Payee Code is required.',
-            ], 400);
+                'message' => $e->getMessage(),
+            ], 500);
         }
-
-        $params = [
-            'json_data' => [
-                'vendCode' => $vendCode,
-            ],
-        ];
-
-        DB::statement(
-            "EXEC sproc_PHP_VendMast @mode = ?, @params = ?",
-            [
-                'delete',
-                json_encode($params),
-            ]
-        );
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Payee deleted successfully.',
-        ]);
-    } catch (\Throwable $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to delete payee.',
-            'error'   => $e->getMessage(),
-        ], 500);
     }
-}
 
+    public function lookup(Request $request)
+    {
+        try {
+            $jsonString = $request->query('json_data');
 
+            $results = DB::select(
+                'EXEC sproc_PHP_VendMast @mode = ?, @params = ?',
+                ['Lookup', $jsonString]
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $results,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function get(Request $request)
+    {
+        $request->validate([
+            'VEND_CODE' => 'required|string',
+        ]);
+
+        try {
+            $results = DB::select(
+                'EXEC sproc_PHP_VendMast @mode = ?, @params = ?',
+                ['Get', $request->input('VEND_CODE')]
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $results,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function upsert(Request $request)
+    {
+        try {
+            $request->validate([
+                'json_data' => 'required|json',
+            ]);
+
+            $params = $request->input('json_data');
+
+            $results = DB::select(
+                'EXEC sproc_PHP_VendMast @mode = ?, @params = ?',
+                ['Upsert', $params]
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $results,
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Payee save failed:', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save payee: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function delete(Request $request)
+    {
+        try {
+            $vendCode = $request->input('VEND_CODE');
+            $userCode = $request->input('USER_CODE', '');
+
+            $params = json_encode([
+                'json_data' => [
+                    'vendCode' => $vendCode,
+                    'userCode' => $userCode,
+                ]
+            ]);
+
+            $results = DB::select(
+                'EXEC sproc_PHP_VendMast @mode = ?, @params = ?',
+                ['Delete', $params]
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $results,
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Payee delete failed:', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete payee: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function checkDuplicate(Request $request)
+    {
+        try {
+            $results = DB::select(
+                'EXEC sproc_PHP_VendMast @mode = ?, @params = ?',
+                ['CheckDuplicate', $request->input('json_data')]
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $results,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function checkInUsed(Request $request)
+    {
+        try {
+            $results = DB::select(
+                'EXEC sproc_PHP_VendMast @mode = ?, @params = ?',
+                ['CheckInUsed', $request->input('json_data')]
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $results,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }
