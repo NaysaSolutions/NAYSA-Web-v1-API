@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-
+use App\Http\Controllers\UserBioController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -14,6 +14,18 @@ use App\Http\Controllers\AuthController;
 |
 */
 
+
+Route::middleware(['web', 'tenant'])->prefix('api/user-bio')->group(function () {
+    Route::post('/register/options', [UserBioController::class, 'registerOptions']);
+    Route::post('/register/verify', [UserBioController::class, 'registerVerify']);
+    Route::post('/login/options', [UserBioController::class, 'loginOptions']);
+    Route::post('/login/verify', [UserBioController::class, 'loginVerify']);
+    Route::post('/login/options-passwordless', [UserBioController::class, 'loginOptionsPasswordless']);
+    Route::post('/login/verify-passwordless', [UserBioController::class, 'loginVerifyPasswordless']);
+    Route::get('/list/{userCode}', [UserBioController::class, 'listByUser']);
+    Route::post('/deactivate', [UserBioController::class, 'deactivate']);
+    Route::post('/delete', [UserBioController::class, 'delete']);
+});
 
 Route::prefix('api')
     ->middleware(['web', 'tenant']) // <= IMPORTANT: web + tenant

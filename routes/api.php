@@ -51,6 +51,7 @@ use App\Http\Controllers\AllBIRController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\AccessRightsController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserBioController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MailController;
 
@@ -87,6 +88,9 @@ Route::options('{any}', function () {
 Route::get('/companies', [AuthController::class, 'companies']);
 Route::post('/send-mail', [MailController::class, 'send']);
 
+
+
+
 Route::middleware('tenant')->group(function () {
 
     Route::post('/register', [AuthController::class, 'register']);
@@ -109,6 +113,11 @@ Route::middleware('tenant')->group(function () {
     Route::post('/users/change-password', [UserController::class, 'changePassword']);
     Route::post('/users/checkduplicate', [UserController::class, 'checkDuplicate']);
     Route::post('/users/checkinused', [UserController::class, 'checkInUsed']);
+
+
+
+
+
 
     // Heart Strong
     Route::get('/getHSDoc', [HSDocController::class, 'get']);
@@ -280,6 +289,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsertDForex', [DForexController::class, 'upsert']);
     Route::get('/lookupDForex', [DForexController::class, 'lookup']);
     Route::get('/getDForex', [DForexController::class, 'get']);
+    Route::post('/getDForexByDate', [DForexController::class, 'getByDate']);
     Route::post('/checkDuplicateDForex', [DForexController::class, 'checkDuplicate']);
     Route::post('/deleteDForex', [DForexController::class, 'delete']);
 
@@ -523,7 +533,6 @@ Route::middleware('tenant')->group(function () {
     });
 
     Route::post('/msLookup', [MSISController::class, 'msLookup']);
-
     Route::get('/aPCM', [APCMController::class, 'index']);
     Route::post('/upsertAPCM', [APCMController::class, 'upsert']);
     Route::post('/generateGLAPCM', [APCMController::class, 'generateGL']);

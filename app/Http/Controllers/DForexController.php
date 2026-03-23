@@ -116,6 +116,37 @@ class DForexController extends Controller
     }
 
 
+
+    
+    public function getByDate(Request $request)
+    {
+
+          $validated = $request->validate([
+            'json_data' => 'required|array'
+        ]);
+
+        $params = json_encode(['json_data' => $validated['json_data']]);
+
+
+        try {
+            $results = DB::select(
+                'EXEC sproc_PHP_DForexRef @mode = ?, @params = ?',
+                ['GetByDate', $params]
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $results,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
     public function checkDuplicate(Request $request)
     {
 
