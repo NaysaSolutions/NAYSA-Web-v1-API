@@ -28,6 +28,8 @@ use App\Http\Controllers\BillTermController;
 use App\Http\Controllers\VendMasterController;
 use App\Http\Controllers\CustMasterController;
 use App\Http\Controllers\SLMasterController;
+use App\Http\Controllers\SalesRepController;
+
 
 
 use App\Http\Controllers\JournalVoucherController;
@@ -128,6 +130,8 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsert', [AccessRightsController::class, 'upsert']);
     Route::post('/deleteUserRole', [AccessRightsController::class, 'deleteUserRole']);
     Route::get('/getUserRoles', [AccessRightsController::class, 'getUserRoles']);
+     Route::get('/checkDuplicateRole', [AccessRightsController::class, 'checkDuplicate']);
+    Route::get('/checkInUsedRole', [AccessRightsController::class, 'checkInUsed']);
 
     //Printing
     Route::prefix('printing')->group(function () {
@@ -184,17 +188,26 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsertBankType', [BankTypeController::class, 'upsert']);
     Route::get('/lookupBankType', [BankTypeController::class, 'lookup']);
     Route::post('/deleteBankType', [BankTypeController::class, 'delete']);
+    Route::get('/getBankType', [BankTypeController::class, 'get']);
+    Route::post('/checkDuplicateBankType', [BankTypeController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedBankType', [BankTypeController::class, 'checkInUsed']);
 
-    Route::get('/curr', [CurrController::class, 'index']);
+    Route::get('/salesRep', [SalesRepController::class, 'index']);
+    Route::post('/upsertsalesRep', [SalesRepController::class, 'upsert']);
+    Route::get('/lookupsalesRep', [SalesRepController::class, 'lookup']);
+    Route::post('/deletesalesRep', [SalesRepController::class, 'delete']);
+    Route::get('/getsalesRep', [SalesRepController::class, 'get']);
+    Route::post('/checkDuplicatesalesRep', [SalesRepController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedsalesRep', [SalesRepController::class, 'checkInUsed']);
+
+	Route::get('/curr', [CurrController::class, 'index']);
     Route::post('/upsertCurr', [CurrController::class, 'upsert']);
     Route::get('/lookupCurr', [CurrController::class, 'lookup']);
     Route::get('/getCurr', [CurrController::class, 'get']);
     Route::post('/deleteCurr', [CurrController::class, 'delete']);
     Route::post('/checkDuplicateCurr', [CurrController::class, 'checkDuplicate']);
     Route::post('/checkInUsedCurr', [CurrController::class, 'checkInUsed']);
-
     
-
     Route::get('/vat', [VATController::class, 'index']);
     Route::post('/upsertVat', [VATController::class, 'upsert']);
     Route::get('/lookupVat', [VATController::class, 'lookup']);
@@ -225,15 +238,14 @@ Route::middleware('tenant')->group(function () {
     Route::get('/loadRCType', [RCTypeController::class, 'loadRcType']);
 
 
-
-
-    
-
-    Route::get('/atc', [ATCController::class, 'index']);
+    Route::POST('/atc', [ATCController::class, 'index']);
     Route::post('/upsertATC', [ATCController::class, 'upsert']);
-    Route::post('/lookupATC', [ATCController::class, 'lookup']);
+    Route::get('/lookupATC', [ATCController::class, 'lookup']);
+    Route::post('/deleteATC', [ATCController::class, 'delete']);
+    Route::post('/checkDuplicateATC', [ATCController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedATC', [ATCController::class, 'checkInUsed']);
+    Route::get('/lookupATC', [ATCController::class, 'lookup']);
     Route::get('/getATC', [ATCController::class, 'get']);
-    
 
     Route::get('/cutOff', [CutoffController::class, 'index']);
     Route::post('/upsertCutOff', [CutoffController::class, 'upsert']);
@@ -246,14 +258,6 @@ Route::middleware('tenant')->group(function () {
 
 
 
-
-
-
-    // Route::get('/rCType', [RCTypeController::class, 'index']);
-    // Route::post('/upsertRCType', [RCTypeController::class, 'upsert']);
-
-
-
     Route::get('/dForex', [DForexController::class, 'index']);
     Route::post('/upsertDForex', [DForexController::class, 'upsert']);
     Route::post('/getDForex', [DForexController::class, 'get']);
@@ -262,7 +266,9 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsertBank', [BankMasterController::class, 'upsert']);
     Route::get('/lookupBank', [BankMasterController::class, 'lookup']);
     Route::get('/getBank', [BankMasterController::class, 'get']);
-    Route::get('/getDuplicate', [BankMasterController::class, 'getDuplicateCheck']);
+    Route::post('/checkDuplicateBank', [BankMasterController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedBank', [BankMasterController::class, 'checkInUsed']);
+    Route::post('/deleteBank', [BankMasterController::class, 'delete']);
 
     Route::get('/cOA', [COAMasterController::class, 'index']);
     Route::post('/upsertCOA', [COAMasterController::class, 'upsert']);
@@ -273,6 +279,17 @@ Route::middleware('tenant')->group(function () {
     Route::post('/deleteCOA', [COAMasterController::class, 'delete']);
     Route::post('/checkDuplicateCOA', [COAMasterController::class, 'checkDuplicate']);
     Route::post('/checkInUsedCOA', [COAMasterController::class, 'checkInUsed']);
+    Route::get('/glfsmatching', [COAMasterController::class, 'index']);
+
+    
+    Route::get('/fsconso', [FSConsolidationController::class, 'index']);
+    Route::post('/upsertFSConso', [FSConsolidationController::class, 'upsert']);
+    Route::get('/lookupFSConso', [FSConsolidationController::class, 'lookup']);
+    Route::get('/getFSConso', [FSConsolidationController::class, 'get']);
+    Route::post('/deleteFSConso', [FSConsolidationController::class, 'delete']);
+    Route::post('/checkDuplicateFSConso', [FSConsolidationController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedFSConso', [FSConsolidationController::class, 'checkInUsed']);
+    Route::post('/upsertGLFSMatching', [FSConsolidationController::class, 'upsertGLFSMatching']);
 
 
 
@@ -289,10 +306,14 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getBranch', [BranchController::class, 'get']);
     Route::post('/deleteBranch', [BranchController::class, 'delete']);
 
-    Route::get('/billcode', [BillCodeController::class, 'index']);
-    Route::post('/upsertBillcode', [BillCodeController::class, 'upsert']);
-    Route::get('/lookupBillcode', [BillCodeController::class, 'lookup']);
-    Route::get('/getBillcode', [BillCodeController::class, 'get']);
+
+    Route::get('/billCode', [BillCodeController::class, 'index']);
+    Route::post('/upsertbillCode', [BillCodeController::class, 'upsert']);
+    Route::get('/lookupbillCode', [BillCodeController::class, 'lookup']);
+    Route::get('/getbillCode', [BillCodeController::class, 'get']);
+    Route::post('/deletebillCode', [BillCodeController::class, 'delete']);
+    Route::post('/checkDuplicatebillCode', [BillCodeController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedbillCode', [BillCodeController::class, 'checkInUsed']);
 
     Route::get('/payterm', [PayTermController::class, 'index']);
     Route::post('/upsertPayterm', [PayTermController::class, 'upsert']);
