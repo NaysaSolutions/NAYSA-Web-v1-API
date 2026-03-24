@@ -78,6 +78,7 @@ public function upsert(Request $request)
         ]);
 
         try {
+            // $params = json_encode(['json_data' => $validated['json_data']]);
             $params = json_encode(['json_data' => $validated['json_data']]);
             $mode = 'Upsert';
 
@@ -135,6 +136,7 @@ public function finalize(Request $request) {
         ]);
         // Already JSON, just assign
         // $params = json_encode($validated['json_data']);
+        // $params = json_encode(['json_data' => $validated['json_data']]);
         $params = json_encode(['json_data' => $validated['json_data']]);
 
           
@@ -165,6 +167,7 @@ public function cancel(Request $request)
         ]);
 
         try {
+            // $params = json_encode(['json_data' => $validated['json_data']]);
             $params = json_encode(['json_data' => $validated['json_data']]);
             $mode = 'Cancel';
 
@@ -195,6 +198,7 @@ public function post(Request $request)
         ]);
 
         try {
+            // $params = json_encode(['json_data' => $validated['json_data']]);
             $params = json_encode(['json_data' => $validated['json_data']]);
             $mode = 'Post';
 
@@ -258,6 +262,7 @@ public function history(Request $request) {
         ]);
 
         try {
+            // $params = json_encode(['json_data' => $validated['json_data']]);
             $params = json_encode(['json_data' => $validated['json_data']]);
             $mode = 'History';
 

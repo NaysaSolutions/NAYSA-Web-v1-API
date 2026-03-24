@@ -38,16 +38,17 @@ public function index(Request $request) {
 
 
 public function lookup(Request $request) {
-
-  
+    // Get the PARAMS input
     $paramsString = $request->input('PARAMS');
-    $params = json_decode($paramsString, true);
-   
+    
+    // Attempt to decode if it's JSON, otherwise use the string directly
+    $decoded = json_decode($paramsString, true);
+    $searchValue = is_array($decoded) ? ($decoded['search'] ?? $paramsString) : $paramsString;
 
     try {
         $results = DB::select(
             'EXEC sproc_PHP_RCMast @mode = ?, @params = ?',
-            ['Lookup' ,$params['search']] 
+            ['Lookup', $searchValue] 
         );
 
         return response()->json([
@@ -164,11 +165,9 @@ public function delete(Request $request) {
 
     try {
 
-      $validated = $request->validate([
-            'json_data' => 'required|array'
-        ]);
-
-        $params = json_encode(['json_data' => $validated['json_data']]);
+    //   $validated = $request->validate([ 'json_data' => 'required|array']);
+      $params = json_encode($validated['json_data']);
+      $params = json_encode(['json_data' => $validated['json_data']]);
       
 
         $results = DB::select(
