@@ -14,171 +14,110 @@ class RCTypeController extends Controller
     public function index(Request $request)
     {
         try {
-            $results = DB::select(
-                'EXEC sproc_PHP_RCTypeRef @mode = ?',
-                ['Load']
-            );
-
-            return response()->json([
-                'success' => true,
-                'data' => $results,
-            ], 200);
+            $results = DB::select('EXEC sproc_PHP_RCTypeRef @mode = ?', ['Load']);
+            return response()->json(['success' => true, 'data' => $results], 200);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * Add or Update RC Type
+     * Add or Update RC Type (POST - already JSON)
      */
     public function upsert(Request $request)
     {
         try {
-            $request->validate([
-                'json_data' => 'required|json',
-            ]);
-
+            // React already sends json_data as a stringified JSON
             $params = $request->input('json_data');
 
-            // Use DB::select to capture the Sproc's output (errormsg, errorcount)
             $results = DB::select('EXEC sproc_PHP_RCTypeRef @mode = :mode, @params = :json_data', [
                 'mode' => 'Upsert',
                 'json_data' => $params,
             ]);
 
-            return response()->json([
-                'status' => 'success',
-                'data' => $results,
-            ], 200);
+            return response()->json(['status' => 'success', 'data' => $results], 200);
         } catch (\Exception $e) {
             Log::error('Upsert failed:', ['error' => $e->getMessage()]);
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to save: ' . $e->getMessage(),
-            ], 500);
+            return response()->json(['status' => 'error', 'message' => 'Failed to save: ' . $e->getMessage()], 500);
         }
     }
 
     /**
-     * Delete RC Type (with usage validation)
+     * Delete RC Type (POST - already JSON)
      */
     public function delete(Request $request)
     {
         try {
-            $request->validate([
-                'json_data' => 'required|json',
-            ]);
-
             $params = $request->input('json_data');
-
-            // IMPORTANT: Use DB::select instead of DB::statement 
-            // so we can catch the 'errormsg' returned by the Sproc
-            $results = DB::select('EXEC sproc_PHP_RCTypeRef @mode = ?, @params = ?', [
-                'Delete',
-                $params
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'data' => $results,
-            ], 200);
+            
+            $results = DB::select('EXEC sproc_PHP_RCTypeRef @mode = ?, @params = ?', ['Delete', $params]);
+            return response()->json(['success' => true, 'data' => $results], 200);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * Get a single RC Type by Code
+     * Get a single RC Type (GET - Convert to JSON)
      */
     public function get(Request $request)
     {
         try {
             $code = $request->query('rcTypeCode');
+            
+            // Format as JSON before sending to SPROC
+            $json_params = json_encode(['rcTypeCode' => $code]);
 
-            $results = DB::select(
-                'EXEC sproc_PHP_RCTypeRef @mode = ?, @params = ?',
-                ['Get', $code]
-            );
-
-            return response()->json([
-                'success' => true,
-                'data' => $results,
-            ], 200);
+            $results = DB::select('EXEC sproc_PHP_RCTypeRef @mode = ?, @params = ?', ['Get', $json_params]);
+            return response()->json(['success' => true, 'data' => $results], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * Check if a Code already exists
+     * Check Duplicate (POST - already JSON)
      */
     public function checkDuplicate(Request $request)
     {
         try {
-            // FIX: Pass the raw json_data string directly. 
-            // Do NOT use json_encode here.
             $params = $request->input('json_data');
-
-            $results = DB::select(
-                'EXEC sproc_PHP_RCTypeRef @mode = ?, @params = ?',
-                ['CheckDuplicate', $params]
-            );
-
-            return response()->json([
-                'success' => true,
-                'data' => $results,
-            ], 200);
+            
+            $results = DB::select('EXEC sproc_PHP_RCTypeRef @mode = ?, @params = ?', ['CheckDuplicate', $params]);
+            return response()->json(['success' => true, 'data' => $results], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * Check if the record is used in other tables (RC Master)
+     * Check In Used (POST - already JSON)
      */
     public function checkInUsed(Request $request)
     {
         try {
-            // FIX: Pass the raw json_data string directly.
             $params = $request->input('json_data');
-
-            $results = DB::select(
-                'EXEC sproc_PHP_RCTypeRef @mode = ?, @params = ?',
-                ['CheckInUsed', $params]
-            );
-
-            return response()->json([
-                'success' => true,
-                'data' => $results,
-            ], 200);
+            
+            $results = DB::select('EXEC sproc_PHP_RCTypeRef @mode = ?, @params = ?', ['CheckInUsed', $params]);
+            return response()->json(['success' => true, 'data' => $results], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * Lookup for Dropdowns
+     * Lookup for Dropdowns (GET - Convert to JSON)
      */
     public function lookup(Request $request)
     {
         try {
-            $params = $request->input('PARAMS', '');
+            $filter = $request->query('filter', '');
+            
+            // Format as JSON before sending to SPROC
+            $json_params = json_encode(['filter' => $filter]);
 
-            $results = DB::select(
-                'EXEC sproc_PHP_RCTypeRef @mode = ?, @params = ?',
-                ['Lookup', $params]
-            );
-
-            return response()->json([
-                'success' => true,
-                'data' => $results,
-            ], 200);
+            $results = DB::select('EXEC sproc_PHP_RCTypeRef @mode = ?, @params = ?', ['Lookup', $json_params]);
+            return response()->json(['success' => true, 'data' => $results], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }

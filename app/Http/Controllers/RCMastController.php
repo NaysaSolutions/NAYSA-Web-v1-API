@@ -162,14 +162,16 @@ public function upsert(Request $request)
 
 
 public function delete(Request $request) {
-
     try {
+        // 1. Uncomment the validation so $validated actually exists
+        $validated = $request->validate([
+            'json_data' => 'required|array'
+        ]);
 
-    //   $validated = $request->validate([ 'json_data' => 'required|array']);
-      $params = json_encode($validated['json_data']);
-      $params = json_encode(['json_data' => $validated['json_data']]);
+        // 2. Format the parameters correctly for your Stored Procedure
+        $params = json_encode(['json_data' => $validated['json_data']]);
       
-
+        // 3. Execute the procedure
         $results = DB::select(
             'EXEC sproc_PHP_RCMast @mode = ?, @params = ?',
             ['Delete', $params]
@@ -179,6 +181,7 @@ public function delete(Request $request) {
             'success' => true,
             'data' => $results,
         ], 200);
+        
     } catch (\Exception $e) {
         return response()->json([
             'success' => false,
@@ -186,7 +189,6 @@ public function delete(Request $request) {
         ], 500);
     }
 }
-
 
 public function checkInUsed(Request $request) {
 
