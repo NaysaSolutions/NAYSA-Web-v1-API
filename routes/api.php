@@ -286,6 +286,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsertFSConso', [FSConsolidationController::class, 'upsert']);
     Route::get('/lookupFSConso', [FSConsolidationController::class, 'lookup']);
     Route::get('/getFSConso', [FSConsolidationController::class, 'get']);
+    // Route::post('/lookupGL', [FSConsolidationController::class, 'lookupGL']);
     Route::post('/deleteFSConso', [FSConsolidationController::class, 'delete']);
     Route::post('/checkDuplicateFSConso', [FSConsolidationController::class, 'checkDuplicate']);
     Route::post('/checkInUsedFSConso', [FSConsolidationController::class, 'checkInUsed']);
@@ -347,8 +348,14 @@ Route::middleware('tenant')->group(function () {
     Route::post('/getCustomer', [CustMasterController::class, 'get']);
     Route::post('/addCustomerDetail', [CustMasterController::class, 'addDetail']);
 
-    Route::get('/sl', [SLMasterController::class, 'index']);
-    Route::post('/upsertSL', [SLMasterController::class, 'upsert']);
+    Route::get('/slType', [SLMasterController::class, 'slType']);
+    Route::get('/sLMast', [SLMasterController::class, 'sLMast']);
+    Route::get('/sLCoa', [SLMasterController::class, 'sLCoa']);
+    Route::post('/upsertSLMast', [SLMasterController::class, 'upsertSLMast']);
+    Route::post('/upsertSLType', [SLMasterController::class, 'upsertSLType']);
+    Route::post('/upsertSLTypeGLMatching', [SLMasterController::class, 'upsertSLTypeGLMatching']);
+    Route::post('/deleteSLMast', [SLMasterController::class, 'deleteSLMast']);
+    Route::post('/deleteSLType', [SLMasterController::class, 'deleteSLType']);
     Route::get('/lookupSL', [SLMasterController::class, 'lookup']);
     Route::get('/getSL', [SLMasterController::class, 'get']);
 
