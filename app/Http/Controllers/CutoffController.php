@@ -166,31 +166,43 @@ public function delete(Request $request){
 
 
 
-public function checkInUsed(Request $request) {
-
+public function checkInUsed(Request $request)
+{
+    try {
         $validated = $request->validate([
             'json_data' => 'required|array'
         ]);
 
         $params = json_encode(['json_data' => $validated['json_data']]);
 
-    try {
+        Log::info('CutOff checkInUsed payload', [
+            'payload' => $validated['json_data'],
+            'params' => $params,
+        ]);
+
         $results = DB::select(
             'EXEC sproc_PHP_CutoffRef @mode = ?, @params = ?',
-            ['CheckInUsed' ,$params] 
+            ['CheckInUsed', $params]
         );
+
+        Log::info('CutOff checkInUsed result', ['results' => $results]);
 
         return response()->json([
             'success' => true,
             'data' => $results,
         ], 200);
+
     } catch (\Exception $e) {
+        Log::error('CutOff checkInUsed failed', [
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+
         return response()->json([
             'success' => false,
             'message' => $e->getMessage(),
         ], 500);
     }
-
 }
 
 
