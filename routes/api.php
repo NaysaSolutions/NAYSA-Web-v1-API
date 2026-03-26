@@ -21,6 +21,7 @@ use App\Http\Controllers\DForexController;
 use App\Http\Controllers\BankMasterController;
 use App\Http\Controllers\COAMasterController;
 use App\Http\Controllers\COAClassController;
+use App\Http\Controllers\FSConsolidationController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\BillCodeController;
 use App\Http\Controllers\PayTermController;
@@ -358,6 +359,10 @@ Route::middleware('tenant')->group(function () {
     Route::post('/deleteSLType', [SLMasterController::class, 'deleteSLType']);
     Route::get('/lookupSL', [SLMasterController::class, 'lookup']);
     Route::get('/getSL', [SLMasterController::class, 'get']);
+    Route::post('/checkDuplicateSLMast', [SLMasterController::class, 'checkDuplicateSLMast']);
+    Route::post('/checkDuplicateSLType', [SLMasterController::class, 'checkDuplicateSLType']);
+    Route::post('/checkInUsedSLMast', [SLMasterController::class, 'checkInUsedSLMast']);
+    Route::post('/checkInUsedSLType', [SLMasterController::class, 'checkInUsedSLType']);
 
     Route::get('/MSMast', [MSMastController::class, 'index']);
     Route::post('/upsertMSMast', [MSMastController::class, 'upsert']);

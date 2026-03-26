@@ -259,4 +259,122 @@ public function deleteSLType(Request $request) {
             return $this->errorResponse($e, 'Failed to get SL record.');
         }
     }
+
+
+
+public function checkInUsedSLMast(Request $request) {
+
+        $validated = $request->validate([
+            'json_data' => 'required|array'
+        ]);
+
+        $params = json_encode(['json_data' => $validated['json_data']]);
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_SLMast @mode = ?, @params = ?',
+            ['CheckInUsedSLMast' ,$params] 
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+
+}
+
+public function checkInUsedSLType(Request $request) {
+
+        $validated = $request->validate([
+            'json_data' => 'required|array'
+        ]);
+
+        $params = json_encode(['json_data' => $validated['json_data']]);
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_SLMast @mode = ?, @params = ?',
+            ['CheckInUsedSLType' ,$params] 
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+
+}
+
+
+
+
+
+
+public function checkDuplicateSLMast(Request $request) {
+
+        $validated = $request->validate([
+            'json_data' => 'required|array'
+        ]);
+
+        $params = json_encode(['json_data' => $validated['json_data']]);
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_SLMast @mode = ?, @params = ?',
+            ['CheckDuplicateSLMast' ,$params] 
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+
+}
+
+
+
+public function checkDuplicateSLType(Request $request) {
+
+        $validated = $request->validate([
+            'json_data' => 'required|array'
+        ]);
+
+        $params = json_encode(['json_data' => $validated['json_data']]);
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_SLMast @mode = ?, @params = ?',
+            ['CheckDuplicateSLType' ,$params] 
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+
+}
+
 }
