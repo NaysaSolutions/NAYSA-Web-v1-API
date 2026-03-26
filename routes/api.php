@@ -255,7 +255,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/deleteCutOff', [CutoffController::class, 'delete']);
     Route::post('/checkInUsedCutOff', [CutoffController::class, 'checkInUsed']);
     Route::post('/checkDuplicateCutOff', [CutoffController::class, 'checkDuplicate']);
-    Route::get('/loadCutOff', [CutoffController::class, 'loadRcType']);
+    Route::get('/loadCutOff', [CutoffController::class, 'index']);
 
 
 
