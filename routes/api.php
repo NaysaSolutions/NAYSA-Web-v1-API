@@ -41,6 +41,7 @@ use App\Http\Controllers\SOAController;
 use App\Http\Controllers\ARCMController;
 use App\Http\Controllers\ARDMController;
 use App\Http\Controllers\CRController;
+use App\Http\Controllers\SalesRepController;
 
 use App\Http\Controllers\ARController;
 use App\Http\Controllers\ARBalanceController;
@@ -51,7 +52,6 @@ use App\Http\Controllers\AllBIRController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\AccessRightsController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\UserBioController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MailController;
 
@@ -88,9 +88,6 @@ Route::options('{any}', function () {
 Route::get('/companies', [AuthController::class, 'companies']);
 Route::post('/send-mail', [MailController::class, 'send']);
 
-
-
-
 Route::middleware('tenant')->group(function () {
 
     Route::post('/register', [AuthController::class, 'register']);
@@ -114,17 +111,12 @@ Route::middleware('tenant')->group(function () {
     Route::post('/users/checkduplicate', [UserController::class, 'checkDuplicate']);
     Route::post('/users/checkinused', [UserController::class, 'checkInUsed']);
 
-
-
-
-
-
     // Heart Strong
     Route::get('/getHSDoc', [HSDocController::class, 'get']);
     Route::get('/lookupHSDoc', [HSDocController::class, 'lookup']);
 
     Route::post('/getHSDropdown', [HSDropdownController::class, 'get']);
-    Route::post('/getHSDropdownAll', [HSDropdownController::class, 'getAll']);
+    Route::get('/getHSDropdownAll', [HSDropdownController::class, 'getAll']);
     Route::get('/getHSOption', [HSOptionController::class, 'get']);
     Route::get('/getHSColConfig', [HSColConfigController::class, 'get']);
 
@@ -163,6 +155,7 @@ Route::middleware('tenant')->group(function () {
 
 
     Route::post('/printForm', [PrintingController::class, 'printForm']);
+    Route::post('/printQuery', [PrintingController::class, 'printQuery']);
     Route::post('/printARReport', [PrintingController::class, 'printARReport']);
     Route::post('/printAPReport', [PrintingController::class, 'printAPReport']);
     Route::post('/printGLReport', [PrintingController::class, 'printGLReport']);
@@ -199,12 +192,14 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getARAging', [ARBalanceController::class, 'getARAging']);
     Route::get('/getARAdvances', [ARBalanceController::class, 'getARAdvances']);
     Route::get('/getARCWLCLInquiry', [ARBalanceController::class, 'getARCWLCLInquiry']);
+    Route::post('/updateARCWLCL', [ARBalanceController::class, 'updateARCWLCL']);
 
 
     Route::get('/getGLInquiry', [GLBalanceController::class, 'getGLInquiry']);
     Route::get('/getSLInquiry', [GLBalanceController::class, 'getSLInquiry']);
     Route::get('/getTBSummary', [GLBalanceController::class, 'getTBSummary']);
     Route::get('/getUnpostedperMonth', [GLBalanceController::class, 'getUnpostedperMonth']);
+    Route::get('/getYearEndProforma', [GLBalanceController::class, 'getYearEndProforma']);
     Route::get('/getBSIS_YTD', [GLBalanceController::class, 'getBSIS_YTD']);
 
 
@@ -264,7 +259,7 @@ Route::middleware('tenant')->group(function () {
 
 
 
-    Route::get('/ATC', [ATCController::class, 'index']);
+    Route::POST('/atc', [ATCController::class, 'index']);
     Route::post('/upsertATC', [ATCController::class, 'upsert']);
     Route::get('/lookupATC', [ATCController::class, 'lookup']);
     Route::post('/deleteATC', [ATCController::class, 'delete']);
@@ -273,11 +268,16 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getATC', [ATCController::class, 'get']);
 
 
+
+
     Route::get('/cutOff', [CutoffController::class, 'index']);
     Route::post('/upsertCutOff', [CutoffController::class, 'upsert']);
     Route::get('/lookupCutOff', [CutoffController::class, 'lookup']);
     Route::get('/getCutOff', [CutoffController::class, 'get']);
     Route::post('/deleteCutOff', [CutoffController::class, 'delete']);
+    Route::post('/checkInUsedCutOff', [CutoffController::class, 'checkInUsed']);
+    Route::post('/checkDuplicateCutOff', [CutoffController::class, 'checkDuplicate']);
+    Route::get('/loadCutOff', [CutoffController::class, 'index']);
 
     Route::get('/rCType', [RCTypeController::class, 'index']);
     Route::post('/upsertRCType', [RCTypeController::class, 'upsert']);
@@ -289,9 +289,10 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsertDForex', [DForexController::class, 'upsert']);
     Route::get('/lookupDForex', [DForexController::class, 'lookup']);
     Route::get('/getDForex', [DForexController::class, 'get']);
-    Route::post('/getDForexByDate', [DForexController::class, 'getByDate']);
     Route::post('/checkDuplicateDForex', [DForexController::class, 'checkDuplicate']);
     Route::post('/deleteDForex', [DForexController::class, 'delete']);
+    Route::post('/getDForexByDate', [DForexController::class, 'getByDate']);
+    
 
 
     Route::get('/salesRep', [SalesRepController::class, 'index']);
@@ -301,6 +302,8 @@ Route::middleware('tenant')->group(function () {
     Route::post('/checkDuplicatesalesRep', [SalesRepController::class, 'checkDuplicate']);
     Route::post('/checkInUsedsalesRep', [SalesRepController::class, 'checkInUsed']);
     Route::get('/getsalesRep', [SalesRepController::class, 'get']);
+    Route::post('/checkDuplicatesalesRep', [SalesRepController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedsalesRep', [SalesRepController::class, 'checkInUsed']);
 
 
 
@@ -354,7 +357,7 @@ Route::middleware('tenant')->group(function () {
 
     Route::get('/billCode', [BillCodeController::class, 'index']);
     Route::post('/upsertbillCode', [BillCodeController::class, 'upsert']);
-    Route::get('/lookupsalesRep', [BillCodeController::class, 'lookup']);
+    Route::get('/lookupBillCode', [BillCodeController::class, 'lookup']);
     Route::post('/deletebillCode', [BillCodeController::class, 'delete']);
     Route::post('/checkDuplicatebillCode', [BillCodeController::class, 'checkDuplicate']);
     Route::post('/checkInUsedbillCode', [BillCodeController::class, 'checkInUsed']);
@@ -410,6 +413,10 @@ Route::middleware('tenant')->group(function () {
     Route::post('/deleteSLType', [SLMasterController::class, 'deleteSLType']);
     Route::get('/lookupSL', [SLMasterController::class, 'lookup']);
     Route::get('/getSL', [SLMasterController::class, 'get']);
+    Route::post('/checkDuplicateSLMast', [SLMasterController::class, 'checkDuplicateSLMast']);
+    Route::post('/checkDuplicateSLType', [SLMasterController::class, 'checkDuplicateSLType']);
+    Route::post('/checkInUsedSLMast', [SLMasterController::class, 'checkInUsedSLMast']);
+    Route::post('/checkInUsedSLType', [SLMasterController::class, 'checkInUsedSLType']);
 
     Route::get('/MSMast', [MSMastController::class, 'index']);
     Route::post('/upsertMSMast', [MSMastController::class, 'upsert']);
@@ -533,6 +540,7 @@ Route::middleware('tenant')->group(function () {
     });
 
     Route::post('/msLookup', [MSISController::class, 'msLookup']);
+
     Route::get('/aPCM', [APCMController::class, 'index']);
     Route::post('/upsertAPCM', [APCMController::class, 'upsert']);
     Route::post('/generateGLAPCM', [APCMController::class, 'generateGL']);
