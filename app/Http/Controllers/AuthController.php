@@ -11,9 +11,11 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Throwable;
 use hisorange\BrowserDetect\Parser as Browser;
 use App\Support\TenantCatalog;
+use App\Mail\AdminApprovalMail;
 
 
 class AuthController extends Controller
@@ -126,6 +128,79 @@ class AuthController extends Controller
     //     }
     // }
 
+    // ORIGINAL REGISTER
+
+    // public function register(Request $req)
+    // {
+    //     $v = Validator::make($req->all(), [
+    //         'USER_CODE' => ['required', 'string', 'max:10'],
+    //         'USER_NAME' => ['required', 'string', 'max:100'],
+    //         'EMAIL_ADD' => ['required', 'email', 'max:255'],
+    //         // ❌ NO PASSWORD
+    //     ]);
+
+    //     if ($v->fails()) {
+    //         return response()->json([
+    //             'status'  => 'error',
+    //             'message' => $v->errors()->first(),
+    //         ], 422);
+    //     }
+
+    //     $userId   = trim($req->input('USER_CODE'));
+    //     $username = trim($req->input('USER_NAME'));
+    //     $email    = trim($req->input('EMAIL_ADD'));
+
+    //     try {
+    //         // --------------------------------------------------
+    //         // Uniqueness checks (per tenant DB)
+    //         // --------------------------------------------------
+    //         if (DB::table('users')->where('user_code', $userId)->exists()) {
+    //             return response()->json([
+    //                 'status'  => 'error',
+    //                 'message' => 'User ID already exists.',
+    //             ], 409);
+    //         }
+
+    //         if (DB::table('users')->where('email_add', $email)->exists()) {
+    //             return response()->json([
+    //                 'status'  => 'error',
+    //                 'message' => 'Email already registered.',
+    //             ], 409);
+    //         }
+
+    //         // --------------------------------------------------
+    //         // Insert PENDING user (NO PASSWORD)
+    //         // --------------------------------------------------
+    //         DB::table('users')->insert([
+    //             'user_code'    => $userId,
+    //             'user_name'    => $username,
+    //             'email_add'    => $email,
+    //             'user_type'    => 'R',     // Regular user
+    //             'active'       => 'P',     // ⬅ PENDING
+    //             'view_costamt' => 'N',
+    //             'edit_uprice'  => 'N',
+    //             'password'     => null,    // ⬅ IMPORTANT
+    //             'tpword_date'  => null,
+    //             'cpword_date'  => null,
+    //         ]);
+
+    //         return response()->json([
+    //             'status'  => 'success',
+    //             'message' => 'Registration submitted. Awaiting admin approval.',
+    //             'data'    => [
+    //                 'USER_CODE' => $userId,
+    //                 'USER_NAME' => $username,
+    //                 'EMAIL_ADD' => $email,
+    //             ],
+    //         ], 201);
+    //     } catch (Throwable $e) {
+    //         report($e);
+    //         return response()->json([
+    //             'status'  => 'error',
+    //             'message' => 'Registration failed. ' . $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
 
     public function register(Request $req)
     {
@@ -146,6 +221,7 @@ class AuthController extends Controller
         $userId   = trim($req->input('USER_CODE'));
         $username = trim($req->input('USER_NAME'));
         $email    = trim($req->input('EMAIL_ADD'));
+        $company  = $req->header('X-Company-DB'); // Fetch the company name for the email
 
         try {
             // --------------------------------------------------
@@ -181,15 +257,48 @@ class AuthController extends Controller
                 'cpword_date'  => null,
             ]);
 
+            // ==================================================
+            // NEW: SEND EMAIL NOTIFICATION TO SECURITY ADMINS
+            // ==================================================
+            $securityAdmins = DB::table('users')
+                ->where('user_type', 'X')
+                ->where('active', 'Y')
+                ->get();
+
+            $emailsSent = 0;
+            foreach ($securityAdmins as $admin) {
+                // Force all DB columns to lowercase to prevent SQL Server case sensitivity issues
+                $adminArray = array_change_key_case((array) $admin, CASE_LOWER);
+                
+                $adminEmail = $adminArray['email_add'] ?? null;
+                $adminName  = $adminArray['user_name'] ?? 'Security Administrator';
+
+                if (!empty($adminEmail)) {
+                    Mail::to($adminEmail)->send(
+                        new AdminApprovalMail(
+                            $adminName,
+                            $userId,
+                            $username,
+                            $email,
+                            $company
+                        )
+                    );
+                    $emailsSent++;
+                }
+            }
+            // ==================================================
+
             return response()->json([
                 'status'  => 'success',
                 'message' => 'Registration submitted. Awaiting admin approval.',
+                'debug_emails_sent' => $emailsSent, // Optional: helpful to see if the loop actually found admins
                 'data'    => [
                     'USER_CODE' => $userId,
                     'USER_NAME' => $username,
                     'EMAIL_ADD' => $email,
                 ],
             ], 201);
+
         } catch (Throwable $e) {
             report($e);
             return response()->json([

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Routing\Controller;
 
 class VendMasterController extends Controller
 {
@@ -93,11 +94,11 @@ class VendMasterController extends Controller
                 'data' => $results,
             ], 200);
         } catch (\Exception $e) {
-            Log::error('Payee save failed:', ['error' => $e->getMessage()]);
+            Log::error('Vendor save failed:', ['error' => $e->getMessage()]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to save payee: ' . $e->getMessage(),
+                'message' => 'Failed to save vendor: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -105,6 +106,10 @@ class VendMasterController extends Controller
     public function delete(Request $request)
     {
         try {
+            $request->validate([
+                'VEND_CODE' => 'required|string',
+            ]);
+
             $vendCode = $request->input('VEND_CODE');
             $userCode = $request->input('USER_CODE', '');
 
@@ -125,11 +130,11 @@ class VendMasterController extends Controller
                 'data' => $results,
             ], 200);
         } catch (\Exception $e) {
-            Log::error('Payee delete failed:', ['error' => $e->getMessage()]);
+            Log::error('Vendor delete failed:', ['error' => $e->getMessage()]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete payee: ' . $e->getMessage(),
+                'message' => 'Failed to delete vendor: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -160,6 +165,28 @@ class VendMasterController extends Controller
             $results = DB::select(
                 'EXEC sproc_PHP_VendMast @mode = ?, @params = ?',
                 ['CheckInUsed', $request->input('json_data')]
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $results,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function addDetail(Request $request)
+    {
+        try {
+            $jsonString = json_encode($request->all());
+
+            $results = DB::select(
+                'EXEC sproc_PHP_VendMast @mode = ?, @params = ?',
+                ['Add_Detail', $jsonString]
             );
 
             return response()->json([

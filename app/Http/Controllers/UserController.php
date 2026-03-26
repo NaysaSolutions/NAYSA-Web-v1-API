@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\TempPasswordMail;
+use App\Mail\AdminApprovalMail;
 use Throwable;
 
 class UserController extends Controller
@@ -172,8 +173,7 @@ class UserController extends Controller
         }
     }
 
-
-
+    
     /* ============================================================
      * RESET PASSWORD (EMAIL LINK ONLY)
      * ============================================================
@@ -300,33 +300,196 @@ class UserController extends Controller
             return response()->json(['success' => false, 'message' => 'Invalid JSON body.'], 422);
         }
 
-        DB::statement('EXEC dbo.sproc_PHP_Users @mode = ?, @params = ?', ['Upsert', $json]);
-
-        return response()->json(['success' => true, 'message' => 'User saved']);
-    }
-
-
-
-    
-
-public function lookupAll(Request $request)
-{
-    try {
-        $results = DB::select(
-            'EXEC sproc_PHP_Users @mode = ?',
-            ['LookupAll']
+        $rows = DB::select(
+            'EXEC dbo.sproc_PHP_Users @mode = ?, @params = ?',
+            ['Upsert', $json]
         );
+
+        $result     = $rows[0] ?? null;
+        $errorcount = (int) ($result->errorcount ?? 0);
+        $errormsg   = $result->errormsg ?? '';
+
+        if ($errorcount > 0) {
+            // Sproc returned a validation error (e.g. missing required fields)
+            return response()->json([
+                'success'    => false,
+                'message'    => $errormsg,
+                'errorcount' => $errorcount,
+            ], 422);
+        }
 
         return response()->json([
             'success' => true,
-            'data' => $results, // no more `json_encode`
-        ], 200);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage(),
-        ], 500);
+            'message' => 'User saved successfully.',
+        ]);
     }
-}
 
+
+
+
+
+    public function lookupAll(Request $request)
+    {
+        try {
+            $results = DB::select(
+                'EXEC sproc_PHP_Users @mode = ?',
+                ['LookupAll']
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $results, // no more `json_encode`
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /* ============================================================
+     * DELETE / REJECT USER
+     * ============================================================
+     */
+    public function delete(Request $request)
+    {
+        $request->validate([
+            'userCode' => 'required|string',
+        ]);
+
+        $userCode = trim($request->input('userCode'));
+        $company  = $request->header('X-Company-DB');
+
+        try {
+            // 1. FETCH USER BEFORE DELETION TO GET THEIR EMAIL
+            $userData = DB::select("SELECT * FROM users WHERE user_code = ?", [$userCode]);
+            
+            $isPending = false;
+            $userEmail = null;
+            $userName  = 'User';
+
+            if (!empty($userData)) {
+                // Force keys to lowercase for SQL Server case sensitivity
+                $userArray = array_change_key_case((array) $userData[0], CASE_LOWER);
+                
+                if (($userArray['active'] ?? '') === 'P') {
+                    $isPending = true;
+                    $userEmail = $userArray['email_add'] ?? null;
+                    $userName  = $userArray['user_name'] ?? 'User';
+                }
+            }
+
+            // 2. EXECUTE THE DELETION STORED PROCEDURE
+            $params = json_encode([
+                'json_data' => [
+                    'userCode' => $userCode,
+                ]
+            ], JSON_UNESCAPED_UNICODE);
+
+            $rows = DB::select(
+                'EXEC dbo.sproc_PHP_Users @mode = ?, @params = ?',
+                ['Delete', $params]
+            );
+
+            $rawResult = $rows[0]->result ?? null;
+            $parsedResult = $rawResult ? json_decode($rawResult, true) : [];
+
+            // 3. IF THE DELETED USER WAS PENDING, SEND THE REJECTION EMAIL USING THE REUSED BLADE
+            if ($isPending && !empty($userEmail)) {
+                try {
+                    // Note the final parameter `true` which triggers the rejection view!
+                    Mail::to($userEmail)->send(
+                        new \App\Mail\AdminApprovalMail($userName, null, null, null, $company, true)
+                    );
+                } catch (\Throwable $mailError) {
+                    Log::error("Failed to send rejection email to {$userEmail}: " . $mailError->getMessage());
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $parsedResult['message'] ?? 'User delete processed successfully.',
+                'deleteMode' => $parsedResult['deleteMode'] ?? null,
+                'data' => $rows,
+            ], 200);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+    /* ============================================================
+     * CHECK DUPLICATE
+     * ============================================================
+     */
+    public function checkDuplicate(Request $request)
+    {
+        // Safely extract userCode whether React sends it directly or inside json_data
+        $userCode = $request->input('json_data.userCode') ?? $request->input('userCode');
+
+        if (!$userCode) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'User ID is required.'
+            ], 400);
+        }
+
+        try {
+            // The SQL procedure automatically wraps this string into JSON
+            $results = DB::select(
+                'EXEC sproc_PHP_Users @mode = ?, @params = ?',
+                ['CheckDuplicate', trim($userCode)]
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $results
+            ], 200);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /* ============================================================
+     * CHECK IN USED (To see if user has transaction history)
+     * ============================================================
+     */
+    public function checkInUsed(Request $request)
+    {
+        // Safely extract userCode whether React sends it directly or inside json_data
+        $userCode = $request->input('json_data.userCode') ?? $request->input('userCode');
+
+        if (!$userCode) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'User ID is required.'
+            ], 400);
+        }
+
+        try {
+            // The SQL procedure automatically wraps this string into JSON for 'CheckInUsed'
+            $results = DB::select(
+                'EXEC sproc_PHP_Users @mode = ?, @params = ?',
+                ['CheckInUsed', trim($userCode)]
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $results
+            ], 200);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
