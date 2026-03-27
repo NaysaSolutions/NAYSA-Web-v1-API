@@ -192,6 +192,7 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getARAging', [ARBalanceController::class, 'getARAging']);
     Route::get('/getARAdvances', [ARBalanceController::class, 'getARAdvances']);
     Route::get('/getARCWLCLInquiry', [ARBalanceController::class, 'getARCWLCLInquiry']);
+    Route::post('/updateARCWLCL', [ARBalanceController::class, 'updateARCWLCL']);
 
 
     Route::get('/getGLInquiry', [GLBalanceController::class, 'getGLInquiry']);
@@ -431,6 +432,7 @@ Route::middleware('tenant')->group(function () {
 
 
     // Transactions
+    
     Route::get('/jV', [JournalVoucherController::class, 'index']);
     Route::post('/upsertJV', [JournalVoucherController::class, 'upsert']);
     Route::post('/generateGLJV', [JournalVoucherController::class, 'generateGL']);
@@ -644,7 +646,7 @@ Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
     Route::post('/cancelPCV', [PCVController::class, 'cancel']);
     Route::post('/cancelCV',  [CVController::class, 'cancel']);
     Route::post('/cancelAPV', [APVoucherController::class, 'cancel']);
-    Route::post('/cancelJV',  [JournalVoucherController::class, 'cancel']);
+    Route::post('/cancelJV', [JournalVoucherController::class, 'cancel']);
     Route::post('/cancelARCM', [ARCMController::class, 'cancel']);
     Route::post('/cancelCR',  [CRController::class, 'cancel']);
     Route::post('/cancelAR',  [ARController::class, 'cancel']);
