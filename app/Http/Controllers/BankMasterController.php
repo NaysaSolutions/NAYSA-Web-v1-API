@@ -237,4 +237,43 @@ public function checkInUsed(Request $request) {
     }
 
 }
+
+
+
+    public function validateDuplicateCheck(Request $request)
+    {
+        // 1. Validate the input
+        $validated = $request->validate([
+            'json_data' => 'required|array'
+        ]);
+
+        $data = $validated['json_data'];
+
+        // 2. Extract values for the sproc
+        // We map frontend keys to what your SQL variables likely expect
+        $params = json_encode([
+            'bankCode'    => $data['bankCode'] ?? null,
+            'checkNo' => $data['checkNo'] ?? null,
+            'docId'   => $data['docId'] ?? null,
+        ]);
+
+        try {
+            $results = DB::select(
+                'EXEC sproc_PHP_BankMast @mode = ?, @params = ?',
+                ['ValidateDuplicateCheck', $params]
+            );
+
+            return response()->json([
+                'success' => true,
+                'data'    => $results, // This returns [{ "result": 1 }]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
 }

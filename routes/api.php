@@ -315,6 +315,8 @@ Route::middleware('tenant')->group(function () {
     Route::post('/checkDuplicateBank', [BankMasterController::class, 'checkDuplicate']);
     Route::post('/deleteBank', [BankMasterController::class, 'delete']);
     Route::post('/checkInUsedBank', [BankMasterController::class, 'checkInUsed']);
+    
+    Route::get('/validateDuplicateCheck', [BankMasterController::class, 'validateDuplicateCheck']);
 
     Route::get('/cOA', [COAMasterController::class, 'index']);
     Route::post('/upsertCOA', [COAMasterController::class, 'upsert']);
