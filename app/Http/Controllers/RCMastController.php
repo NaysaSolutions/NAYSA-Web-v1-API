@@ -37,17 +37,16 @@ public function index(Request $request) {
 
 
 
-public function lookup(Request $request) {
+// RCMastController.php
 
-  
-    $paramsString = $request->input('PARAMS');
-    $params = json_decode($paramsString, true);
-   
+public function lookup(Request $request) {
+    // Get the raw string (e.g., "ActiveAll")
+    $params = $request->input('PARAMS'); 
 
     try {
         $results = DB::select(
             'EXEC sproc_PHP_RCMast @mode = ?, @params = ?',
-            ['Lookup' ,$params['search']] 
+            ['Lookup', $params] // Pass the string directly
         );
 
         return response()->json([
