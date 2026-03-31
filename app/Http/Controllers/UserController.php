@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 use App\Mail\TempPasswordMail;
 use App\Mail\AdminApprovalMail;
 use Throwable;
@@ -492,4 +493,356 @@ class UserController extends Controller
             ], 500);
         }
     }
+
+
+
+//     // User Profile Image
+//  public function uploadProfileImage(Request $request)
+// {
+//     $validator = Validator::make($request->all(), [
+//         'USER_CODE' => 'required|string',
+//         'PROFILE_IMAGE' => 'required|file|mimes:jpg,jpeg,png,webp|max:2048',
+//     ]);
+
+//     if ($validator->fails()) {
+//         return response()->json([
+//             'message' => 'Validation failed.',
+//             'errors' => $validator->errors(),
+//         ], 422);
+//     }
+
+//     try {
+//         $file = $request->file('PROFILE_IMAGE');
+
+//         if (!$file || !$file->isValid()) {
+//             return response()->json([
+//                 'message' => 'Invalid uploaded file.',
+//             ], 422);
+//         }
+
+//         $binary = file_get_contents($file->getRealPath());
+//         $hex = bin2hex($binary); // ✅ convert to HEX
+//         $mime = $file->getMimeType();
+
+//         \Log::info('UPLOAD PROFILE IMAGE START', [
+//             'userCode' => $request->USER_CODE,
+//             'mime' => $mime,
+//             'size' => strlen($binary),
+//         ]);
+
+//         DB::connection('tenant')->update(
+//             "UPDATE USERS
+//              SET PROFILE_IMG = CONVERT(VARBINARY(MAX), ?, 2),
+//                  PROFILE_IMG_MIME = ?
+//              WHERE USER_CODE = ?",
+//             [$hex, $mime, $request->USER_CODE]
+//         );
+
+//         \Log::info('UPLOAD PROFILE IMAGE SUCCESS', [
+//             'userCode' => $request->USER_CODE,
+//         ]);
+
+//         return response()->json([
+//             'message' => 'Profile image uploaded successfully.',
+//         ]);
+//     } catch (\Throwable $e) {
+//         \Log::error('UPLOAD PROFILE IMAGE ERROR', [
+//             'userCode' => $request->USER_CODE,
+//             'message' => $e->getMessage(),
+//         ]);
+
+//         return response()->json([
+//             'message' => 'Failed to upload profile image.',
+//         ], 500);
+//     }
+// }
+
+
+
+
+// public function getProfileImage($userCode)
+// {
+//     try {
+//         $row = DB::connection('tenant')->selectOne("
+//             SELECT PROFILE_IMG, PROFILE_IMG_MIME
+//             FROM USERS
+//             WHERE USER_CODE = ?
+//         ", [$userCode]);
+
+//         if (!$row || !$row->PROFILE_IMG) {
+//             return response()->json([
+//                 'message' => 'No image found.'
+//             ], 404);
+//         }
+
+//         $image = $row->PROFILE_IMG;
+
+//         if (is_resource($image)) {
+//             $image = stream_get_contents($image);
+//         }
+
+//         // If SQL Server returns 0xHEX...
+//         if (is_string($image) && strncmp($image, '0x', 2) === 0) {
+//             $decoded = hex2bin(substr($image, 2));
+//             if ($decoded !== false) {
+//                 $image = $decoded;
+//             }
+//         }
+
+//         // If SQL Server returns plain HEX without 0x
+//         if (
+//             is_string($image) &&
+//             preg_match('/^[0-9A-Fa-f]+$/', $image) &&
+//             strlen($image) % 2 === 0
+//         ) {
+//             $decoded = hex2bin($image);
+//             if ($decoded !== false) {
+//                 $image = $decoded;
+//             }
+//         }
+
+//         if ($image === false || $image === null || $image === '') {
+//             return response()->json([
+//                 'message' => 'Invalid image data.'
+//             ], 500);
+//         }
+
+//         \Log::info('PROFILE IMAGE DEBUG', [
+//             'userCode' => $userCode,
+//             'raw_type' => gettype($row->PROFILE_IMG),
+//             'mime' => $row->PROFILE_IMG_MIME,
+//             'final_len' => is_string($image) ? strlen($image) : null,
+//             'final_first_8_hex' => is_string($image)
+//                 ? strtoupper(bin2hex(substr($image, 0, 8)))
+//                 : null,
+//         ]);
+
+//         while (ob_get_level()) {
+//             ob_end_clean();
+//         }
+
+//         return response()->stream(function () use ($image) {
+//             echo $image;
+//         }, 200, [
+//             'Content-Type' => $row->PROFILE_IMG_MIME ?: 'image/jpeg',
+//             'Content-Length' => strlen($image),
+//             'Content-Disposition' => 'inline; filename="profile.jpg"',
+//             'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+//             'Pragma' => 'no-cache',
+//         ]);
+//     } catch (\Throwable $e) {
+//         \Log::error('PROFILE IMAGE ERROR', [
+//             'userCode' => $userCode,
+//             'error' => $e->getMessage(),
+//         ]);
+
+//         return response()->json([
+//             'message' => 'Failed to fetch profile image.'
+//         ], 500);
+//     }
+// }
+// public function deleteProfileImage($userCode)
+// {
+//     try {
+//         $updated = DB::connection('tenant')->update(
+//             "UPDATE USERS
+//              SET PROFILE_IMG = NULL,
+//                  PROFILE_IMG_MIME = NULL
+//              WHERE USER_CODE = ?",
+//             [$userCode]
+//         );
+
+//         if ($updated === 0) {
+//             $exists = DB::connection('tenant')
+//                 ->table('USERS')
+//                 ->where('USER_CODE', $userCode)
+//                 ->exists();
+
+//             if (!$exists) {
+//                 return response()->json([
+//                     'message' => 'User not found.',
+//                 ], 404);
+//             }
+//         }
+
+//         \Log::info('DELETE PROFILE IMAGE SUCCESS', [
+//             'userCode' => $userCode,
+//         ]);
+
+//         return response()->json([
+//             'message' => 'Profile image deleted successfully.',
+//         ]);
+//     } catch (\Throwable $e) {
+//         \Log::error('DELETE PROFILE IMAGE ERROR', [
+//             'userCode' => $userCode,
+//             'message' => $e->getMessage(),
+//         ]);
+
+//         return response()->json([
+//             'message' => 'Failed to delete profile image.',
+//         ], 500);
+//     }
+// }
+
+// User Profile Image
+public function uploadProfileImage(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'USER_CODE' => 'required|string',
+        'PROFILE_IMAGE' => 'required|file|mimes:jpg,jpeg,png,webp|max:2048',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'message' => 'Validation failed.',
+            'errors' => $validator->errors(),
+        ], 422);
+    }
+
+    try {
+        $file = $request->file('PROFILE_IMAGE');
+
+        if (!$file || !$file->isValid()) {
+            return response()->json([
+                'message' => 'Invalid uploaded file.',
+            ], 422);
+        }
+
+        $binary = file_get_contents($file->getRealPath());
+        $hex = strtoupper(bin2hex($binary));
+        $mime = $file->getMimeType();
+
+        DB::connection('tenant')->update(
+            "UPDATE USERS
+             SET PROFILE_IMG = CONVERT(VARBINARY(MAX), ?, 2),
+                 PROFILE_IMG_MIME = ?
+             WHERE USER_CODE = ?",
+            [$hex, $mime, $request->USER_CODE]
+        );
+
+        return response()->json([
+            'message' => 'Profile image uploaded successfully.',
+        ]);
+    } catch (\Throwable $e) {
+        \Log::error('UPLOAD PROFILE IMAGE ERROR', [
+            'userCode' => $request->USER_CODE,
+            'message' => $e->getMessage(),
+        ]);
+
+        return response()->json([
+            'message' => 'Failed to upload profile image.',
+        ], 500);
+    }
+}
+
+public function getProfileImage($userCode)
+{
+    try {
+        $row = DB::connection('tenant')->selectOne(
+            "SELECT PROFILE_IMG, PROFILE_IMG_MIME
+             FROM USERS
+             WHERE USER_CODE = ?",
+            [$userCode]
+        );
+
+        if (!$row || !$row->PROFILE_IMG) {
+            return response()->json([
+                'message' => 'No image found.',
+            ], 404);
+        }
+
+        $image = $row->PROFILE_IMG;
+
+        if (is_resource($image)) {
+            $image = stream_get_contents($image);
+        }
+
+        if (is_string($image) && strncmp($image, '0x', 2) === 0) {
+            $decoded = hex2bin(substr($image, 2));
+            if ($decoded !== false) {
+                $image = $decoded;
+            }
+        }
+
+        if (
+            is_string($image) &&
+            preg_match('/^[0-9A-Fa-f]+$/', $image) &&
+            strlen($image) % 2 === 0
+        ) {
+            $decoded = hex2bin($image);
+            if ($decoded !== false) {
+                $image = $decoded;
+            }
+        }
+
+        if ($image === false || $image === null || $image === '') {
+            return response()->json([
+                'message' => 'Invalid image data.',
+            ], 500);
+        }
+
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        return response()->stream(function () use ($image) {
+            echo $image;
+        }, 200, [
+            'Content-Type' => $row->PROFILE_IMG_MIME ?: 'image/jpeg',
+            'Content-Length' => strlen($image),
+            'Content-Disposition' => 'inline; filename="profile.jpg"',
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+        ]);
+    } catch (\Throwable $e) {
+        \Log::error('PROFILE IMAGE ERROR', [
+            'userCode' => $userCode,
+            'message' => $e->getMessage(),
+        ]);
+
+        return response()->json([
+            'message' => 'Failed to fetch profile image.',
+        ], 500);
+    }
+}
+
+public function deleteProfileImage($userCode)
+{
+    try {
+        $updated = DB::connection('tenant')->update(
+            "UPDATE USERS
+             SET PROFILE_IMG = NULL,
+                 PROFILE_IMG_MIME = NULL
+             WHERE USER_CODE = ?",
+            [$userCode]
+        );
+
+        if ($updated === 0) {
+            $exists = DB::connection('tenant')
+                ->table('USERS')
+                ->where('USER_CODE', $userCode)
+                ->exists();
+
+            if (!$exists) {
+                return response()->json([
+                    'message' => 'User not found.',
+                ], 404);
+            }
+        }
+
+        return response()->json([
+            'message' => 'Profile image deleted successfully.',
+        ]);
+    } catch (\Throwable $e) {
+        \Log::error('DELETE PROFILE IMAGE ERROR', [
+            'userCode' => $userCode,
+            'message' => $e->getMessage(),
+        ]);
+
+        return response()->json([
+            'message' => 'Failed to delete profile image.',
+        ], 500);
+    }
+}
+
 }

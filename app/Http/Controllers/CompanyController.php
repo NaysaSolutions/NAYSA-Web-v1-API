@@ -9,11 +9,10 @@ use Illuminate\Support\Facades\Log;
 class CompanyController extends Controller
 {
    
+
 public function get(Request $request) {
 
   
-   
-
     try {
         $results = DB::select(
             'EXEC sproc_PHP_Company @mode = ?',
@@ -32,6 +31,32 @@ public function get(Request $request) {
     }
 }
 
+
+
+
+
+
+
+public function getGlobalTables(Request $request) {
+
+  
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_Company @mode = ?',
+            ['getGlobalTables'] 
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+}
 
 
 

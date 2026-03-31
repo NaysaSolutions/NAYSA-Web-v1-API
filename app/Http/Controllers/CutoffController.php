@@ -33,6 +33,7 @@ public function index(Request $request) {
 }
 
 
+   
 
 
 
@@ -103,30 +104,34 @@ public function upsert(Request $request)
 {
     try {
         $request->validate([
-            'json_data' => 'required',
+            'json_data' => 'required|json',
         ]);
 
-        $params = $request->input('json_data');
+        $params = $request->get('json_data');
 
-        if (is_array($params)) {
-            $params = json_encode(['json_data' => $params]);
+      
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid JSON data provided.',
+            ], 400);
         }
 
-        $results = DB::select(
-            'EXEC sproc_PHP_CutoffRef @params = :json_data, @mode = :mode',
-            [
-                'json_data' => $params,
-                'mode' => 'Upsert',
-            ]
-        );
+
+        DB::statement('EXEC sproc_PHP_CutoffRef @params = :json_data, @mode = :mode', [
+            'json_data' => $params,
+            'mode' => 'upsert'
+        ]);
+
 
         return response()->json([
             'status' => 'success',
-            'data' => $results,
+            'message' => 'Transaction saved successfully.',
         ], 200);
-
     } catch (\Exception $e) {
         Log::error('Transaction save failed:', ['error' => $e->getMessage()]);
+
         return response()->json([
             'status' => 'error',
             'message' => 'Failed to save transaction: ' . $e->getMessage(),
@@ -134,98 +139,37 @@ public function upsert(Request $request)
     }
 }
 
+public function delete(Request $request)
+{
+    // Expect the same contract as upsert: a json_data string
+    $request->validate([
+        'json_data' => 'required|json',
+    ]);
 
-
-public function delete(Request $request){
+    $params = $request->get('json_data'); // this is already a JSON string
 
     try {
-
-      $validated = $request->validate([
-            'json_data' => 'required|array'
-        ]);
-
-        $params = json_encode(['json_data' => $validated['json_data']]);
-      
-
-        $results = DB::select(
-            'EXEC sproc_PHP_CutoffRef @mode = ?, @params = ?',
-            ['Delete', $params]
+        DB::statement(
+            'EXEC sproc_PHP_CutoffRef @params = :json_data, @mode = :mode',
+            [
+                'json_data' => $params,
+                'mode'      => 'Delete', // fixed mode for delete
+            ]
         );
 
         return response()->json([
             'success' => true,
-            'data' => $results,
+            'status'  => 'success',
+            'message' => 'Cutoff period deleted successfully.',
         ], 200);
-    } catch (\Exception $e) {
+    } catch (\Throwable $e) {
         return response()->json([
             'success' => false,
-            'message' => $e->getMessage(),
+            'status'  => 'error',
+            'message' => 'Failed to delete cutoff period: ' . $e->getMessage(),
         ], 500);
     }
 }
-
-
-
-public function checkInUsed(Request $request) {
-
-        $validated = $request->validate([
-            'json_data' => 'required|array'
-        ]);
-
-        $params = json_encode(['json_data' => $validated['json_data']]);
-
-    try {
-        $results = DB::select(
-            'EXEC sproc_PHP_CutoffRef @mode = ?, @params = ?',
-            ['CheckInUsed' ,$params] 
-        );
-
-        return response()->json([
-            'success' => true,
-            'data' => $results,
-        ], 200);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage(),
-        ], 500);
-    }
-
-}
-
-
-public function checkDuplicate(Request $request) {
-
-        $validated = $request->validate([
-            'json_data' => 'required|array'
-        ]);
-
-        $params = json_encode(['json_data' => $validated['json_data']]);
-
-    try {
-        $results = DB::select(
-            'EXEC sproc_PHP_CutoffRef @mode = ?, @params = ?',
-            ['CheckDuplicate' ,$params] 
-        );
-
-        return response()->json([
-            'success' => true,
-            'data' => $results,
-        ], 200);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage(),
-        ], 500);
-    }
-
-}
-
-
-
-
-
-
 
 
 }

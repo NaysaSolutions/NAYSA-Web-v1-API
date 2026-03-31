@@ -37,7 +37,6 @@ public function index(Request $request) {
 
 
 
-// RCMastController.php
 
 public function lookup(Request $request) {
     // Get the raw string (e.g., "ActiveAll")

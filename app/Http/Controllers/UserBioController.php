@@ -172,9 +172,12 @@ public function loginVerifyPasswordless(Request $request)
     try {
         $request->validate([
             'credential.id' => 'required|string',
+            'credential.rawId' => 'nullable|string',
+            'credential.type' => 'nullable|string',
             'credential.response.clientDataJSON' => 'required|string',
             'credential.response.authenticatorData' => 'required|string',
             'credential.response.signature' => 'required|string',
+            'credential.response.userHandle' => 'nullable|string',
         ]);
 
         $challengeB64 = Session::get('user_bio.passwordless.challenge');
@@ -189,7 +192,8 @@ public function loginVerifyPasswordless(Request $request)
             return $this->fail('Stored login challenge is invalid.', 419);
         }
 
-        $credentialId = trim((string) $request->input('credential.id'));
+        // Prefer rawId when available
+        $credentialId = trim((string) ($request->input('credential.rawId') ?: $request->input('credential.id')));
         $bio = $this->activeCredentialByCredentialId($credentialId);
 
         if (!$bio) {
@@ -210,7 +214,8 @@ public function loginVerifyPasswordless(Request $request)
         $clientDataJSON = $this->b64urlDecode($request->input('credential.response.clientDataJSON'));
         $authenticatorData = $this->b64urlDecode($request->input('credential.response.authenticatorData'));
         $signature = $this->b64urlDecode($request->input('credential.response.signature'));
-        $publicKeyRaw = base64_decode((string) $bio->PUBLIC_KEY);
+        $userHandle = $this->b64urlDecode($request->input('credential.response.userHandle'));
+        $publicKeyRaw = base64_decode((string) $bio->PUBLIC_KEY, true);
 
         if (!$clientDataJSON || !$authenticatorData || !$signature) {
             return $this->fail('Invalid biometric response payload.', 400);
@@ -222,15 +227,30 @@ public function loginVerifyPasswordless(Request $request)
 
         $webAuthn = $this->getWebAuthn($request);
 
-        $webAuthn->processGet(
-            $clientDataJSON,
-            $authenticatorData,
-            $signature,
-            $publicKeyRaw,
-            $challenge,
-            null,
-            true
-        );
+        try {
+            $webAuthn->processGet(
+                $clientDataJSON,
+                $authenticatorData,
+                $signature,
+                $publicKeyRaw,
+                $challenge,
+                null,
+                true
+            );
+        } catch (\Throwable $verifyError) {
+            \Log::error('PASSWORDLESS VERIFY ERROR', [
+                'message' => $verifyError->getMessage(),
+                'session_id' => $request->session()->getId(),
+                'rp_id' => $this->getRpId($request),
+                'origin_host' => $request->getHost(),
+                'credential_id' => $credentialId,
+                'user_code' => $userCode,
+                'has_user_handle' => !empty($userHandle),
+                'has_challenge' => !empty($challenge),
+            ]);
+
+            return $this->fail('Biometric verification failed: ' . $verifyError->getMessage(), 401);
+        }
 
         DB::table('USER_BIO')
             ->where('ID', $bio->ID)
@@ -277,9 +297,17 @@ public function loginVerifyPasswordless(Request $request)
             'login_type' => 'biometric',
         ], 'Biometric login successful.');
     } catch (\Throwable $e) {
+        \Log::error('PASSWORDLESS LOGIN FATAL', [
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+
         return $this->fail($e->getMessage(), 500);
     }
 }
+
 
 
     protected function normalizeCreateArgsForJson($args): array
@@ -458,7 +486,7 @@ public function loginVerifyPasswordless(Request $request)
                 $userName,
                 $userDisplayName,
                 60 * 4,
-                false,
+                true,
                 'required',
                 null
             );

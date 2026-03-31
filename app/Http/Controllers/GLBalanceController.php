@@ -191,4 +191,37 @@ public function getBSIS_YTD(Request $request)
     }
 
 
+
+
+
+
+public function getYearEndProforma(Request $request)
+    { 
+     try {
+
+        $dataArray = $request->input('json_data');
+        $jsonString = json_encode($dataArray);
+           
+
+        $results = DB::select(
+            'EXEC sproc_PHP_GL_Inq @_mode =?, @_params =? ',
+            ['getYearEndProforma', $jsonString] 
+        );
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+
+        ], 500);
+    }
+    }
+
+
+
+
 }

@@ -615,25 +615,59 @@ class AuthController extends Controller
      * Logout: clear SingleSession mapping (if this session owns it) and invalidate the session.
      * NOTE: Exclude SingleSession middleware on this route so logout always works.
      */
+    // public function logout(Request $req)
+    // {
+    //     if (Auth::check()) {
+    //         $user = Auth::user();
+    //         $cacheKey = "user:active_session:{$user->USER_CODE}";
+    //         $current  = session()->getId();
+    //         $mapped   = Cache::get($cacheKey);
+
+    //         if ($mapped === $current) {
+    //             Cache::forget($cacheKey);
+    //         }
+
+
+    //         try {
+    //             DB::connection('tenant')
+    //                 ->table('USERS')
+    //                 ->where('USER_CODE', $user->USER_CODE)
+    //                 ->update([
+    //                     'LOGIN_STAT' => 0
+    //                 ]);
+    //         } catch (\Throwable $e) {
+    //             Log::warning("Failed to update logout audit for {$user->USER_CODE}: " . $e->getMessage());
+    //         }
+
+    //         Auth::logout();
+    //     }
+
+    //     // Invalidate + new CSRF token
+    //     $req->session()->invalidate();
+    //     $req->session()->regenerateToken();
+
+    //     return response()->json(['ok' => true, 'message' => 'Successfully logged out']);
+    // }
+
     public function logout(Request $req)
-    {
+{
+    try {
         if (Auth::check()) {
             $user = Auth::user();
             $cacheKey = "user:active_session:{$user->USER_CODE}";
-            $current  = session()->getId();
+            $current  = $req->session()->getId();
             $mapped   = Cache::get($cacheKey);
 
             if ($mapped === $current) {
                 Cache::forget($cacheKey);
             }
 
-
             try {
                 DB::connection('tenant')
                     ->table('USERS')
                     ->where('USER_CODE', $user->USER_CODE)
                     ->update([
-                        'LOGIN_STAT' => 0
+                        'LOGIN_STAT' => 0,
                     ]);
             } catch (\Throwable $e) {
                 Log::warning("Failed to update logout audit for {$user->USER_CODE}: " . $e->getMessage());
@@ -642,10 +676,20 @@ class AuthController extends Controller
             Auth::logout();
         }
 
-        // Invalidate + new CSRF token
         $req->session()->invalidate();
         $req->session()->regenerateToken();
 
-        return response()->json(['ok' => true, 'message' => 'Successfully logged out']);
+        return response()->json([
+            'ok' => true,
+            'message' => 'Successfully logged out',
+        ]);
+    } catch (\Throwable $e) {
+        Log::error("Logout failed: " . $e->getMessage());
+
+        return response()->json([
+            'ok' => false,
+            'message' => 'Logout failed.',
+        ], 500);
     }
+}
 }

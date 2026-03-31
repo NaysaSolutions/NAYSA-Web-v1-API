@@ -36,7 +36,7 @@ class BillCodeController extends Controller
 
 
 
-    public function lookup(Request $request)
+     public function lookup(Request $request)
     {
 
         $request->validate([
