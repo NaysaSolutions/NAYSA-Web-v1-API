@@ -201,6 +201,70 @@ public function printForm(Request $request)
 
 
 
+public function printQuery(Request $request)
+{  
+    try {
+        $validated = $request->validate([
+            'formName'  => 'required|string',
+            'userCode'   => 'nullable|string',
+            'params'   => 'nullable|string',
+        ]);
+
+        $baseUrl = rtrim(config('services.crystal.base'), '/');
+        $apiUrl  = $baseUrl . config('services.crystal.query_generate_pdf');
+        $creds = $this->tenantCreds($request);
+
+
+
+
+        foreach (['host','database','username','password'] as $k) {
+            if (empty($creds[$k])) {
+                Log::warning('printForm: missing DB credential', ['missing' => $k]);
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => "Missing database credential: $k",
+                ], 400);
+            }
+        }
+
+        $payload = [
+            'ReportName'    => $validated['formName'],
+            'ServerName'    => $creds['host']     ?? '',
+            'DatabaseName'  => $creds['database'] ?? '',
+            'UserId'        => $creds['username'] ?? '',
+            'Password'      => $creds['password'] ?? '',
+            'UserCode'      => $validated['userCode'],
+            'Params'      => $validated['params'],
+        ];
+
+        $response = Http::withHeaders(['Accept' => 'application/pdf'])->post($apiUrl, $payload);
+        if ($response->successful()) {
+            return response($response->body(), 200)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'inline; filename="report.pdf"');
+        }
+
+
+
+        return response()->json([
+            'status'  => 'error',
+            'message' => 'Failed to generate report',
+            'code'    => $response->status(),
+            'details' => $response->body(),
+            'payload' => collect($payload)->except('Password'),
+        ], 500);
+
+    } catch (\Throwable $e) {
+        return response()->json([
+            'status'  => 'error',
+            'message' => 'Error calling Crystal Report API.',
+            'details' => $e->getMessage(),
+        ], 500);
+    }
+
+}
+
+
 
 
 public function printARReport(Request $request)

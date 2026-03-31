@@ -266,7 +266,7 @@ public function PostTransaction(Request $request)
         DB::statement('DBCC TRACEON(460)');
 
         // Call the stored procedure
-        $result = DB::select("EXEC sproc_PHP_APV @mode = ?, @params = ?", ['Post', $jsonString]);
+        $result = DB::select("EXEC sproc_PHP_CV @mode = ?, @params = ?", ['Post', $jsonString]);
 
         $message = $result[0]->result ?? 'No result returned from stored procedure';
 

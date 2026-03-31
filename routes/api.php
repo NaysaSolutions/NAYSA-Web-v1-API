@@ -99,6 +99,9 @@ Route::middleware('tenant')->group(function () {
 
     Route::post('/upsertCompany', [CompanyController::class, 'upsert']);
     Route::get('/getCompany', [CompanyController::class, 'get']);
+    Route::get('/getGlobalTables', [CompanyController::class, 'getGlobalTables']);
+
+
 
     Route::get('/getUser', [UserController::class, 'get']);
     Route::get('/load', [UserController::class, 'load']);
@@ -110,6 +113,12 @@ Route::middleware('tenant')->group(function () {
     Route::post('/users/change-password', [UserController::class, 'changePassword']);
     Route::post('/users/checkduplicate', [UserController::class, 'checkDuplicate']);
     Route::post('/users/checkinused', [UserController::class, 'checkInUsed']);
+    // Profile Image
+    Route::post('/user/profile-image', [UserController::class, 'uploadProfileImage']);
+    Route::get('/user/profile-image/{userCode}', [UserController::class, 'getProfileImage']);
+    Route::delete('/user/profile-image/{userCode}', [UserController::class, 'deleteProfileImage']);
+
+
 
     // Heart Strong
     Route::get('/getHSDoc', [HSDocController::class, 'get']);
@@ -192,7 +201,6 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getARAging', [ARBalanceController::class, 'getARAging']);
     Route::get('/getARAdvances', [ARBalanceController::class, 'getARAdvances']);
     Route::get('/getARCWLCLInquiry', [ARBalanceController::class, 'getARCWLCLInquiry']);
-    Route::post('/updateARCWLCL', [ARBalanceController::class, 'updateARCWLCL']);
 
 
     Route::get('/getGLInquiry', [GLBalanceController::class, 'getGLInquiry']);
@@ -315,8 +323,8 @@ Route::middleware('tenant')->group(function () {
     Route::post('/checkDuplicateBank', [BankMasterController::class, 'checkDuplicate']);
     Route::post('/deleteBank', [BankMasterController::class, 'delete']);
     Route::post('/checkInUsedBank', [BankMasterController::class, 'checkInUsed']);
-    
     Route::get('/validateDuplicateCheck', [BankMasterController::class, 'validateDuplicateCheck']);
+    
 
     Route::get('/cOA', [COAMasterController::class, 'index']);
     Route::post('/upsertCOA', [COAMasterController::class, 'upsert']);
@@ -434,7 +442,6 @@ Route::middleware('tenant')->group(function () {
 
 
     // Transactions
-    
     Route::get('/jV', [JournalVoucherController::class, 'index']);
     Route::post('/upsertJV', [JournalVoucherController::class, 'upsert']);
     Route::post('/generateGLJV', [JournalVoucherController::class, 'generateGL']);
@@ -648,7 +655,7 @@ Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
     Route::post('/cancelPCV', [PCVController::class, 'cancel']);
     Route::post('/cancelCV',  [CVController::class, 'cancel']);
     Route::post('/cancelAPV', [APVoucherController::class, 'cancel']);
-    Route::post('/cancelJV', [JournalVoucherController::class, 'cancel']);
+    Route::post('/cancelJV',  [JournalVoucherController::class, 'cancel']);
     Route::post('/cancelARCM', [ARCMController::class, 'cancel']);
     Route::post('/cancelCR',  [CRController::class, 'cancel']);
     Route::post('/cancelAR',  [ARController::class, 'cancel']);
