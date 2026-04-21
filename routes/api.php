@@ -42,6 +42,9 @@ use App\Http\Controllers\ARCMController;
 use App\Http\Controllers\ARDMController;
 use App\Http\Controllers\CRController;
 use App\Http\Controllers\SalesRepController;
+use App\Http\Controllers\AreaController;
+use App\Http\Controllers\ZoneController;
+use App\Http\Controllers\CustTypeController;
 
 use App\Http\Controllers\ARController;
 use App\Http\Controllers\ARBalanceController;
@@ -390,10 +393,36 @@ Route::middleware('tenant')->group(function () {
     Route::post('/checkInUsedBillterm', [BillTermController::class, 'checkInUsed']);
     Route::post('/deleteBillterm', [BillTermController::class, 'delete']);
 
+     Route::get('/area', [AreaController::class, 'index']);
+    Route::post('/upsertArea', [AreaController::class, 'upsert']);
+    Route::get('/lookupArea', [AreaController::class, 'lookup']);
+    Route::get('/getArea', [AreaController::class, 'get']);
+    Route::post('/checkDuplicateArea', [AreaController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedArea', [AreaController::class, 'checkInUsed']);
+    Route::post('/deleteArea', [AreaController::class, 'delete']);
+
+    Route::get('/zone', [ZoneController::class, 'index']);
+    Route::post('/upsertZone', [ZoneController::class, 'upsert']);
+    Route::get('/lookupZone', [ZoneController::class, 'lookup']);
+    Route::get('/getZone', [ZoneController::class, 'get']);
+    Route::post('/checkDuplicateZone', [ZoneController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedZone', [ZoneController::class, 'checkInUsed']);
+    Route::post('/deleteZone', [ZoneController::class, 'delete']);
+
+
+    Route::get('/custType', [CustTypeController::class, 'index']);
+    Route::post('/upsertCustType', [CustTypeController::class, 'upsert']);
+    Route::get('/lookupCustType', [CustTypeController::class, 'lookup']);
+    Route::get('/getCustType', [CustTypeController::class, 'get']);
+    Route::post('/checkDuplicateCustType', [CustTypeController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedCustType', [CustTypeController::class, 'checkInUsed']);
+    Route::post('/deleteCustType', [CustTypeController::class, 'delete']);
+
     Route::get('/vendMast', [VendMasterController::class, 'index']);
     Route::post('/upsertVendMast', [VendMasterController::class, 'upsert']);
     Route::get('/lookupVendMast', [VendMasterController::class, 'lookup']);
     Route::get('/getVendMast', [VendMasterController::class, 'get']);
+    
 
     Route::get('/payee', [VendMasterController::class, 'index']);
     Route::post('/upsertPayee', [VendMasterController::class, 'upsert']);
@@ -663,6 +692,7 @@ Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
     Route::post('/cancelAPCM', [APCMController::class, 'cancel']);
     Route::post('/cancelMSAJ', [MSAJController::class, 'cancel']);
     Route::post('/cancelPR',  [PRController::class, 'cancel']);
+    Route::post('/cancelPO', [POController::class, 'cancel']);
     Route::post('/cancelJO',  [JOController::class, 'cancel']);
 
     Route::post('/generateJVARCWLCL', [ARBalanceController::class, 'generateJVARCWLCL']);
