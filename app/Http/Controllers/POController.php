@@ -40,13 +40,24 @@ class POController extends Controller
 
     public function get(Request $request)
     {
-
-
-
-        $jsonData = $request->all();
-        $jsonString = json_encode($jsonData);
-
         try {
+            // Support both formats:
+            // 1. Flat query params: ?poNo=xxx&branchCode=xxx&key=xxx
+            // 2. json_data wrapper (array): { json_data: { poNo, branchCode, key } }
+            // 3. json_data wrapper (JSON string): { json_data: '{"poNo":...}' }
+            $all = $request->all();
+
+            if (isset($all['json_data'])) {
+                $inner = $all['json_data'];
+                // If it's already an array (sent as object), wrap it for the sproc normalizer
+                $jsonString = is_array($inner)
+                    ? json_encode(['json_data' => $inner])
+                    : json_encode(['json_data' => json_decode($inner, true)]);
+            } else {
+                // Flat query-string params — pass directly
+                $jsonString = json_encode($all);
+            }
+
             $results = DB::select(
                 'EXEC sproc_PHP_PO @mode = ?, @params = ?',
                 ['Get', $jsonString]
@@ -87,11 +98,22 @@ class POController extends Controller
                 'data' => $result
             ], 200);
         } catch (\Throwable $e) {
+            $rawMessage = $e->getMessage();
+
+            $cleanMessage = $rawMessage;
+
+            if (str_contains($cleanMessage, '[SQL Server]')) {
+                $cleanMessage = substr($cleanMessage, strrpos($cleanMessage, '[SQL Server]') + strlen('[SQL Server]'));
+            }
+
+            $cleanMessage = preg_replace('/\s*\(SQL:.*$/s', '', $cleanMessage);
+            $cleanMessage = trim($cleanMessage);
+
             return response()->json([
                 'status' => 'error',
-                'message' => 'Error executing PO Upsert.',
-                'details' => $e->getMessage()
-            ], 500);
+                'message' => $cleanMessage ?: 'Error executing PO Upsert.',
+                'details' => $rawMessage
+            ], 422);
         }
     }
 
