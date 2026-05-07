@@ -76,6 +76,8 @@ use App\Http\Controllers\MSInvBalanceController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PRInqController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -212,6 +214,11 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getUnpostedperMonth', [GLBalanceController::class, 'getUnpostedperMonth']);
     Route::get('/getYearEndProforma', [GLBalanceController::class, 'getYearEndProforma']);
     Route::get('/getBSIS_YTD', [GLBalanceController::class, 'getBSIS_YTD']);
+
+
+    Route::get('/getPOInquiry', [POInqController::class, 'getPOInquiry']);
+    Route::get('/getPRInquiry', [PRInqController::class, 'getPRInquiry']);
+
 
 
     Route::get('/getEWTInquiry', [AllBIRController::class, 'getEWTInquiry']);
