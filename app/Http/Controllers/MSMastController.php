@@ -94,6 +94,45 @@ public function get(Request $request) {
 
 
 
+// public function upsert(Request $request)
+// {
+//     try {
+//         $request->validate([
+//             'json_data' => 'required|json',
+//         ]);
+
+//         $params = $request->get('json_data');
+
+      
+
+//         if (json_last_error() !== JSON_ERROR_NONE) {
+//             return response()->json([
+//                 'status' => 'error',
+//                 'message' => 'Invalid JSON data provided.',
+//             ], 400);
+//         }
+
+
+//         DB::statement('EXEC sproc_PHP_MSMast @params = :json_data, @mode = :mode', [
+//             'json_data' => $params,
+//             'mode' => 'upsert'
+//         ]);
+
+
+//         return response()->json([
+//             'status' => 'success',
+//             'message' => 'Transaction saved successfully.',
+//         ], 200);
+//     } catch (\Exception $e) {
+//         Log::error('Transaction save failed:', ['error' => $e->getMessage()]);
+
+//         return response()->json([
+//             'status' => 'error',
+//             'message' => 'Failed to save transaction: ' . $e->getMessage(),
+//         ], 500);
+//     }
+// }
+
 public function upsert(Request $request)
 {
     try {
@@ -103,34 +142,30 @@ public function upsert(Request $request)
 
         $params = $request->get('json_data');
 
-      
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Invalid JSON data provided.',
-            ], 400);
-        }
-
-
-        DB::statement('EXEC sproc_PHP_MSMast @params = :json_data, @mode = :mode', [
-            'json_data' => $params,
-            'mode' => 'upsert'
-        ]);
-
+        // Use select() instead of statement() — SQLSRV requires a result set
+        $result = DB::select(
+            'EXEC sproc_PHP_MSMast @params = :json_data, @mode = :mode',
+            [
+                'json_data' => $params,
+                'mode'      => 'Upsert',   // capital U to match the sproc IF check
+            ]
+        );
 
         return response()->json([
-            'status' => 'success',
+            'status'  => 'success',
             'message' => 'Transaction saved successfully.',
+            'data'    => $result,           // lets frontend read errorcount/generatedCode
         ], 200);
+
     } catch (\Exception $e) {
         Log::error('Transaction save failed:', ['error' => $e->getMessage()]);
 
         return response()->json([
-            'status' => 'error',
+            'status'  => 'error',
             'message' => 'Failed to save transaction: ' . $e->getMessage(),
         ], 500);
     }
 }
+
 
 }
