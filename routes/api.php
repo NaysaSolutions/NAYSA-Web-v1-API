@@ -571,17 +571,22 @@ Route::middleware('tenant')->group(function () {
 
 
     Route::prefix('warehouse')->group(function () {
-        Route::get('/warehouse',   [WarehouseMastController::class, 'load']);
+        Route::get('/warehouse', [WarehouseMastController::class, 'load']); // accepts optional filter for lookup
         Route::get('/getWarehouse',    [WarehouseMastController::class, 'get']);      // ?whCode=WH001
         Route::get('/lookupWarehouse', [WarehouseMastController::class, 'lookup']);   // ?filter=ActiveAll
         Route::post('/upsertWarehouse', [WarehouseMastController::class, 'upsert']);
+        Route::post('/deleteWarehouse', [WarehouseMastController::class, 'delete']);
+        Route::post('/checkDuplicateWH', [WarehouseMastController::class, 'checkDuplicateWH']);
+        Route::post('/checkInUsedWH', [WarehouseMastController::class, 'checkInUsedWH']);
     });
 
+    
     Route::prefix('location')->group(function () {
         Route::get('/location',   [LocationController::class, 'load']);
         Route::get('/getLocation',    [LocationController::class, 'get']);           // ?locCode=L001
         Route::get('/lookupLocation', [LocationController::class, 'lookup']);        // ?filter=ActiveAll
         Route::post('/upsertLocation', [LocationController::class, 'upsert']);
+        Route::post('/deleteLocation', [LocationController::class, 'delete']);
         Route::post('/getByWarehouse', [LocationController::class, 'byWarehouse']);
     });
 
