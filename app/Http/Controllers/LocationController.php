@@ -195,4 +195,50 @@ class LocationController extends Controller
             ], 500);
         }
     }
+
+public function checkInUsed(Request $request)
+    {
+        try {
+            $inputData = $request->input('json_data');
+            if (is_string($inputData)) {
+                $inputData = json_decode($inputData, true);
+            }
+
+            $params = json_encode(['json_data' => $inputData]);
+
+            $rows = DB::select('EXEC sproc_PHP_Location @mode = ?, @params = ?', [
+                'checkInUsed', // Matches the SPROC mode
+                $params
+            ]);
+
+            $jsonResult = '';
+            foreach ($rows as $row) {
+                $jsonResult .= $row->result ?? '';
+            }
+
+            return response()->json([
+                'success' => true,
+                'data'    => json_decode($jsonResult, true) ?? [],
+            ], 200);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'data'    => [],
+                'message' => 'Error checking usage: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 }
