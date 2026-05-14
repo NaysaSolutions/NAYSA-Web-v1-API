@@ -36,17 +36,13 @@ public function index(Request $request) {
 
 
 public function lookup(Request $request) {
-
-  
-    $paramsString = $request->input('PARAMS');
-    $params = json_decode($paramsString, true);
-   
-
+    // 1. Get the raw JSON string sent by the generic lookup component
+    $params = $request->input('PARAMS');
 
     try {
         $results = DB::select(
             'EXEC sproc_PHP_MSMast @mode = ?, @params = ?',
-            ['Lookup',$params['search']] 
+            ['Lookup', $params] // Pass the whole JSON string
         );
 
         return response()->json([
