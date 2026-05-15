@@ -588,6 +588,8 @@ Route::middleware('tenant')->group(function () {
         Route::post('/upsertLocation', [LocationController::class, 'upsert']);
         Route::post('/deleteLocation', [LocationController::class, 'delete']);
         Route::post('/getByWarehouse', [LocationController::class, 'byWarehouse']);
+        Route::post('/checkInUsedLocation', [LocationController::class, 'checkInUsed']);
+
     });
 
     Route::post('/msLookup', [MSISController::class, 'msLookup']);
