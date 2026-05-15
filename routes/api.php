@@ -72,6 +72,7 @@ use App\Http\Controllers\MSCategController;
 use App\Http\Controllers\MSClassController;
 use App\Http\Controllers\FGCategController;
 use App\Http\Controllers\FGClassController;
+use App\Http\Controllers\UOMController;
 use App\Http\Controllers\WarehouseMastController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\QStatController;
@@ -89,6 +90,7 @@ use App\Http\Controllers\PRInqController;
 use App\Http\Controllers\POInqController;
 use App\Http\Controllers\AllTranApprovalController;
 use App\Http\Controllers\CheckTemplateController;
+use App\Http\Controllers\CanController;
 
 
 
@@ -336,7 +338,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/checkDuplicateDForex', [DForexController::class, 'checkDuplicate']);
     Route::post('/deleteDForex', [DForexController::class, 'delete']);
     Route::post('/getDForexByDate', [DForexController::class, 'getByDate']);
-    
+
 
 
     Route::get('/salesRep', [SalesRepController::class, 'index']);
@@ -351,7 +353,7 @@ Route::middleware('tenant')->group(function () {
 
 
 
-    
+
     Route::get('/bank', [BankMasterController::class, 'index']);
     Route::post('/upsertBank', [BankMasterController::class, 'upsert']);
     Route::get('/lookupBank', [BankMasterController::class, 'lookup']);
@@ -360,7 +362,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/deleteBank', [BankMasterController::class, 'delete']);
     Route::post('/checkInUsedBank', [BankMasterController::class, 'checkInUsed']);
     Route::get('/validateDuplicateCheck', [BankMasterController::class, 'validateDuplicateCheck']);
-    
+
 
     Route::get('/cOA', [COAMasterController::class, 'index']);
     Route::post('/upsertCOA', [COAMasterController::class, 'upsert']);
@@ -499,7 +501,10 @@ Route::middleware('tenant')->group(function () {
     Route::get('/MSMast', [MSMastController::class, 'index']);
     Route::post('/upsertMSMast', [MSMastController::class, 'upsert']);
     Route::get('/lookupMSMast', [MSMastController::class, 'lookup']);
-    Route::post('/getMSMast', [MSMastController::class, 'get']);   // ← was GET, now POST
+    Route::post('/getMSMast', [MSMastController::class, 'get']);
+    Route::post('/checkDuplicateMSMast', [MSMastController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedMSMast',    [MSMastController::class, 'checkInUsed']);
+    Route::post('/deleteMSMast',         [MSMastController::class, 'delete']);   // ← was GET, now POST
 
     Route::get('/fgMast',           [FGMastController::class, 'index']);
     Route::post('/getFGMast',        [FGMastController::class, 'get']);
@@ -527,7 +532,7 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getInvLookupMS', [MSInvBalanceController::class, 'getInvLookup']);
     Route::get('/getInvLookupFG', [FGInvBalanceController::class, 'getInvLookup']);
 
-    
+
     Route::get('/fgCateg', [FGCategController::class, 'index']);
     Route::post('/getFGCateg', [FGCategController::class, 'get']);
     Route::post('/lookupFGCateg', [FGCategController::class, 'lookup']);
@@ -543,6 +548,15 @@ Route::middleware('tenant')->group(function () {
     Route::post('/deleteFGClass', [FGClassController::class, 'delete']);
     Route::post('/checkDuplicateFGClass', [FGClassController::class, 'checkDuplicate']);
     Route::post('/checkInUsedFGClass', [FGClassController::class, 'checkInUsed']);
+
+    Route::get('/uom', [UOMController::class, 'index']);
+    Route::post('/upsertUom', [UOMController::class, 'upsert']);
+    Route::get('/lookupUom', [UOMController::class, 'lookup']);
+    Route::get('/getUom', [UOMController::class, 'get']);
+    Route::post('/deleteUom', [UOMController::class, 'delete']);
+    Route::post('/checkInUsedUom', [UOMController::class, 'checkInUsed']);
+    Route::post('/checkInUsedLocation', [UOMController::class, 'checkInUsed']);
+
     Route::get('/getInvLookupMS', [MSInvBalanceController::class, 'getInvLookup']);
     Route::get('/getInvLookupFG', [FGInvBalanceController::class, 'getInvLookup']);
 
@@ -586,7 +600,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/getPOHistory', [POController::class, 'history']);
     Route::get('/getPOApproval', [POController::class, 'getPOApproval']);
     Route::post('/approvePO', [POController::class, 'approvePO']);
- Route::get('/getPORR_OpenSummary', [POController::class, 'getPORR_OpenSummary']);
+    Route::get('/getPORR_OpenSummary', [POController::class, 'getPORR_OpenSummary']);
     Route::post('/getPORR_OpenDetail', [POController::class, 'getPORR_OpenDetail']);
 
 
@@ -616,7 +630,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/approvePR', [PRController::class, 'approvePR']);
 
 
-    
+
     Route::get('/MSRR', [MSRRController::class, 'index']);
     Route::post('/upsertMSRR', [MSRRController::class, 'upsert']);
     Route::post('/generateGLMSRR', [MSRRController::class, 'generateGL']);
@@ -672,10 +686,10 @@ Route::middleware('tenant')->group(function () {
     Route::get('/findMSRTV', [MSRTVController::class, 'find']);
 
 
-     Route::prefix('warehouse')->group(function () {
-        Route::get('/warehouse', [WarehouseMastController::class, 'load']); 
-        Route::get('/getWarehouse',    [WarehouseMastController::class, 'get']);    
-        Route::get('/lookupWarehouse', [WarehouseMastController::class, 'lookup']);   
+    Route::prefix('warehouse')->group(function () {
+        Route::get('/warehouse', [WarehouseMastController::class, 'load']);
+        Route::get('/getWarehouse',    [WarehouseMastController::class, 'get']);
+        Route::get('/lookupWarehouse', [WarehouseMastController::class, 'lookup']);
         Route::post('/upsertWarehouse', [WarehouseMastController::class, 'upsert']);
         Route::post('/deleteWarehouse', [WarehouseMastController::class, 'delete']);
         Route::post('/checkDuplicateWH', [WarehouseMastController::class, 'checkDuplicateWH']);
@@ -690,7 +704,6 @@ Route::middleware('tenant')->group(function () {
         Route::post('/upsertLocation', [LocationController::class, 'upsert']);
         Route::post('/getByWarehouse', [LocationController::class, 'byWarehouse']);
         Route::post('/checkInUsedLocation', [LocationController::class, 'checkInUsed']);
-
     });
 
     Route::post('/msLookup', [MSISController::class, 'msLookup']);
@@ -788,7 +801,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/getSODR_OpenDetail', [SOController::class, 'getSODR_OpenDetail']);
 
 
-    
+
     Route::get('/dR', [DRController::class, 'index']);
     Route::post('/upsertDR', [DRController::class, 'upsert']);
     Route::get('/getDR', [DRController::class, 'get']);
@@ -802,7 +815,7 @@ Route::middleware('tenant')->group(function () {
 
 
 
-  
+
     Route::get('/getCheckTemplates', [CheckTemplateController::class, 'index']);
     Route::get('/lookupCheckTemplates', [CheckTemplateController::class, 'lookup']);
     Route::get('/getCheckTemplate', [CheckTemplateController::class, 'get']);
@@ -820,8 +833,16 @@ Route::middleware('tenant')->group(function () {
     Route::post('/checkCheckTemplateInUsed', [CheckTemplateController::class, 'checkInUsed']);
     Route::post('/checkCheckTemplateDuplicate', [CheckTemplateController::class, 'checkDuplicate']);
 
-
-
+    Route::post('/getCANHistory', [CanController::class, 'getHistory']);
+    Route::post('/getCANOpenPR', [CanController::class, 'getOpenPR']);
+    Route::post('/getCANOpenPRDetail', [CanController::class, 'getOpenPRDetail']);
+    Route::post('/getCAN', [CanController::class, 'getCAN']);
+    Route::post('/upsertCAN', [CanController::class, 'upsert']);
+    Route::post('/cancelCAN', [CanController::class, 'cancel']);
+    Route::post('/submitCAN', [CanController::class, 'submit']);
+    Route::post('/approveCAN', [CanController::class, 'approve']);
+    Route::post('/awardCAN', [CanController::class, 'award']);
+    Route::post('/findCAN', [CanController::class, 'find']);
 });
 
 Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
