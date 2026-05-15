@@ -689,7 +689,7 @@ Route::middleware('tenant')->group(function () {
         Route::get('/lookupLocation', [LocationController::class, 'lookup']);        // ?filter=ActiveAll
         Route::post('/upsertLocation', [LocationController::class, 'upsert']);
         Route::post('/getByWarehouse', [LocationController::class, 'byWarehouse']);
-	Route::post('/checkInUsedLocation', [LocationController::class, 'checkInUsed']);
+        Route::post('/checkInUsedLocation', [LocationController::class, 'checkInUsed']);
 
     });
 
