@@ -73,6 +73,9 @@ use App\Http\Controllers\MSAJController;
 use App\Http\Controllers\MSRRController;
 use App\Http\Controllers\MSRTVController;
 use App\Http\Controllers\MSInvBalanceController;
+use App\Http\Controllers\UOMController;
+
+
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -592,7 +595,17 @@ Route::middleware('tenant')->group(function () {
 
     });
 
-    Route::post('/msLookup', [MSISController::class, 'msLookup']);
+     Route::post('/msLookup', [MSISController::class, 'msLookup']);
+
+    Route::get('/uom', [UOMController::class, 'index']);
+    Route::post('/upsertUom', [UOMController::class, 'upsert']);
+    Route::get('/lookupUom', [UOMController::class, 'lookup']);
+    Route::get('/getUom', [UOMController::class, 'get']);
+    Route::post('/deleteUom', [UOMController::class, 'delete']);
+    Route::post('/checkInUsedUom', [UOMController::class, 'checkInUsed']);
+    Route::post('/checkInUsedLocation', [UOMController::class, 'checkInUsed']);
+
+   
 
     Route::get('/aPCM', [APCMController::class, 'index']);
     Route::post('/upsertAPCM', [APCMController::class, 'upsert']);
