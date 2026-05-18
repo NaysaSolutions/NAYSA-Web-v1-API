@@ -132,33 +132,117 @@ public function get(Request $request) {
 public function upsert(Request $request)
 {
     try {
-        $request->validate([
-            'json_data' => 'required|json',
-        ]);
+        // Pass the full request body, not just the inner object
+        $params = $request->all(); // gets {"json_data": {...}}
 
-        $params = $request->get('json_data');
+        if (is_array($params) || is_object($params)) {
+            $params = json_encode($params);
+        }
 
-        // Use select() instead of statement() — SQLSRV requires a result set
+        if (!is_string($params) || !json_validate($params)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Invalid JSON data provided.'
+            ], 400);
+        }
+
         $result = DB::select(
             'EXEC sproc_PHP_MSMast @params = :json_data, @mode = :mode',
             [
                 'json_data' => $params,
-                'mode'      => 'Upsert',   // capital U to match the sproc IF check
+                'mode'      => 'Upsert',
             ]
         );
 
         return response()->json([
             'status'  => 'success',
             'message' => 'Transaction saved successfully.',
-            'data'    => $result,           // lets frontend read errorcount/generatedCode
+            'data'    => $result,
         ], 200);
 
     } catch (\Exception $e) {
         Log::error('Transaction save failed:', ['error' => $e->getMessage()]);
-
         return response()->json([
             'status'  => 'error',
             'message' => 'Failed to save transaction: ' . $e->getMessage(),
+        ], 500);
+    }
+}
+
+public function checkDuplicate(Request $request)
+{
+    $validated = $request->validate([
+        'json_data' => 'required|array'
+    ]);
+
+    $params = json_encode(['json_data' => $validated['json_data']]);
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_MSMast @mode = ?, @params = ?',
+            ['CheckDuplicate', $params]
+        );
+
+        return response()->json([
+            'success' => true,
+            'data'    => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+}
+
+public function checkInUsed(Request $request)
+{
+    $validated = $request->validate([
+        'json_data' => 'required|array'
+    ]);
+
+    $params = json_encode(['json_data' => $validated['json_data']]);
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_MSMast @mode = ?, @params = ?',
+            ['CheckInUsed', $params]
+        );
+
+        return response()->json([
+            'success' => true,
+            'data'    => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+}
+
+public function delete(Request $request)
+{
+    $request->validate([
+        'json_data' => 'required|array',
+    ]);
+
+    try {
+        $params = json_encode(['json_data' => $request->json_data]);
+
+        $results = DB::select(
+            'EXEC sproc_PHP_MSMast @mode = ?, @params = ?',
+            ['Delete', $params]
+        );
+
+        return response()->json([
+            'success' => true,
+            'data'    => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
         ], 500);
     }
 }
