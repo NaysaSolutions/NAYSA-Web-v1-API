@@ -38,17 +38,12 @@ public function index(Request $request) {
 
 public function lookup(Request $request) {
 
-    $request->validate([
-        'PARAMS' => 'required|string',
-    ]);
-
     $params = $request->input('PARAMS');
-
 
     try {
         $results = DB::select(
             'EXEC sproc_PHP_Uom @mode = ?, @params = ?',
-            ['Lookup' ,$params] 
+            ['Lookup', $params]
         );
 
         return response()->json([
