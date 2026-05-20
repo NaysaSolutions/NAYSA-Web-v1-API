@@ -227,10 +227,6 @@ public function cancel(Request $request)
 
 
 
-
-
-
-
 public function history(Request $request) {
 
         $validated = $request->validate([
