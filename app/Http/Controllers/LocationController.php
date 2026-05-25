@@ -137,22 +137,27 @@ class LocationController extends Controller
         try {
             $filter = $request->query('filter', 'ActiveAll');
 
-            $rows = DB::select('EXEC sproc_PHP_Location @params = ?, @mode = ?', [
-                $filter,  // sproc wraps this for Lookup
-                'Lookup'
+            $rows = DB::select('EXEC sproc_PHP_Location @mode = ?, @params = ?', [
+                'Lookup',
+                $filter // SPROC automatically wraps this in '{"json_data":{"filter": "..."}}'
             ]);
+
+            $jsonResult = '';
+            foreach ($rows as $row) {
+                $jsonResult .= $row->result ?? '';
+            }
 
             return response()->json([
                 'success' => true,
-                'data'    => $rows,
+                'data'    => json_decode($jsonResult, true) ?? [],
                 'message' => 'Location lookup loaded successfully.',
             ], 200);
 
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
-                'data'    => ['status' => 'error', 'details' => $e->getMessage()],
-                'message' => 'Error loading location lookup.',
+                'data'    => [],
+                'message' => 'Error loading location lookup: ' . $e->getMessage(),
             ], 500);
         }
     }
