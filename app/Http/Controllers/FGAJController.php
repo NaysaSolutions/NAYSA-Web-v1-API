@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class MSAJController extends Controller
+class FGAJController extends Controller
 {
     
 public function index(Request $request) {
@@ -20,7 +20,7 @@ public function index(Request $request) {
         $params = $request->get('json_data');
       
         $results = DB::select(
-            'EXEC sproc_PHP_MSAJ @mode = ?, @params = ?',
+            'EXEC sproc_PHP_FGAJ @mode = ?, @params = ?',
             ['get' ,$params] 
         );
 
@@ -51,7 +51,7 @@ public function get(Request $request) {
 
     try {
         $results = DB::select(
-            'EXEC sproc_PHP_MSAJ @mode = ?, @params = ?',
+            'EXEC sproc_PHP_FGAJ @mode = ?, @params = ?',
             ['Get' ,$jsonString] 
         );
 
@@ -75,7 +75,7 @@ public function posting(Request $request) {
 
     try {
         $results = DB::select(
-            'EXEC sproc_PHP_MSAJ @mode = ?',
+            'EXEC sproc_PHP_FGAJ @mode = ?',
             ['Posting'] 
         );
 
@@ -106,7 +106,7 @@ public function upsert(Request $request)
             $mode = 'Upsert';
 
             // Call the stored procedure
-            $result = DB::select('EXEC sproc_PHP_MSAJ @mode = ?, @params = ?', [
+            $result = DB::select('EXEC sproc_PHP_FGAJ @mode = ?, @params = ?', [
                 $mode,
                 $params
             ]);
@@ -118,7 +118,7 @@ public function upsert(Request $request)
         } catch (\Throwable $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Error executing SVI Upsert.',
+                'message' => 'Error executing FGAJ Upsert.',
                 'details' => $e->getMessage()
             ], 500);
         }
@@ -139,7 +139,7 @@ public function finalize(Request $request) {
 
           
         $results = DB::select(
-            'EXEC sproc_PHP_Posting_MSAJ @mode = ?, @params = ?',
+            'EXEC sproc_PHP_Posting_FGAJ @mode = ?, @params = ?',
             ['Finalize', $params]
         );
 
@@ -170,7 +170,7 @@ public function generateGL(Request $request)
             $jsonString = json_encode(['json_data' => $jsonData], JSON_UNESCAPED_UNICODE);
 
 
-            $results = DB::select("EXEC sproc_PHP_MSAJ @mode = ?, @params = ?", [
+            $results = DB::select("EXEC sproc_PHP_FGAJ @mode = ?, @params = ?", [
                 'GenerateEntries',
                 $jsonString
             ]);
@@ -181,7 +181,7 @@ public function generateGL(Request $request)
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error executing sproc_PHP_MSAJ: ' . $e->getMessage());
+            Log::error('Error executing sproc_PHP_FGAJ: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to generate entries.',
@@ -206,7 +206,7 @@ public function cancel(Request $request)
             $mode = 'Cancel';
 
             // Call the stored procedure
-            $result = DB::select('EXEC sproc_PHP_MSAJ @mode = ?, @params = ?', [
+            $result = DB::select('EXEC sproc_PHP_FGAJ @mode = ?, @params = ?', [
                 $mode,
                 $params
             ]);
@@ -218,7 +218,7 @@ public function cancel(Request $request)
         } catch (\Throwable $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Error executing SVI Upsert.',
+                'message' => 'Error executing FGAJ Upsert.',
                 'details' => $e->getMessage()
             ], 500);
         }
@@ -242,7 +242,7 @@ public function history(Request $request) {
             $mode = 'History';
 
             // Call the stored procedure
-            $results = DB::select('EXEC sproc_PHP_MSAJ @mode = ?, @params = ?', [
+            $results = DB::select('EXEC sproc_PHP_FGAJ @mode = ?, @params = ?', [
                 $mode,
                 $params
             ]);
@@ -254,7 +254,7 @@ public function history(Request $request) {
         } catch (\Throwable $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Error executing SVI Upsert.',
+                'message' => 'Error executing FGAJ Upsert.',
                 'details' => $e->getMessage()
             ], 500);
     }
@@ -279,7 +279,7 @@ public function find(Request $request) {
             $mode = 'Find';
 
             // Call the stored procedure
-            $results = DB::select('EXEC sproc_PHP_MSAJ @mode = ?, @params = ?', [
+            $results = DB::select('EXEC sproc_PHP_FGAJ @mode = ?, @params = ?', [
                 $mode,
                 $params
             ]);
@@ -291,7 +291,7 @@ public function find(Request $request) {
         } catch (\Throwable $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Error executing SVI Upsert.',
+                'message' => 'Error executing FGAJ Upsert.',
                 'details' => $e->getMessage()
             ], 500);
     }
@@ -312,7 +312,7 @@ public function validateUpload(Request $request)
     try {
         $params = json_encode(['json_data' => $validated['json_data']], JSON_UNESCAPED_UNICODE);
 
-        $results = DB::select('EXEC sproc_PHP_MSAJ @mode = ?, @params = ?', [
+        $results = DB::select('EXEC sproc_PHP_FGAJ @mode = ?, @params = ?', [
             'ValidateUpload',
             $params
         ]);
@@ -326,11 +326,11 @@ public function validateUpload(Request $request)
             'data' => $results
         ], 200);
     } catch (\Throwable $e) {
-        Log::error('Error validating MSAJ upload: ' . $e->getMessage());
+        Log::error('Error validating FGAJ upload: ' . $e->getMessage());
 
         return response()->json([
             'status' => 'error',
-            'message' => 'Error validating MSAJ upload.',
+            'message' => 'Error validating FGAJ upload.',
             'details' => $e->getMessage()
         ], 500);
     }
@@ -349,7 +349,7 @@ public function checkBBUploaded(Request $request)
         ];
 
         $result = DB::select(
-            "EXEC sproc_PHP_MSAJ @mode = ?, @params = ?",
+            "EXEC sproc_PHP_FGAJ @mode = ?, @params = ?",
             [
                 'CheckBBUploaded',
                 json_encode($payload),

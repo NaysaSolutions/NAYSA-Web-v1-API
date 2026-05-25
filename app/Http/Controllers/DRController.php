@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class MSAJController extends Controller
+class DRController extends Controller
 {
     
 public function index(Request $request) {
@@ -20,7 +20,7 @@ public function index(Request $request) {
         $params = $request->get('json_data');
       
         $results = DB::select(
-            'EXEC sproc_PHP_MSAJ @mode = ?, @params = ?',
+            'EXEC sproc_PHP_DR @mode = ?, @params = ?',
             ['get' ,$params] 
         );
 
@@ -44,14 +44,12 @@ public function index(Request $request) {
 
 public function get(Request $request) {
 
-
-
     $jsonData = $request->all(); 
     $jsonString = json_encode($jsonData); 
 
     try {
         $results = DB::select(
-            'EXEC sproc_PHP_MSAJ @mode = ?, @params = ?',
+            'EXEC sproc_PHP_DR @mode = ?, @params = ?',
             ['Get' ,$jsonString] 
         );
 
@@ -71,26 +69,8 @@ public function get(Request $request) {
 
 
 
-public function posting(Request $request) {
 
-    try {
-        $results = DB::select(
-            'EXEC sproc_PHP_MSAJ @mode = ?',
-            ['Posting'] 
-        );
 
-        return response()->json([
-            'success' => true,
-            'data' => $results,
-        ], 200);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage(),
-        ], 500);
-    }
-
-}
 
 
 
@@ -106,7 +86,7 @@ public function upsert(Request $request)
             $mode = 'Upsert';
 
             // Call the stored procedure
-            $result = DB::select('EXEC sproc_PHP_MSAJ @mode = ?, @params = ?', [
+            $result = DB::select('EXEC sproc_PHP_DR @mode = ?, @params = ?', [
                 $mode,
                 $params
             ]);
@@ -127,72 +107,9 @@ public function upsert(Request $request)
 
 
 
-public function finalize(Request $request) {
-
-    try {
-
-       $validated = $request->validate([
-            'json_data'     => 'required|array'
-        ]);
-
-        $params = json_encode(['json_data' => $validated['json_data']]);
-
-          
-        $results = DB::select(
-            'EXEC sproc_PHP_Posting_MSAJ @mode = ?, @params = ?',
-            ['Finalize', $params]
-        );
-
-        return response()->json([
-            'success' => true,
-            'data' => $results,
-        ], 200);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage(),
-        ], 500);
-    }
-
-}
 
 
 
-
-public function generateGL(Request $request)
-    {
-        try {
-            $jsonData = $request->input('json_data');
-
-            if (!$jsonData) {
-                return response()->json(['error' => 'Missing json_data'], 400);
-            }
-            $jsonString = json_encode(['json_data' => $jsonData], JSON_UNESCAPED_UNICODE);
-
-
-            $results = DB::select("EXEC sproc_PHP_MSAJ @mode = ?, @params = ?", [
-                'GenerateEntries',
-                $jsonString
-            ]);
-
-            return response()->json([
-                'status' => 'success',
-                'data' => $results
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Error executing sproc_PHP_MSAJ: ' . $e->getMessage());
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to generate entries.',
-                'details' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-
-
-    
 
     
 public function cancel(Request $request)
@@ -206,7 +123,7 @@ public function cancel(Request $request)
             $mode = 'Cancel';
 
             // Call the stored procedure
-            $result = DB::select('EXEC sproc_PHP_MSAJ @mode = ?, @params = ?', [
+            $result = DB::select('EXEC sproc_PHP_DR @mode = ?, @params = ?', [
                 $mode,
                 $params
             ]);
@@ -242,7 +159,7 @@ public function history(Request $request) {
             $mode = 'History';
 
             // Call the stored procedure
-            $results = DB::select('EXEC sproc_PHP_MSAJ @mode = ?, @params = ?', [
+            $results = DB::select('EXEC sproc_PHP_DR @mode = ?, @params = ?', [
                 $mode,
                 $params
             ]);
@@ -279,7 +196,7 @@ public function find(Request $request) {
             $mode = 'Find';
 
             // Call the stored procedure
-            $results = DB::select('EXEC sproc_PHP_MSAJ @mode = ?, @params = ?', [
+            $results = DB::select('EXEC sproc_PHP_DR @mode = ?, @params = ?', [
                 $mode,
                 $params
             ]);
@@ -301,75 +218,143 @@ public function find(Request $request) {
 
 
 
+public function getDRSI_OpenSummary(Request $request) {
 
-
-public function validateUpload(Request $request)
-{
-    $validated = $request->validate([
-        'json_data' => 'required|array'
-    ]);
+   $jsonString = $request->input('PARAMS');
 
     try {
-        $params = json_encode(['json_data' => $validated['json_data']], JSON_UNESCAPED_UNICODE);
-
-        $results = DB::select('EXEC sproc_PHP_MSAJ @mode = ?, @params = ?', [
-            'ValidateUpload',
-            $params
-        ]);
-
-        $rawResult = $results[0]->result ?? $results[0]->Result ?? null;
-        $decodedResult = is_string($rawResult) ? json_decode($rawResult, true) : $rawResult;
-
-        return response()->json([
-            'status' => 'success',
-            'result' => $decodedResult,
-            'data' => $results
-        ], 200);
-    } catch (\Throwable $e) {
-        Log::error('Error validating MSAJ upload: ' . $e->getMessage());
-
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Error validating MSAJ upload.',
-            'details' => $e->getMessage()
-        ], 500);
-    }
-}
-
-
-public function checkBBUploaded(Request $request)
-{
-    try {
-        $params = json_decode($request->PARAMS ?? '{}', true);
-
-        $payload = [
-            'json_data' => [
-                'branchCode' => $params['branchCode'] ?? '',
-            ],
-        ];
-
-        $result = DB::select(
-            "EXEC sproc_PHP_MSAJ @mode = ?, @params = ?",
-            [
-                'CheckBBUploaded',
-                json_encode($payload),
-            ]
+        $results = DB::select(
+            'EXEC sproc_PHP_DR @mode = ?, @params = ?',
+            ['getDRSI_OpenSummary' ,$jsonString] 
         );
-
-        $rawResult = $result[0]->result ?? '{}';
-        $decodedResult = json_decode($rawResult, true);
 
         return response()->json([
             'success' => true,
-            'result' => $decodedResult,
-        ]);
+            'data' => $results,
+        ], 200);
     } catch (\Exception $e) {
         return response()->json([
             'success' => false,
             'message' => $e->getMessage(),
         ], 500);
     }
+
 }
+
+
+
+
+public function getDRSI_Selected(Request $request) {
+
+    $jsonData = $request->all(); 
+    $jsonString = json_encode($jsonData); 
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_DR @mode = ?, @params = ?',
+            ['GetDRSI_Selected' ,$jsonString] 
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+
+}
+
+
+
+public function generateGL(Request $request)
+    {
+        try {
+            $jsonData = $request->input('json_data');
+
+            if (!$jsonData) {
+                return response()->json(['error' => 'Missing json_data'], 400);
+            }
+            $jsonString = json_encode(['json_data' => $jsonData], JSON_UNESCAPED_UNICODE);
+
+
+            $results = DB::select("EXEC sproc_PHP_DR @mode = ?, @params = ?", [
+                'GenerateEntries',
+                $jsonString
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $results
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error executing sproc_PHP_DR: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to generate entries.',
+                'details' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+
+public function posting(Request $request) {
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_DR @mode = ?',
+            ['Posting'] 
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+
+}
+
+
+    
+public function finalize(Request $request) {
+
+    try {
+
+       $validated = $request->validate([
+            'json_data'     => 'required|array'
+        ]);
+
+        $params = json_encode(['json_data' => $validated['json_data']]);
+
+          
+        $results = DB::select(
+            'EXEC sproc_PHP_Posting_DR @mode = ?, @params = ?',
+            ['Finalize', $params]
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+
+}
+
 
 }
 

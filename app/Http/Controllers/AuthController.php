@@ -16,6 +16,7 @@ use Throwable;
 use hisorange\BrowserDetect\Parser as Browser;
 use App\Support\TenantCatalog;
 use App\Mail\AdminApprovalMail;
+use App\Mail\AccountLockedMail;
 
 
 class AuthController extends Controller
@@ -269,7 +270,7 @@ class AuthController extends Controller
             foreach ($securityAdmins as $admin) {
                 // Force all DB columns to lowercase to prevent SQL Server case sensitivity issues
                 $adminArray = array_change_key_case((array) $admin, CASE_LOWER);
-                
+
                 $adminEmail = $adminArray['email_add'] ?? null;
                 $adminName  = $adminArray['user_name'] ?? 'Security Administrator';
 
@@ -298,7 +299,6 @@ class AuthController extends Controller
                     'EMAIL_ADD' => $email,
                 ],
             ], 201);
-
         } catch (Throwable $e) {
             report($e);
             return response()->json([
@@ -439,8 +439,84 @@ class AuthController extends Controller
             /** @var \App\Models\User|null $user */
             $user = User::where('USER_CODE', $userCode)->first();
 
+            // ── Fetch maxLog from HS_SEC policy ──────────────────────────────
+            $policy = null;
+            $maxLog = 0;
+            try {
+                $policy = DB::connection('tenant')->table('HS_SEC')->first();
+                $maxLog = (int) ($policy->maxLog ?? 0);
+            } catch (\Throwable $e) {
+                Log::warning("Could not read HS_SEC policy: " . $e->getMessage());
+            }
+
             // 1) Credentials
             if (!$user || !Hash::check($password, $user->PASSWORD)) {
+
+                // Track failed attempt if user exists and maxLog is enforced
+                if ($user && $maxLog > 0) {
+                    $newStat = (int)($user->STAT ?? 0) + 1;
+
+                    DB::connection('tenant')
+                        ->table('users')
+                        ->where('user_code', $userCode)
+                        ->update(['stat' => $newStat]);
+
+                    // Lock account when threshold is reached
+                    if ($newStat >= $maxLog) {
+                        DB::connection('tenant')
+                            ->table('users')
+                            ->where('user_code', $userCode)
+                            ->update(['active' => 'N']);
+
+                        // ── Notify all Security Admins by email ───────────────
+                        try {
+                            $lockedUserName  = $user->USER_NAME  ?? $userCode;
+                            $lockedUserEmail = $user->EMAIL_ADD  ?? '';
+                            $company         = $req->header('X-Company-DB');
+
+                            $secAdmins = DB::connection('tenant')
+                                ->table('users')
+                                ->where('user_type', 'X')
+                                ->where('active', 'Y')
+                                ->get();
+
+                            foreach ($secAdmins as $admin) {
+                                $adminArr   = array_change_key_case((array) $admin, CASE_LOWER);
+                                $adminEmail = $adminArr['email_add'] ?? null;
+                                $adminName  = $adminArr['user_name']  ?? 'Security Administrator';
+
+                                if (!empty($adminEmail)) {
+                                    Mail::to($adminEmail)->send(
+                                        new AccountLockedMail(
+                                            $adminName,
+                                            $userCode,
+                                            $lockedUserName,
+                                            $lockedUserEmail,
+                                            $maxLog,
+                                            $company
+                                        )
+                                    );
+                                }
+                            }
+                        } catch (\Throwable $mailEx) {
+                            Log::warning("AccountLockedMail failed for {$userCode}: " . $mailEx->getMessage());
+                        }
+                        // ─────────────────────────────────────────────────────
+
+                        return response()->json([
+                            'status'  => 'error',
+                            'code'    => 'LOCKED',
+                            'message' => "Your account has been locked after {$maxLog} failed attempts. Please contact your administrator.",
+                        ], 403);
+                    }
+
+                    $remaining = $maxLog - $newStat;
+                    return response()->json([
+                        'status'  => 'error',
+                        'message' => "Invalid credentials. {$remaining} attempt(s) remaining before account lockout.",
+                    ], 401);
+                }
+
                 return response()->json([
                     'status'  => 'error',
                     'message' => 'Invalid credentials.',
@@ -459,12 +535,46 @@ class AuthController extends Controller
             }
 
             if ($active !== 'Y') {
+                $stat = (int)($user->STAT ?? 0);
+
+                if ($maxLog > 0 && $stat >= $maxLog) {
+                    return response()->json([
+                        'status'  => 'error',
+                        'code'    => 'LOCKED',
+                        'message' => "Your account has been locked after {$maxLog} failed login attempt(s). Please contact your administrator to release your account.",
+                    ], 403);
+                }
+
                 return response()->json([
                     'status'  => 'error',
                     'code'    => 'INACTIVE',
-                    'message' => 'Your account is inactive. Please contact administrator.',
+                    'message' => 'Your account is inactive. Please contact your administrator.',
                 ], 403);
             }
+
+            // ── Password Expiry check (passExp) ─────────────────────────────────
+            $passExp = (int) ($policy->passExp ?? 0);
+            if ($passExp > 0) {
+                $lastChanged = $user->CPWORD_DATE ?? $user->TPWORD_DATE ?? null;
+
+                if ($lastChanged === null) {
+                    return response()->json([
+                        'status'  => 'error',
+                        'code'    => 'PASSWORD_EXPIRED',
+                        'message' => 'Your password has expired. Please set a new password.',
+                    ], 403);
+                }
+
+                $daysSinceChange = now()->diffInDays(\Carbon\Carbon::parse($lastChanged));
+                if ($daysSinceChange >= $passExp) {
+                    return response()->json([
+                        'status'  => 'error',
+                        'code'    => 'PASSWORD_EXPIRED',
+                        'message' => "Your password expired {$daysSinceChange} day(s) ago. Please set a new password.",
+                    ], 403);
+                }
+            }
+            // ────────────────────────────────────────────────────────────────────
 
             // 2) Seat enforcement (atomic inside SeatGate; uses USER_CODE + login_active)
             if (!$gate->tryOccupy($user->USER_CODE)) {
@@ -515,6 +625,7 @@ class AuthController extends Controller
                         'LOGIN_COUNT'   => DB::raw('ISNULL(LOGIN_COUNT, 0) + 1'),
                         'LAST_BROWSER'  => $browserInfo,
                         'LAST_SEEN_AT'  => now(),             // keep inactivity in sync
+                        'STAT'          => 0,                 // reset failed attempt counter
                     ]);
             } catch (\Throwable $e) {
                 Log::warning("Failed to update login audit for {$user->USER_CODE}: " . $e->getMessage());
@@ -524,6 +635,7 @@ class AuthController extends Controller
                 'USER_CODE' => $user->USER_CODE,
                 'USER_NAME' => $user->USER_NAME,
                 'EMAIL_ADD' => $user->EMAIL_ADD,
+                'USER_TYPE' => $user->USER_TYPE,
             ];
 
             return response()->json([
@@ -569,36 +681,37 @@ class AuthController extends Controller
 
 
     public function me(Request $req)
-{
-    if (!Auth::check()) {
-        return response()->json(['message' => 'Unauthenticated'], 401);
+    {
+        if (!Auth::check()) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $u = Auth::user();
+
+        $cacheKey = "user:active_session:{$u->USER_CODE}";
+        $currentSessionId = $req->session()->getId();
+        $mappedSessionId = Cache::get($cacheKey);
+
+        $loginStat = DB::connection('tenant')
+            ->table('USERS')
+            ->where('USER_CODE', $u->USER_CODE)
+            ->value('LOGIN_STAT');
+
+        if ((string)$loginStat !== '1' || ($mappedSessionId && $mappedSessionId !== $currentSessionId)) {
+            Auth::logout();
+            $req->session()->invalidate();
+            $req->session()->regenerateToken();
+
+            return response()->json(['message' => 'Session expired'], 401);
+        }
+
+        return response()->json([
+            'USER_CODE' => $u->USER_CODE,
+            'USER_NAME' => $u->USER_NAME,
+            'EMAIL_ADD' => $u->EMAIL_ADD,
+            'USER_TYPE' => $u->USER_TYPE,
+        ]);
     }
-
-    $u = Auth::user();
-
-    $cacheKey = "user:active_session:{$u->USER_CODE}";
-    $currentSessionId = $req->session()->getId();
-    $mappedSessionId = Cache::get($cacheKey);
-
-    $loginStat = DB::connection('tenant')
-        ->table('USERS')
-        ->where('USER_CODE', $u->USER_CODE)
-        ->value('LOGIN_STAT');
-
-    if ((string)$loginStat !== '1' || ($mappedSessionId && $mappedSessionId !== $currentSessionId)) {
-        Auth::logout();
-        $req->session()->invalidate();
-        $req->session()->regenerateToken();
-
-        return response()->json(['message' => 'Session expired'], 401);
-    }
-
-    return response()->json([
-        'USER_CODE' => $u->USER_CODE,
-        'USER_NAME' => $u->USER_NAME,
-        'EMAIL_ADD' => $u->EMAIL_ADD,
-    ]);
-}
 
 
     public function heartbeat(Request $req)
@@ -650,46 +763,46 @@ class AuthController extends Controller
     // }
 
     public function logout(Request $req)
-{
-    try {
-        if (Auth::check()) {
-            $user = Auth::user();
-            $cacheKey = "user:active_session:{$user->USER_CODE}";
-            $current  = $req->session()->getId();
-            $mapped   = Cache::get($cacheKey);
+    {
+        try {
+            if (Auth::check()) {
+                $user = Auth::user();
+                $cacheKey = "user:active_session:{$user->USER_CODE}";
+                $current  = $req->session()->getId();
+                $mapped   = Cache::get($cacheKey);
 
-            if ($mapped === $current) {
-                Cache::forget($cacheKey);
+                if ($mapped === $current) {
+                    Cache::forget($cacheKey);
+                }
+
+                try {
+                    DB::connection('tenant')
+                        ->table('USERS')
+                        ->where('USER_CODE', $user->USER_CODE)
+                        ->update([
+                            'LOGIN_STAT' => 0,
+                        ]);
+                } catch (\Throwable $e) {
+                    Log::warning("Failed to update logout audit for {$user->USER_CODE}: " . $e->getMessage());
+                }
+
+                Auth::logout();
             }
 
-            try {
-                DB::connection('tenant')
-                    ->table('USERS')
-                    ->where('USER_CODE', $user->USER_CODE)
-                    ->update([
-                        'LOGIN_STAT' => 0,
-                    ]);
-            } catch (\Throwable $e) {
-                Log::warning("Failed to update logout audit for {$user->USER_CODE}: " . $e->getMessage());
-            }
+            $req->session()->invalidate();
+            $req->session()->regenerateToken();
 
-            Auth::logout();
+            return response()->json([
+                'ok' => true,
+                'message' => 'Successfully logged out',
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("Logout failed: " . $e->getMessage());
+
+            return response()->json([
+                'ok' => false,
+                'message' => 'Logout failed.',
+            ], 500);
         }
-
-        $req->session()->invalidate();
-        $req->session()->regenerateToken();
-
-        return response()->json([
-            'ok' => true,
-            'message' => 'Successfully logged out',
-        ]);
-    } catch (\Throwable $e) {
-        Log::error("Logout failed: " . $e->getMessage());
-
-        return response()->json([
-            'ok' => false,
-            'message' => 'Logout failed.',
-        ], 500);
     }
-}
 }

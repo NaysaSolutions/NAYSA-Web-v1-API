@@ -190,4 +190,58 @@ public function lookup(Request $request) {
             ], 500);
         }
     }
+
+
+
+public function checkInUsed(Request $request) {
+        $validated = $request->validate([
+            'json_data' => 'required|array'
+        ]);
+
+        $params = json_encode(['json_data' => $validated['json_data']]);
+
+        try {
+            $results = DB::select(
+                'EXEC sproc_PHP_QStatRef @mode = ?, @params = ?', // FIX: Changed from sproc_PHP_Uom
+                ['CheckInUsed', $params] 
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $results,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function checkDuplicate(Request $request) {
+        $validated = $request->validate([
+            'json_data' => 'required|array'
+        ]);
+
+        $params = json_encode(['json_data' => $validated['json_data']]);
+
+        try {
+            $results = DB::select(
+                'EXEC sproc_PHP_QStatRef @mode = ?, @params = ?', // FIX: Changed from sproc_PHP_Uom
+                ['CheckDuplicate', $params] 
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $results,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
 }

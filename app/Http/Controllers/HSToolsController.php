@@ -13,6 +13,35 @@ class HSToolsController extends Controller
 {
     
 
+public function initialize(Request $request)
+{
+    $mode = $request->input('mode', $request->input('@mode'));
+    $params = $request->input('params', $request->input('@params'));
+
+    if (is_array($params)) {
+        $params = json_encode($params);
+    }
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_Initialize @mode = ?, @params = ?',
+            [$mode, $params]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Initialize completed successfully.',
+            'data' => $results,
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+}
+
 
 
 public function getTblGetFieldLenght(Request $request) {
@@ -125,6 +154,38 @@ public function getTblGetFieldLenght(Request $request) {
         ], 500);
     }
 }
+
+
+public function excelFileUpload(Request $request)
+{
+        $validated = $request->validate([
+            'json_data' => 'required|array'
+        ]);
+
+        try {
+            $params = json_encode(['json_data' => $validated['json_data']]);
+           
+
+            // Call the stored procedure
+            $result = DB::select('EXEC sproc_PHP_HSTools_ExcelFileUpload @params = ?', [
+                $params
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $result
+            ], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error executing File Upload.',
+                'details' => $e->getMessage()
+            ], 500);
+        }
+}
+
+
+
 
 
 }

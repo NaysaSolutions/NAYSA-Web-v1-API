@@ -312,6 +312,80 @@ public function getPOOpen(Request $request)
     }
 }
 
+public function getPORR_OpenSummary(Request $request) {
+
+   $jsonString = $request->input('PARAMS');
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_PO @mode = ?, @params = ?',
+            ['getPORR_OpenSummary' ,$jsonString] 
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+
+}
+
+public function getFGPORR_OpenSummary(Request $request) {
+
+   $jsonString = $request->input('PARAMS');
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_PO @mode = ?, @params = ?',
+            ['getFGPORR_OpenSummary' ,$jsonString] 
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+
+}
+
+
+
+
+public function getPORR_OpenDetail(Request $request) {
+    
+    $jsonString = $request->input('json_data');
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_PO @mode = ?, @params = ?',
+            ['getPORR_OpenDetail' ,$jsonString] 
+        );
+
+
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+
+}
+
 }
 
 

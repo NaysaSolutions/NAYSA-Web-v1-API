@@ -80,7 +80,7 @@ public function get(Request $request)
 
 
 
-public function addDetail(Request $request) {+
+public function addDetail(Request $request) {
 
     $jsonData = $request->all();
     $jsonString = json_encode($jsonData);
@@ -326,5 +326,124 @@ public function history(Request $request) {
     }
 
 }
+
+public function posting(Request $request)
+{
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_APV @mode = ?',
+            ['Posting']
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+}
+
+public function finalize(Request $request)
+{
+    try {
+        $validated = $request->validate([
+            'json_data' => 'required|array'
+        ]);
+
+        $params = json_encode(['json_data' => $validated['json_data']]);
+
+        $results = DB::select(
+            'EXEC sproc_PHP_Posting_APV @mode = ?, @params = ?',
+            ['Finalize', $params]
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+}
+
+public function getAPVRR_OpenSummary(Request $request) {
+
+   $jsonString = $request->input('PARAMS');
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_MSRR @mode = ?, @params = ?',
+            ['getAPVRR_OpenSummary' ,$jsonString] 
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+
+}
+
+public function getAPVJO_OpenSummary(Request $request) {
+
+   $jsonString = $request->input('PARAMS');
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_JO @mode = ?, @params = ?',
+            ['getAPVJO_OpenSummary' ,$jsonString] 
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+
+}
+
+
+
+
+
+public function getAPVRR_OpenDetail(Request $request) {
+    // 1. Laravel automatically turns JSON input into a PHP array
+    $inputData = $request->input('json_data'); 
+
+    try {
+        // 2. Convert it back to a JSON STRING to avoid the Array-to-String error
+        $jsonString = json_encode(['json_data' => $inputData], JSON_UNESCAPED_UNICODE);
+
+        $results = DB::select(
+            'EXEC sproc_PHP_MSRR @mode = ?, @params = ?',
+            ['getAPVRR_OpenDetail', $jsonString] 
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+    }
+}
+
 
 }

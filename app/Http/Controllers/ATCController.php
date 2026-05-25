@@ -170,7 +170,7 @@ class ATCController extends Controller
         'json_data' => 'required|array',
     ]);
 
-    $data = $request->json_data;   // ← already array
+    $data = $request->json_data;   // ? already array
     $code = $data['atcCode'] ?? null;
 
     if (!$code) {
@@ -229,7 +229,5 @@ public function checkInUsed(Request $request) {
     }
 
 }
-
-
 
 }
