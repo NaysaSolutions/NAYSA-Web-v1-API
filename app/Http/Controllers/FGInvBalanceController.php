@@ -41,5 +41,36 @@ public function getInvLookup(Request $request) {
 }
 
 
+<<<<<<< HEAD
+=======
+public function getFGUpdateStockAllocation(Request $request)
+{
+    try {
+        $mode = $request->input('mode', 'GetOpenStock');
+
+        $params = $request->input('params');
+
+        if (is_array($params)) {
+            $params = json_encode($params);
+        }
+
+        $result = DB::select(
+            'exec sproc_PHP_FGUpdateStockAllocation @mode = ?, @params = ?',
+            [$mode, $params]
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $result,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+}
+
+>>>>>>> f86ae426a6f0953b4fe07eec682ea0307bd91725
 
 }

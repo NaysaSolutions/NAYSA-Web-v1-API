@@ -5,69 +5,72 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\GenericApiMail;
 
 class PRController extends Controller
 {
+    
+public function index(Request $request) {
 
-    public function index(Request $request)
-    {
+    try {
 
-        try {
+        $request->validate([
+            'json_data' => 'required|json',
+        ]);
 
-            $request->validate([
-                'json_data' => 'required|json',
-            ]);
+        $params = $request->get('json_data');
+      
+        $results = DB::select(
+            'EXEC sproc_PHP_PR @mode = ?, @params = ?',
+            ['get' ,$params] 
+        );
 
-            $params = $request->get('json_data');
-
-            $results = DB::select(
-                'EXEC sproc_PHP_PR @mode = ?, @params = ?',
-                ['get', $params]
-            );
-
-            return response()->json([
-                'success' => true,
-                'data' => $results,
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
     }
 
 
-    public function get(Request $request)
-    {
+}
+
+
+public function get(Request $request) {
 
 
 
-        $jsonData = $request->all();
-        $jsonString = json_encode($jsonData);
+    $jsonData = $request->all(); 
+    $jsonString = json_encode($jsonData); 
 
-        try {
-            $results = DB::select(
-                'EXEC sproc_PHP_PR @mode = ?, @params = ?',
-                ['Get', $jsonString]
-            );
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_PR @mode = ?, @params = ?',
+            ['Get' ,$jsonString] 
+        );
 
-            return response()->json([
-                'success' => true,
-                'data' => $results,
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
     }
 
+}
 
 
-    public function upsert(Request $request)
-    {
+
+public function upsert(Request $request)
+{
         $validated = $request->validate([
             'json_data' => 'required|array'
         ]);
@@ -93,11 +96,11 @@ class PRController extends Controller
                 'details' => $e->getMessage()
             ], 500);
         }
-    }
+}   
 
-
-    public function cancel(Request $request)
-    {
+    
+public function cancel(Request $request)
+{
         $validated = $request->validate([
             'json_data' => 'required|array'
         ]);
@@ -123,11 +126,10 @@ class PRController extends Controller
                 'details' => $e->getMessage()
             ], 500);
         }
-    }
+}
 
 
-    public function history(Request $request)
-    {
+public function history(Request $request) {
 
         $validated = $request->validate([
             'json_data' => 'required|array'
@@ -142,8 +144,8 @@ class PRController extends Controller
                 $mode,
                 $params
             ]);
-
-            return response()->json([
+       
+         return response()->json([
                 'status' => 'success',
                 'data' => $results
             ], 200);
@@ -153,14 +155,15 @@ class PRController extends Controller
                 'message' => 'Error executing PR Upsert.',
                 'details' => $e->getMessage()
             ], 500);
-        }
     }
 
+}
 
 
 
-    public function getBranchItemBalance(Request $request)
-    {
+
+public function getBranchItemBalance(Request $request)
+{
         $validated = $request->validate([
             'json_data' => 'required|array'
         ]);
@@ -186,68 +189,12 @@ class PRController extends Controller
                 'details' => $e->getMessage()
             ], 500);
         }
-    }
+}   
 
 
 
-    // public function getPROpen(Request $request)
-    // {
-    //     Log::info('getPROpen request', $request->all());
 
-    //     $mode = $request->input('mode', 'Header');
-
-    //     $rules = [
-    //         'mode'       => 'required|string|in:Header,Detail',
-    //         'branchCode' => 'nullable|string|max:10',
-    //         'prTranType' => 'nullable|string|max:10',
-    //     ];
-
-    //     if ($mode === 'Detail') {
-    //         // 👇 treat prId as string (GUID)
-    //         $rules['prId'] = 'required|string|max:40';
-    //     } else {
-    //         $rules['prId'] = 'nullable|string|max:40';
-    //     }
-
-    //     $data = $request->validate($rules);
-
-    //     $mode       = $data['mode'];
-    //     $branchCode = $data['branchCode'] ?? null;
-    //     $prTranType = $data['prTranType'] ?? null;
-    //     $prId       = $data['prId'] ?? null;
-
-    //     try {
-    //         Log::info('getPROpen calling sproc', [
-    //             'mode'       => $mode,
-    //             'branchCode' => $branchCode,
-    //             'prTranType' => $prTranType,
-    //             'prId'       => $prId,
-    //         ]);
-
-    //         $rows = DB::select(
-    //             'EXEC sproc_PHP_PR_Open @mode = ?, @branchCode = ?, @prTranType = ?, @prId = ?',
-    //             [$mode, $branchCode, $prTranType, $prId]
-    //         );
-
-    //         return response()->json([
-    //             'success' => true,
-    //             'data'    => $rows,
-    //         ], 200);
-    //     } catch (\Throwable $e) {
-    //         Log::error('getPROpen failed', [
-    //             'error' => $e->getMessage(),
-    //             'line'  => $e->getLine(),
-    //             'file'  => $e->getFile(),
-    //         ]);
-
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => $e->getMessage(),
-    //         ], 500);
-    //     }
-    // }
-
-    public function getPROpen(Request $request)
+public function getPROpen(Request $request)
     {
         Log::info('getPROpen request', $request->all());
 
@@ -276,6 +223,13 @@ class PRController extends Controller
                 [$mode, $branchCode, $prTranType, $prId]
             );
 
+            // For PO Reference PR lookup, the frontend needs the Department Name.
+            // Some versions of sproc_PHP_PR_Open only return the RC code, so enrich
+            // Header rows here without changing the existing stored procedure result shape.
+            if (strtoupper($mode) === 'HEADER') {
+                $rows = $this->attachRcNameToPROpenRows($rows);
+            }
+
             return response()->json([
                 'success' => true,
                 'data'    => $rows,
@@ -294,13 +248,16 @@ class PRController extends Controller
         }
     }
 
-    public function update(Request $request)
+
+
+
+public function update(Request $request)
     {
         try {
             $branchCode = $request->input('branchCode');   // e.g. "HO"
             $poId       = $request->input('poId');         // PO_ID (GUID)
             $userCode   = $request->user()->USER_CODE
-                ?? $request->input('userCode', 'NSI');
+                        ?? $request->input('userCode', 'NSI');
 
             if (!$branchCode || !$poId) {
                 return response()->json([
@@ -345,54 +302,301 @@ class PRController extends Controller
 
 
 
-    public function getPRJO_OpenSummary(Request $request)
-    {
+public function getPRJO_OpenSummary(Request $request) {
 
-        $jsonString = $request->input('PARAMS');
+   $jsonString = $request->input('PARAMS');
 
-        try {
-            $results = DB::select(
-                'EXEC sproc_PHP_PR @mode = ?, @params = ?',
-                ['getPRJO_OpenSummary', $jsonString]
-            );
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_PR @mode = ?, @params = ?',
+            ['getPRJO_OpenSummary' ,$jsonString] 
+        );
 
-            return response()->json([
-                'success' => true,
-                'data' => $results,
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
     }
 
+}
 
 
 
-    public function getPRJO_OpenDetail(Request $request)
-    {
 
-        $jsonString = $request->input('json_data');
+public function getPRPO_OpenSummary(Request $request) {
 
-        try {
-            $results = DB::select(
-                'EXEC sproc_PHP_PR @mode = ?, @params = ?',
-                ['getPRJO_OpenDetail', $jsonString]
-            );
+   $jsonString = $request->input('PARAMS');
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_PR @mode = ?, @params = ?',
+            ['getPRPO_OpenSummary' ,$jsonString] 
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+
+}
 
 
 
-            return response()->json([
-                'success' => true,
-                'data' => $results,
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
+
+public function getPRJO_OpenDetail(Request $request) {
+    
+    $jsonString = $request->input('json_data');
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_PR @mode = ?, @params = ?',
+            ['getPRJO_OpenDetail' ,$jsonString] 
+        );
+
+
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+
+}
+
+
+
+public function getPRPO_OpenDetail(Request $request) {
+    
+    $jsonString = $request->input('json_data');
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_PR @mode = ?, @params = ?',
+            ['getPRPO_OpenDetail' ,$jsonString] 
+        );
+
+
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+
+}
+
+
+
+
+
+
+
+public function getPRApproval(Request $request) {
+
+   $jsonString = $request->input('PARAMS');
+
+    try {
+        $results = DB::select(
+            'EXEC sproc_PHP_PR @mode = ?, @params = ?',
+            ['GetApproval' ,$jsonString] 
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+        ], 500);
+    }
+
+}
+
+
+
+
+public function approvePR(Request $request)
+{
+    $validated = $request->validate([
+        'json_data' => 'required|array'
+    ]);
+
+    try {
+        $params = json_encode([
+            'json_data' => $validated['json_data']
+        ]);
+
+        $mode = 'Approve';
+
+        // Execute stored procedure
+        $result = DB::select(
+            'EXEC sproc_PHP_PR @mode = ?, @params = ?',
+            [$mode, $params]
+        );
+
+        // Default rows
+        $rows = $result;
+
+        /*
+         * Handle JSON string response from SP
+         * Example:
+         * [
+         *   (object)[
+         *      'result' => '[{"emailTo":"...","subject":"...","body":"..."}]'
+         *   ]
+         * ]
+         */
+        if (isset($result[0]) && is_object($result[0])) {
+
+            $firstRow = (array) $result[0];
+
+            if (count($firstRow) === 1) {
+
+                $firstValue = reset($firstRow);
+
+                if (is_string($firstValue)) {
+
+                    $decoded = json_decode($firstValue);
+
+                    if (
+                        json_last_error() === JSON_ERROR_NONE &&
+                        is_array($decoded)
+                    ) {
+                        $rows = $decoded;
+                    }
+                }
+            }
         }
+
+        /*
+         * If SP returns:
+         * SELECT 'Success' AS result
+         * then skip email sending
+         */
+        if (
+            count($rows) === 1 &&
+            isset($rows[0]->result) &&
+            $rows[0]->result === 'Success'
+        ) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'PR approved successfully.',
+                'data' => $rows,
+                'mail_summary' => [
+                    'sent_count' => 0,
+                    'failed_count' => 0,
+                    'sent' => [],
+                    'failed' => [],
+                ]
+            ], 200);
+        }
+
+        $sentEmails = [];
+        $failedEmails = [];
+
+        foreach ($rows as $row) {
+
+            $row = (object) $row;
+
+            $emailTo = $row->emailTo ?? null;
+            $subject = $row->subject ?? null;
+            $body    = $row->body ?? null;
+
+            // Validate required fields
+            if (empty($emailTo) || empty($subject) || empty($body)) {
+
+                $failedEmails[] = [
+                    'emailTo' => $emailTo,
+                    'reason' => 'Missing emailTo, subject, or body'
+                ];
+
+                continue;
+            }
+
+            // Validate email format
+            if (!filter_var($emailTo, FILTER_VALIDATE_EMAIL)) {
+
+                $failedEmails[] = [
+                    'emailTo' => $emailTo,
+                    'reason' => 'Invalid email address'
+                ];
+
+                continue;
+            }
+
+            try {
+
+                // Send email
+                Mail::to($emailTo)
+                    ->send(new GenericApiMail($subject, $body));
+
+                $sentEmails[] = [
+                    'emailTo' => $emailTo,
+                    'subject' => $subject
+                ];
+
+            } catch (\Throwable $mailException) {
+
+                $failedEmails[] = [
+                    'emailTo' => $emailTo,
+                    'reason' => $mailException->getMessage()
+                ];
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $rows,
+            'mail_summary' => [
+                'sent_count' => count($sentEmails),
+                'failed_count' => count($failedEmails),
+                'sent' => $sentEmails,
+                'failed' => $failedEmails,
+            ]
+        ], 200);
+
+    } catch (\Throwable $e) {
+
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Error executing PR Approval.',
+            'details' => $e->getMessage()
+        ], 500);
     }
 }
+
+
+
+
+}
+
+
+
+
+
+
+
+

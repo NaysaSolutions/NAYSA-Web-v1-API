@@ -127,7 +127,7 @@ class FGMastController extends Controller
             $errorcount = (int)($r0->errorcount ?? 0);
             $errormsg = (string)($r0->errormsg ?? '');
 
-            // ✅ If sproc returned validation error
+            // ? If sproc returned validation error
             if ($errorcount > 0) {
                 return response()->json([
                     'success' => false,
@@ -220,7 +220,7 @@ class FGMastController extends Controller
             'json_data' => 'required|array',
         ]);
 
-        $data = $request->json_data;   // ← already array
+        $data = $request->json_data;   // ? already array
         $code = $data['itemCode'] ?? null; // using 'itemCode' to match React frontend state
 
         if (!$code) {

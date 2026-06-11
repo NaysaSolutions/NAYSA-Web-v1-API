@@ -192,6 +192,7 @@ public function lookup(Request $request) {
     }
 
 
+
 public function checkInUsed(Request $request) {
         $validated = $request->validate([
             'json_data' => 'required|array'
@@ -241,8 +242,6 @@ public function checkInUsed(Request $request) {
             ], 500);
         }
     }
-
-
 
 
 }

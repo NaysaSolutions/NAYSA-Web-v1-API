@@ -105,6 +105,7 @@ class UserController extends Controller
                             'json_data' => [
                                 'userCode'     => $userCode,
                                 'passwordHash' => $hash,
+                                'doneBy'       => $req->input('doneBy') ?? 'system',
                             ]
                         ])
                     ]
@@ -136,16 +137,18 @@ class UserController extends Controller
                     'Upsert',
                     json_encode([
                         'json_data' => [
-                            'userCode'     => $userCode,
-                            'userName'     => $user['userName'] ?? '',
-                            'userType'     => $user['userType'] ?? 'R',
-                            'branchCode'   => $user['branchCode'] ?? '',
-                            'rcCode'       => $user['rcCode'] ?? '',
-                            'viewCostamt'  => $user['viewCostamt'] ?? 'N',
-                            'editUprice'   => $user['editUprice'] ?? 'N',
-                            'emailAdd'     => $user['emailAdd'],
-                            'position'     => $user['position'] ?? '',
-                            'active'       => 'Y',   // ✅ THIS FIXES YOUR ISSUE
+                            'userCode'      => $userCode,
+                            'userName'      => $user['userName'] ?? '',
+                            'userType'      => $user['userType'] ?? 'R',
+                            'branchCode'    => $user['branchCode'] ?? '',
+                            'rcCode'        => $user['rcCode'] ?? '',
+                            'viewCostamt'   => $user['viewCostamt'] ?? 'N',
+                            'editUprice'    => $user['editUprice'] ?? 'N',
+                            'emailAdd'      => $user['emailAdd'],
+                            'position'      => $user['position'] ?? '',
+                            'active'        => 'Y',
+                            'accountAction' => 'release',
+                            'doneBy'        => $req->input('doneBy') ?? 'system',
                         ]
                     ])
                 ]
@@ -174,7 +177,95 @@ class UserController extends Controller
         }
     }
 
-    
+
+    /* ============================================================
+     * RELEASE LOCKED ACCOUNT
+     * ============================================================
+     *
+     * Called when a Security Admin unlocks an account that was
+     * locked after exceeding the maximum failed login attempts.
+     * Resets stat + active via ReleaseAccount sproc, then emails
+     * the user a password-reset link (purpose = 'unlock').
+     */
+
+    public function releaseLockedAccount(Request $req)
+    {
+        $req->validate([
+            'userCode' => 'required|string',
+        ]);
+
+        $userCode = trim($req->input('userCode'));
+        $doneBy   = $req->input('doneBy') ?? 'system';
+        $company  = $req->header('X-Company-DB');
+
+        try {
+            // 1) Fetch user directly from the table.
+            //    Avoids the extra JSON encode/decode round-trip of sproc Get,
+            //    and guarantees we always find the user regardless of active status.
+            $rawUser = DB::connection('tenant')
+                ->table('users')
+                ->where('user_code', $userCode)
+                ->first();
+
+            if (!$rawUser) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'User not found.',
+                ], 422);
+            }
+
+            $userArr  = array_change_key_case((array) $rawUser, CASE_LOWER);
+            $emailAdd = $userArr['email_add'] ?? null;
+            $userName = $userArr['user_name'] ?? $userCode;
+
+            if (empty($emailAdd)) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'User email is missing.',
+                ], 422);
+            }
+
+            // 2) Release: reset active = Y and stat = 0
+            //    Use DB::select instead of DB::statement so SQL Server errors are not silently swallowed.
+            DB::select(
+                "exec sproc_PHP_Users ?, ?",
+                [
+                    'ReleaseAccount',
+                    json_encode([
+                        'json_data' => [
+                            'userCode' => $userCode,
+                            'doneBy'   => $doneBy,
+                        ]
+                    ])
+                ]
+            );
+
+            // 3) Email the user: account unlocked + password reset link
+            Mail::to($emailAdd)->send(
+                new TempPasswordMail(
+                    'unlock',
+                    $userName,
+                    $userCode,
+                    null,
+                    $company
+                )
+            );
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Account released. Password reset link sent to user.',
+            ]);
+
+        } catch (Throwable $e) {
+            report($e);
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Release failed: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
     /* ============================================================
      * RESET PASSWORD (EMAIL LINK ONLY)
      * ============================================================
@@ -214,62 +305,112 @@ class UserController extends Controller
      * ============================================================
      */
 
-    public function changePassword(Request $req)
-    {
-        $mode = $req->input('mode'); // admin_add | release | reset | null
+public function changePassword(Request $req)
+{
+    $mode = $req->input('mode');
 
-        $rules = [
-            'userCode'    => 'required|string',
-            'newPassword' => [
-                'required',
-                'string',
-                'min:8',
-                'regex:/[a-z]/',
-                'regex:/[A-Z]/',
-                'regex:/\d/',
-                'regex:/[^A-Za-z0-9]/',
-                'not_regex:/\s/',
-            ],
-        ];
+    // -- Fetch HS_SEC policy first (needed for both validation rules & history check) --
+    $policy    = DB::table('HS_SEC')->first();
+    $policyArr = $policy ? array_change_key_case((array) $policy, CASE_LOWER) : [];
 
-        if (!in_array($mode, ['reset', 'release'], true)) {
-            $rules['oldPassword'] = 'required|string';
-        }
+    $minimChar = (int) ($policyArr['minimchar'] ?? 0);
+    $upLow     = (bool) ($policyArr['uplow']    ?? false);
+    $letNum    = (bool) ($policyArr['letnum']   ?? false);
+    $specChar  = (bool) ($policyArr['specchar'] ?? false);
+    $passHis   = (int) ($policyArr['passhis']   ?? 0);
 
-        $validated = $req->validate($rules);
-        $userCode  = trim($validated['userCode']);
+    // -- Build newPassword rules dynamically from policy ----------------------
+    $passwordRules = ['required', 'string'];
 
-        $row = DB::table('users')->select('password')->where('user_code', $userCode)->first();
-        if (!$row) {
-            return response()->json(['status' => 'error', 'message' => 'User not found.'], 422);
-        }
-
-        if (!in_array($mode, ['reset', 'release'], true)) {
-            if (!Hash::check($req->input('oldPassword'), $row->password)) {
-                return response()->json(['status' => 'error', 'message' => 'Old password is incorrect.'], 422);
-            }
-        }
-
-        if (Hash::check($validated['newPassword'], $row->password)) {
-            return response()->json(['status' => 'error', 'message' => 'New password must differ from old password.'], 422);
-        }
-
-        $hash = Hash::make($validated['newPassword']);
-
-        DB::select("exec sproc_PHP_Users ?, ?", [
-            'SetChangedPassword',
-            json_encode(['json_data' => [
-                'userCode'     => $userCode,
-                'passwordHash' => $hash,
-            ]]),
-        ]);
-
-        return response()->json([
-            'status'  => 'success',
-            'message' => 'Password updated successfully.',
-        ]);
+    if ($minimChar > 0) {
+        $passwordRules[] = "min:{$minimChar}";
     }
 
+    if ($upLow) {
+        $passwordRules[] = 'regex:/[A-Z]/';
+        $passwordRules[] = 'regex:/[a-z]/';
+    }
+
+    if ($letNum) {
+        $passwordRules[] = 'regex:/\d/';
+    }
+
+    if ($specChar) {
+        $passwordRules[] = 'regex:/[^A-Za-z0-9]/';
+    }
+
+    $passwordRules[] = 'not_regex:/\s/'; // no spaces � always enforced
+
+    $rules = [
+        'userCode'    => 'required|string',
+        'newPassword' => $passwordRules,
+    ];
+
+    if (!in_array($mode, ['reset', 'release', 'unlock', 'expired'], true)) {
+        $rules['oldPassword'] = 'required|string';
+    }
+
+    $validated = $req->validate($rules);
+    $userCode  = trim($validated['userCode']);
+
+    $row = DB::table('users')->select('password')->where('user_code', $userCode)->first();
+    if (!$row) {
+        return response()->json(['status' => 'error', 'message' => 'User not found.'], 422);
+    }
+
+    if (!in_array($mode, ['reset', 'release', 'unlock', 'expired'], true)) {
+        $rowArr = array_change_key_case((array) $row, CASE_LOWER);
+        if (!Hash::check($validated['oldPassword'], $rowArr['password'])) {
+            return response()->json(['status' => 'error', 'message' => 'Old password is incorrect.'], 422);
+        }
+    }
+
+    // -- Password history check ------------------------------------------------
+    if ($passHis > 0) {
+        $history = DB::table('HS_PASSHIS')
+            ->where('user_code', $userCode)
+            ->where('changed_at', '>=', now()->subDays($passHis))
+            ->orderByDesc('changed_at')
+            ->get()
+            ->map(fn($r) => array_change_key_case((array) $r, CASE_LOWER))
+            ->pluck('pass_hash');
+
+        foreach ($history as $oldHash) {
+            if (Hash::check($validated['newPassword'], $oldHash)) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => "You cannot reuse a password used within the last {$passHis} day(s).",
+                ], 422);
+            }
+        }
+    } else {
+        // passHis = 0 ? only block reuse of the exact current password
+        $rowArr = array_change_key_case((array) $row, CASE_LOWER);
+        if (Hash::check($validated['newPassword'], $rowArr['password'])) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'New password must differ from old password.',
+            ], 422);
+        }
+    }
+    // -------------------------------------------------------------------------
+
+    $hash = Hash::make($validated['newPassword']);
+
+    DB::select("exec sproc_PHP_Users ?, ?", [
+        'SetChangedPassword',
+        json_encode(['json_data' => [
+            'userCode'     => $userCode,
+            'passwordHash' => $hash,
+            'doneBy'       => $req->input('doneBy') ?? $userCode,
+        ]]),
+    ]);
+
+    return response()->json([
+        'status'  => 'success',
+        'message' => 'Password updated successfully.',
+    ]);
+}
     /* ============================================================
      * LOAD / UPSERT
      * ============================================================
@@ -365,7 +506,7 @@ class UserController extends Controller
         try {
             // 1. FETCH USER BEFORE DELETION TO GET THEIR EMAIL
             $userData = DB::select("SELECT * FROM users WHERE user_code = ?", [$userCode]);
-            
+
             $isPending = false;
             $userEmail = null;
             $userName  = 'User';
@@ -373,7 +514,7 @@ class UserController extends Controller
             if (!empty($userData)) {
                 // Force keys to lowercase for SQL Server case sensitivity
                 $userArray = array_change_key_case((array) $userData[0], CASE_LOWER);
-                
+
                 if (($userArray['active'] ?? '') === 'P') {
                     $isPending = true;
                     $userEmail = $userArray['email_add'] ?? null;
@@ -385,6 +526,7 @@ class UserController extends Controller
             $params = json_encode([
                 'json_data' => [
                     'userCode' => $userCode,
+                    'doneBy'   => $request->input('doneBy') ?? 'system',
                 ]
             ], JSON_UNESCAPED_UNICODE);
 
@@ -414,7 +556,6 @@ class UserController extends Controller
                 'deleteMode' => $parsedResult['deleteMode'] ?? null,
                 'data' => $rows,
             ], 200);
-
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
@@ -433,7 +574,7 @@ class UserController extends Controller
 
         if (!$userCode) {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => 'User ID is required.'
             ], 400);
         }
@@ -449,7 +590,6 @@ class UserController extends Controller
                 'success' => true,
                 'data' => $results
             ], 200);
-
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
@@ -469,7 +609,7 @@ class UserController extends Controller
 
         if (!$userCode) {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => 'User ID is required.'
             ], 400);
         }
@@ -485,7 +625,6 @@ class UserController extends Controller
                 'success' => true,
                 'data' => $results
             ], 200);
-
         } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
@@ -496,353 +635,460 @@ class UserController extends Controller
 
 
 
-//     // User Profile Image
-//  public function uploadProfileImage(Request $request)
-// {
-//     $validator = Validator::make($request->all(), [
-//         'USER_CODE' => 'required|string',
-//         'PROFILE_IMAGE' => 'required|file|mimes:jpg,jpeg,png,webp|max:2048',
-//     ]);
+    /* ============================================================
+     * LOGIN / PASSWORD POLICY (HS_SEC)
+     * ============================================================
+     */
 
-//     if ($validator->fails()) {
-//         return response()->json([
-//             'message' => 'Validation failed.',
-//             'errors' => $validator->errors(),
-//         ], 422);
-//     }
+    public function getPolicy()
+    {
+        try {
+            $rows = DB::select(
+                'EXEC dbo.sproc_PHP_Users @mode = ?',
+                ['GetPolicy']
+            );
 
-//     try {
-//         $file = $request->file('PROFILE_IMAGE');
+            $raw  = $rows[0]->result ?? null;
 
-//         if (!$file || !$file->isValid()) {
-//             return response()->json([
-//                 'message' => 'Invalid uploaded file.',
-//             ], 422);
-//         }
+            if (!$raw) {
+                return response()->json(['success' => false, 'message' => 'No result returned from sproc.'], 500);
+            }
 
-//         $binary = file_get_contents($file->getRealPath());
-//         $hex = bin2hex($binary); // ✅ convert to HEX
-//         $mime = $file->getMimeType();
+            $data = json_decode($raw, true);
 
-//         \Log::info('UPLOAD PROFILE IMAGE START', [
-//             'userCode' => $request->USER_CODE,
-//             'mime' => $mime,
-//             'size' => strlen($binary),
-//         ]);
+            // Normalise BIT (0/1) → boolean for the frontend
+            $data['upLow']    = (bool) ($data['upLow']    ?? false);
+            $data['letNum']   = (bool) ($data['letNum']   ?? false);
+            $data['specChar'] = (bool) ($data['specChar'] ?? false);
 
-//         DB::connection('tenant')->update(
-//             "UPDATE USERS
-//              SET PROFILE_IMG = CONVERT(VARBINARY(MAX), ?, 2),
-//                  PROFILE_IMG_MIME = ?
-//              WHERE USER_CODE = ?",
-//             [$hex, $mime, $request->USER_CODE]
-//         );
-
-//         \Log::info('UPLOAD PROFILE IMAGE SUCCESS', [
-//             'userCode' => $request->USER_CODE,
-//         ]);
-
-//         return response()->json([
-//             'message' => 'Profile image uploaded successfully.',
-//         ]);
-//     } catch (\Throwable $e) {
-//         \Log::error('UPLOAD PROFILE IMAGE ERROR', [
-//             'userCode' => $request->USER_CODE,
-//             'message' => $e->getMessage(),
-//         ]);
-
-//         return response()->json([
-//             'message' => 'Failed to upload profile image.',
-//         ], 500);
-//     }
-// }
-
-
-
-
-// public function getProfileImage($userCode)
-// {
-//     try {
-//         $row = DB::connection('tenant')->selectOne("
-//             SELECT PROFILE_IMG, PROFILE_IMG_MIME
-//             FROM USERS
-//             WHERE USER_CODE = ?
-//         ", [$userCode]);
-
-//         if (!$row || !$row->PROFILE_IMG) {
-//             return response()->json([
-//                 'message' => 'No image found.'
-//             ], 404);
-//         }
-
-//         $image = $row->PROFILE_IMG;
-
-//         if (is_resource($image)) {
-//             $image = stream_get_contents($image);
-//         }
-
-//         // If SQL Server returns 0xHEX...
-//         if (is_string($image) && strncmp($image, '0x', 2) === 0) {
-//             $decoded = hex2bin(substr($image, 2));
-//             if ($decoded !== false) {
-//                 $image = $decoded;
-//             }
-//         }
-
-//         // If SQL Server returns plain HEX without 0x
-//         if (
-//             is_string($image) &&
-//             preg_match('/^[0-9A-Fa-f]+$/', $image) &&
-//             strlen($image) % 2 === 0
-//         ) {
-//             $decoded = hex2bin($image);
-//             if ($decoded !== false) {
-//                 $image = $decoded;
-//             }
-//         }
-
-//         if ($image === false || $image === null || $image === '') {
-//             return response()->json([
-//                 'message' => 'Invalid image data.'
-//             ], 500);
-//         }
-
-//         \Log::info('PROFILE IMAGE DEBUG', [
-//             'userCode' => $userCode,
-//             'raw_type' => gettype($row->PROFILE_IMG),
-//             'mime' => $row->PROFILE_IMG_MIME,
-//             'final_len' => is_string($image) ? strlen($image) : null,
-//             'final_first_8_hex' => is_string($image)
-//                 ? strtoupper(bin2hex(substr($image, 0, 8)))
-//                 : null,
-//         ]);
-
-//         while (ob_get_level()) {
-//             ob_end_clean();
-//         }
-
-//         return response()->stream(function () use ($image) {
-//             echo $image;
-//         }, 200, [
-//             'Content-Type' => $row->PROFILE_IMG_MIME ?: 'image/jpeg',
-//             'Content-Length' => strlen($image),
-//             'Content-Disposition' => 'inline; filename="profile.jpg"',
-//             'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
-//             'Pragma' => 'no-cache',
-//         ]);
-//     } catch (\Throwable $e) {
-//         \Log::error('PROFILE IMAGE ERROR', [
-//             'userCode' => $userCode,
-//             'error' => $e->getMessage(),
-//         ]);
-
-//         return response()->json([
-//             'message' => 'Failed to fetch profile image.'
-//         ], 500);
-//     }
-// }
-// public function deleteProfileImage($userCode)
-// {
-//     try {
-//         $updated = DB::connection('tenant')->update(
-//             "UPDATE USERS
-//              SET PROFILE_IMG = NULL,
-//                  PROFILE_IMG_MIME = NULL
-//              WHERE USER_CODE = ?",
-//             [$userCode]
-//         );
-
-//         if ($updated === 0) {
-//             $exists = DB::connection('tenant')
-//                 ->table('USERS')
-//                 ->where('USER_CODE', $userCode)
-//                 ->exists();
-
-//             if (!$exists) {
-//                 return response()->json([
-//                     'message' => 'User not found.',
-//                 ], 404);
-//             }
-//         }
-
-//         \Log::info('DELETE PROFILE IMAGE SUCCESS', [
-//             'userCode' => $userCode,
-//         ]);
-
-//         return response()->json([
-//             'message' => 'Profile image deleted successfully.',
-//         ]);
-//     } catch (\Throwable $e) {
-//         \Log::error('DELETE PROFILE IMAGE ERROR', [
-//             'userCode' => $userCode,
-//             'message' => $e->getMessage(),
-//         ]);
-
-//         return response()->json([
-//             'message' => 'Failed to delete profile image.',
-//         ], 500);
-//     }
-// }
-
-// User Profile Image
-public function uploadProfileImage(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'USER_CODE' => 'required|string',
-        'PROFILE_IMAGE' => 'required|file|mimes:jpg,jpeg,png,webp|max:2048',
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json([
-            'message' => 'Validation failed.',
-            'errors' => $validator->errors(),
-        ], 422);
+            return response()->json(['success' => true, 'data' => $data], 200);
+        } catch (Throwable $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 
-    try {
-        $file = $request->file('PROFILE_IMAGE');
+    public function upsertPolicy(Request $request)
+    {
+        $request->validate([
+            'minimChar' => 'required|integer|min:0',
+            'passExp'   => 'required|integer|min:0',
+            'passHis'   => 'required|integer|min:0',
+            'upLow'     => 'required|boolean',
+            'letNum'    => 'required|boolean',
+            'specChar'  => 'required|boolean',
+            'maxLog'    => 'required|integer|min:0',
+        ]);
 
-        if (!$file || !$file->isValid()) {
+        try {
+            $params = json_encode([
+                'json_data' => [
+                    'minimChar' => (int)  $request->input('minimChar'),
+                    'passExp'   => (int)  $request->input('passExp'),
+                    'passHis'   => (int)  $request->input('passHis'),
+                    'upLow'     => $request->boolean('upLow')    ? 1 : 0,
+                    'letNum'    => $request->boolean('letNum')   ? 1 : 0,
+                    'specChar'  => $request->boolean('specChar') ? 1 : 0,
+                    'maxLog'    => (int)  $request->input('maxLog'),
+                    'doneBy'    => $request->input('doneBy') ?? 'system',
+                ]
+            ], JSON_UNESCAPED_UNICODE);
+
+            $rows = DB::select(
+                'EXEC dbo.sproc_PHP_Users @mode = ?, @params = ?',
+                ['UpsertPolicy', $params]
+            );
+
+            $raw    = $rows[0]->result ?? null;
+            $result = $raw ? json_decode($raw, true) : [];
+
+            if (($result['status'] ?? '') === 'success') {
+                return response()->json(['success' => true, 'message' => $result['message']], 200);
+            }
+
+            return response()->json(['success' => false, 'message' => $result['message'] ?? 'Failed to save policy.'], 422);
+        } catch (Throwable $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    //     // User Profile Image
+    //  public function uploadProfileImage(Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'USER_CODE' => 'required|string',
+    //         'PROFILE_IMAGE' => 'required|file|mimes:jpg,jpeg,png,webp|max:2048',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'message' => 'Validation failed.',
+    //             'errors' => $validator->errors(),
+    //         ], 422);
+    //     }
+
+    //     try {
+    //         $file = $request->file('PROFILE_IMAGE');
+
+    //         if (!$file || !$file->isValid()) {
+    //             return response()->json([
+    //                 'message' => 'Invalid uploaded file.',
+    //             ], 422);
+    //         }
+
+    //         $binary = file_get_contents($file->getRealPath());
+    //         $hex = bin2hex($binary); // ✅ convert to HEX
+    //         $mime = $file->getMimeType();
+
+    //         \Log::info('UPLOAD PROFILE IMAGE START', [
+    //             'userCode' => $request->USER_CODE,
+    //             'mime' => $mime,
+    //             'size' => strlen($binary),
+    //         ]);
+
+    //         DB::connection('tenant')->update(
+    //             "UPDATE USERS
+    //              SET PROFILE_IMG = CONVERT(VARBINARY(MAX), ?, 2),
+    //                  PROFILE_IMG_MIME = ?
+    //              WHERE USER_CODE = ?",
+    //             [$hex, $mime, $request->USER_CODE]
+    //         );
+
+    //         \Log::info('UPLOAD PROFILE IMAGE SUCCESS', [
+    //             'userCode' => $request->USER_CODE,
+    //         ]);
+
+    //         return response()->json([
+    //             'message' => 'Profile image uploaded successfully.',
+    //         ]);
+    //     } catch (\Throwable $e) {
+    //         \Log::error('UPLOAD PROFILE IMAGE ERROR', [
+    //             'userCode' => $request->USER_CODE,
+    //             'message' => $e->getMessage(),
+    //         ]);
+
+    //         return response()->json([
+    //             'message' => 'Failed to upload profile image.',
+    //         ], 500);
+    //     }
+    // }
+
+
+
+
+    // public function getProfileImage($userCode)
+    // {
+    //     try {
+    //         $row = DB::connection('tenant')->selectOne("
+    //             SELECT PROFILE_IMG, PROFILE_IMG_MIME
+    //             FROM USERS
+    //             WHERE USER_CODE = ?
+    //         ", [$userCode]);
+
+    //         if (!$row || !$row->PROFILE_IMG) {
+    //             return response()->json([
+    //                 'message' => 'No image found.'
+    //             ], 404);
+    //         }
+
+    //         $image = $row->PROFILE_IMG;
+
+    //         if (is_resource($image)) {
+    //             $image = stream_get_contents($image);
+    //         }
+
+    //         // If SQL Server returns 0xHEX...
+    //         if (is_string($image) && strncmp($image, '0x', 2) === 0) {
+    //             $decoded = hex2bin(substr($image, 2));
+    //             if ($decoded !== false) {
+    //                 $image = $decoded;
+    //             }
+    //         }
+
+    //         // If SQL Server returns plain HEX without 0x
+    //         if (
+    //             is_string($image) &&
+    //             preg_match('/^[0-9A-Fa-f]+$/', $image) &&
+    //             strlen($image) % 2 === 0
+    //         ) {
+    //             $decoded = hex2bin($image);
+    //             if ($decoded !== false) {
+    //                 $image = $decoded;
+    //             }
+    //         }
+
+    //         if ($image === false || $image === null || $image === '') {
+    //             return response()->json([
+    //                 'message' => 'Invalid image data.'
+    //             ], 500);
+    //         }
+
+    //         \Log::info('PROFILE IMAGE DEBUG', [
+    //             'userCode' => $userCode,
+    //             'raw_type' => gettype($row->PROFILE_IMG),
+    //             'mime' => $row->PROFILE_IMG_MIME,
+    //             'final_len' => is_string($image) ? strlen($image) : null,
+    //             'final_first_8_hex' => is_string($image)
+    //                 ? strtoupper(bin2hex(substr($image, 0, 8)))
+    //                 : null,
+    //         ]);
+
+    //         while (ob_get_level()) {
+    //             ob_end_clean();
+    //         }
+
+    //         return response()->stream(function () use ($image) {
+    //             echo $image;
+    //         }, 200, [
+    //             'Content-Type' => $row->PROFILE_IMG_MIME ?: 'image/jpeg',
+    //             'Content-Length' => strlen($image),
+    //             'Content-Disposition' => 'inline; filename="profile.jpg"',
+    //             'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+    //             'Pragma' => 'no-cache',
+    //         ]);
+    //     } catch (\Throwable $e) {
+    //         \Log::error('PROFILE IMAGE ERROR', [
+    //             'userCode' => $userCode,
+    //             'error' => $e->getMessage(),
+    //         ]);
+
+    //         return response()->json([
+    //             'message' => 'Failed to fetch profile image.'
+    //         ], 500);
+    //     }
+    // }
+    // public function deleteProfileImage($userCode)
+    // {
+    //     try {
+    //         $updated = DB::connection('tenant')->update(
+    //             "UPDATE USERS
+    //              SET PROFILE_IMG = NULL,
+    //                  PROFILE_IMG_MIME = NULL
+    //              WHERE USER_CODE = ?",
+    //             [$userCode]
+    //         );
+
+    //         if ($updated === 0) {
+    //             $exists = DB::connection('tenant')
+    //                 ->table('USERS')
+    //                 ->where('USER_CODE', $userCode)
+    //                 ->exists();
+
+    //             if (!$exists) {
+    //                 return response()->json([
+    //                     'message' => 'User not found.',
+    //                 ], 404);
+    //             }
+    //         }
+
+    //         \Log::info('DELETE PROFILE IMAGE SUCCESS', [
+    //             'userCode' => $userCode,
+    //         ]);
+
+    //         return response()->json([
+    //             'message' => 'Profile image deleted successfully.',
+    //         ]);
+    //     } catch (\Throwable $e) {
+    //         \Log::error('DELETE PROFILE IMAGE ERROR', [
+    //             'userCode' => $userCode,
+    //             'message' => $e->getMessage(),
+    //         ]);
+
+    //         return response()->json([
+    //             'message' => 'Failed to delete profile image.',
+    //         ], 500);
+    //     }
+    // }
+
+    // User Profile Image
+    public function uploadProfileImage(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'USER_CODE' => 'required|string',
+            'PROFILE_IMAGE' => 'required|file|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
+
+        if ($validator->fails()) {
             return response()->json([
-                'message' => 'Invalid uploaded file.',
+                'message' => 'Validation failed.',
+                'errors' => $validator->errors(),
             ], 422);
         }
 
-        $binary = file_get_contents($file->getRealPath());
-        $hex = strtoupper(bin2hex($binary));
-        $mime = $file->getMimeType();
+        try {
+            $file = $request->file('PROFILE_IMAGE');
 
-        DB::connection('tenant')->update(
-            "UPDATE USERS
+            if (!$file || !$file->isValid()) {
+                return response()->json([
+                    'message' => 'Invalid uploaded file.',
+                ], 422);
+            }
+
+            $binary = file_get_contents($file->getRealPath());
+            $hex = strtoupper(bin2hex($binary));
+            $mime = $file->getMimeType();
+
+            DB::connection('tenant')->update(
+                "UPDATE USERS
              SET PROFILE_IMG = CONVERT(VARBINARY(MAX), ?, 2),
                  PROFILE_IMG_MIME = ?
              WHERE USER_CODE = ?",
-            [$hex, $mime, $request->USER_CODE]
-        );
+                [$hex, $mime, $request->USER_CODE]
+            );
 
-        return response()->json([
-            'message' => 'Profile image uploaded successfully.',
-        ]);
-    } catch (\Throwable $e) {
-        \Log::error('UPLOAD PROFILE IMAGE ERROR', [
-            'userCode' => $request->USER_CODE,
-            'message' => $e->getMessage(),
-        ]);
-
-        return response()->json([
-            'message' => 'Failed to upload profile image.',
-        ], 500);
-    }
-}
-
-public function getProfileImage($userCode)
-{
-    try {
-        $row = DB::connection('tenant')->selectOne(
-            "SELECT PROFILE_IMG, PROFILE_IMG_MIME
-             FROM USERS
-             WHERE USER_CODE = ?",
-            [$userCode]
-        );
-
-        if (!$row || !$row->PROFILE_IMG) {
             return response()->json([
-                'message' => 'No image found.',
-            ], 404);
-        }
+                'message' => 'Profile image uploaded successfully.',
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('UPLOAD PROFILE IMAGE ERROR', [
+                'userCode' => $request->USER_CODE,
+                'message' => $e->getMessage(),
+            ]);
 
-        $image = $row->PROFILE_IMG;
-
-        if (is_resource($image)) {
-            $image = stream_get_contents($image);
-        }
-
-        if (is_string($image) && strncmp($image, '0x', 2) === 0) {
-            $decoded = hex2bin(substr($image, 2));
-            if ($decoded !== false) {
-                $image = $decoded;
-            }
-        }
-
-        if (
-            is_string($image) &&
-            preg_match('/^[0-9A-Fa-f]+$/', $image) &&
-            strlen($image) % 2 === 0
-        ) {
-            $decoded = hex2bin($image);
-            if ($decoded !== false) {
-                $image = $decoded;
-            }
-        }
-
-        if ($image === false || $image === null || $image === '') {
             return response()->json([
-                'message' => 'Invalid image data.',
+                'message' => 'Failed to upload profile image.',
             ], 500);
         }
-
-        while (ob_get_level()) {
-            ob_end_clean();
-        }
-
-        return response()->stream(function () use ($image) {
-            echo $image;
-        }, 200, [
-            'Content-Type' => $row->PROFILE_IMG_MIME ?: 'image/jpeg',
-            'Content-Length' => strlen($image),
-            'Content-Disposition' => 'inline; filename="profile.jpg"',
-            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
-            'Pragma' => 'no-cache',
-        ]);
-    } catch (\Throwable $e) {
-        \Log::error('PROFILE IMAGE ERROR', [
-            'userCode' => $userCode,
-            'message' => $e->getMessage(),
-        ]);
-
-        return response()->json([
-            'message' => 'Failed to fetch profile image.',
-        ], 500);
     }
-}
 
-public function deleteProfileImage($userCode)
-{
-    try {
-        $updated = DB::connection('tenant')->update(
-            "UPDATE USERS
+    public function getProfileImage($userCode)
+    {
+        try {
+            $row = DB::connection('tenant')->selectOne(
+                "SELECT PROFILE_IMG, PROFILE_IMG_MIME
+             FROM USERS
+             WHERE USER_CODE = ?",
+                [$userCode]
+            );
+
+            if (!$row || !$row->PROFILE_IMG) {
+                return response()->json([
+                    'message' => 'No image found.',
+                ], 404);
+            }
+
+            $image = $row->PROFILE_IMG;
+
+            if (is_resource($image)) {
+                $image = stream_get_contents($image);
+            }
+
+            if (is_string($image) && strncmp($image, '0x', 2) === 0) {
+                $decoded = hex2bin(substr($image, 2));
+                if ($decoded !== false) {
+                    $image = $decoded;
+                }
+            }
+
+            if (
+                is_string($image) &&
+                preg_match('/^[0-9A-Fa-f]+$/', $image) &&
+                strlen($image) % 2 === 0
+            ) {
+                $decoded = hex2bin($image);
+                if ($decoded !== false) {
+                    $image = $decoded;
+                }
+            }
+
+            if ($image === false || $image === null || $image === '') {
+                return response()->json([
+                    'message' => 'Invalid image data.',
+                ], 500);
+            }
+
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+
+            return response()->stream(function () use ($image) {
+                echo $image;
+            }, 200, [
+                'Content-Type' => $row->PROFILE_IMG_MIME ?: 'image/jpeg',
+                'Content-Length' => strlen($image),
+                'Content-Disposition' => 'inline; filename="profile.jpg"',
+                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+                'Pragma' => 'no-cache',
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('PROFILE IMAGE ERROR', [
+                'userCode' => $userCode,
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to fetch profile image.',
+            ], 500);
+        }
+    }
+
+    public function deleteProfileImage($userCode)
+    {
+        try {
+            $updated = DB::connection('tenant')->update(
+                "UPDATE USERS
              SET PROFILE_IMG = NULL,
                  PROFILE_IMG_MIME = NULL
              WHERE USER_CODE = ?",
-            [$userCode]
-        );
+                [$userCode]
+            );
 
-        if ($updated === 0) {
-            $exists = DB::connection('tenant')
-                ->table('USERS')
-                ->where('USER_CODE', $userCode)
-                ->exists();
+            if ($updated === 0) {
+                $exists = DB::connection('tenant')
+                    ->table('USERS')
+                    ->where('USER_CODE', $userCode)
+                    ->exists();
 
-            if (!$exists) {
-                return response()->json([
-                    'message' => 'User not found.',
-                ], 404);
+                if (!$exists) {
+                    return response()->json([
+                        'message' => 'User not found.',
+                    ], 404);
+                }
             }
+
+            return response()->json([
+                'message' => 'Profile image deleted successfully.',
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('DELETE PROFILE IMAGE ERROR', [
+                'userCode' => $userCode,
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to delete profile image.',
+            ], 500);
         }
-
-        return response()->json([
-            'message' => 'Profile image deleted successfully.',
-        ]);
-    } catch (\Throwable $e) {
-        \Log::error('DELETE PROFILE IMAGE ERROR', [
-            'userCode' => $userCode,
-            'message' => $e->getMessage(),
-        ]);
-
-        return response()->json([
-            'message' => 'Failed to delete profile image.',
-        ], 500);
     }
-}
 
+    public function getSecTrail(Request $request)
+    {
+        $raw    = $request->input('PARAMS');
+        $params = is_array($raw) ? $raw : json_decode($raw, true);
+
+        // Normalize "ALL" sentinel values to null so the sproc's IS NULL checks work
+        $tblCode   = ($params['tblCode']    ?? 'ALL') === 'ALL' ? null : ($params['tblCode']    ?? null);
+        $activity  = ($params['activity']   ?? 'ALL') === 'ALL' ? null : ($params['activity']   ?? null);
+        $refCode   = !empty($params['refCode'])   ? $params['refCode']   : null;
+        $doneBy    = !empty($params['doneByCode']) ? $params['doneByCode'] : null;
+        $startDate = !empty($params['startDate']) ? $params['startDate'] : null;
+        $endDate   = !empty($params['endDate'])   ? $params['endDate']   : null;
+
+        try {
+            $results = DB::select(
+                'EXEC dbo.sproc_PHP_SecTrail
+                @_mode      = ?,
+                @_tblCode   = ?,
+                @_activity  = ?,
+                @_refCode   = ?,
+                @_doneBy    = ?,
+                @_startDate = ?,
+                @_endDate   = ?',
+                ['GetAll', $tblCode, $activity, $refCode, $doneBy, $startDate, $endDate]
+            );
+
+            return response()->json(['success' => true, 'data' => $results], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
 }

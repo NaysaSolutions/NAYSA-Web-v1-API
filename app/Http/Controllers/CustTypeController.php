@@ -70,28 +70,29 @@ class CustTypeController extends Controller
 
 
     public function get(Request $request)
-{
-    $request->validate([
-        'CUSTTYPE_CODE' => 'required|string',
-    ]);
+    {
 
-    try {
-        $results = DB::select(
-            'EXEC sproc_PHP_CustTypeRef @mode = ?, @params = ?',
-            ['Get', $request->CUSTTYPE_CODE] // FIXED: Was BILLTERM_CODE
-        );
+        $request->validate([
+            'CUSTTYPE_CODE' => 'required|string',
+        ]);
 
-        return response()->json([
-            'success' => true,
-            'data' => $results,
-        ], 200);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage(),
-        ], 500);
+        try {
+            $results = DB::select(
+                'EXEC sproc_PHP_CustTypeRef @mode = ?, @params = ?',
+                ['Get', $request->BILLTERM_CODE]
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $results,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
     }
-}
 
 
 
@@ -200,24 +201,26 @@ public function checkDuplicate(Request $request) {
 
 }
 
- public function delete(Request $request)
+  public function delete(Request $request)
 {
     $request->validate([
         'json_data' => 'required|array',
     ]);
 
-    $data = $request->json_data;
-    $code = $data['custTypeCode'] ?? null; // FIXED: Was billtermCode
+    $data = $request->json_data;   // ← already array
+    $code = $data['billtermCode'] ?? null;
 
     if (!$code) {
         return response()->json([
             'success' => false,
-            'message' => 'Customer Type code is required.', // FIXED: Was BillTerm
+            'message' => 'BillTerm code is required.',
         ], 400);
     }
 
     try {
-        $params = json_encode(['json_data' => $data]);
+        $params = json_encode([
+            'json_data' => $data
+        ]);
 
         DB::statement(
             'EXEC sproc_PHP_CustTypeRef @mode = ?, @params = ?',

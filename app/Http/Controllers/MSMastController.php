@@ -36,13 +36,33 @@ public function index(Request $request) {
 
 
 public function lookup(Request $request) {
-    // 1. Get the raw JSON string sent by the generic lookup component
-    $params = $request->input('PARAMS');
+    $raw = $request->input('PARAMS');
+
+    // Decode whatever the frontend sent
+    $decoded = json_decode($raw, true);
+
+    // If it's not a valid JSON object, start fresh
+    if (!is_array($decoded)) {
+        $decoded = [];
+    }
+
+    // Ensure required keys exist with safe defaults
+    if (!array_key_exists('search', $decoded)) {
+        $decoded['search'] = '';
+    }
+    if (!array_key_exists('searchMode', $decoded)) {
+        $decoded['searchMode'] = 'contains';
+    }
+    if (!array_key_exists('filter', $decoded)) {
+        $decoded['filter'] = 'ActiveAll';
+    }
+
+    $params = json_encode($decoded);
 
     try {
         $results = DB::select(
             'EXEC sproc_PHP_MSMast @mode = ?, @params = ?',
-            ['Lookup', $params] // Pass the whole JSON string
+            ['Lookup', $params]
         );
 
         return response()->json([
@@ -56,7 +76,6 @@ public function lookup(Request $request) {
         ], 500);
     }
 }
-
 
 
 

@@ -79,7 +79,7 @@ class ZoneController extends Controller
         try {
             $results = DB::select(
                 'EXEC sproc_PHP_ZoneRef @mode = ?, @params = ?',
-                ['Get', $request->ZONE_CODE]
+                ['Get', $request->BILLTERM_CODE]
             );
 
             return response()->json([
@@ -202,43 +202,41 @@ public function checkDuplicate(Request $request) {
 }
 
   public function delete(Request $request)
-    {
-        $request->validate([
-            'json_data' => 'required|array',
+{
+    $request->validate([
+        'json_data' => 'required|array',
+    ]);
+
+    $data = $request->json_data;   // ← already array
+    $code = $data['billtermCode'] ?? null;
+
+    if (!$code) {
+        return response()->json([
+            'success' => false,
+            'message' => 'BillTerm code is required.',
+        ], 400);
+    }
+
+    try {
+        $params = json_encode([
+            'json_data' => $data
         ]);
 
-        $data = $request->json_data;
-        $code = $data['zoneCode'] ?? null; 
+        DB::statement(
+            'EXEC sproc_PHP_ZoneRef @mode = ?, @params = ?',
+            ['Delete', $params]
+        );
 
-        if (!$code) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Zone code is required.', // Updated error message
-            ], 400);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Deleted successfully.'
+        ]);
 
-        try {
-            $params = json_encode([
-                'json_data' => $data
-            ]);
-
-            // Note: DB::select is safer if you need to catch sproc error messages, 
-            // but DB::statement works for raw execution.
-            DB::statement(
-                'EXEC sproc_PHP_ZoneRef @mode = ?, @params = ?',
-                ['Delete', $params]
-            );
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Deleted successfully.'
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 500);
-        }
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 500);
     }
+}
 }
