@@ -69,16 +69,20 @@ use App\Http\Controllers\QStatController;
 use App\Http\Controllers\JobCodesController;
 use App\Http\Controllers\MSISController;
 use App\Http\Controllers\MSSTController;
+use App\Http\Controllers\RMSTController;
 use App\Http\Controllers\MSAJController;
 use App\Http\Controllers\MSRRController;
 use App\Http\Controllers\MSRTVController;
 use App\Http\Controllers\MSInvBalanceController;
 use App\Http\Controllers\UOMController;
+use App\Http\Controllers\FGSTController;
+use App\Http\Controllers\FGInvBalanceController;
 
 
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\POInqController;
 use App\Http\Controllers\PRInqController;
 
 
@@ -475,7 +479,7 @@ Route::middleware('tenant')->group(function () {
 
 
     Route::get('/getInvLookupMS', [MSInvBalanceController::class, 'getInvLookup']);
-
+    Route::get('/getInvLookupFG', [FGInvBalanceController::class, 'getInvLookup']);
 
 
 
@@ -532,13 +536,25 @@ Route::middleware('tenant')->group(function () {
     Route::get('/postingMSRR', [MSRRController::class, 'posting']);
     Route::get('/findMSRR', [MSRRController::class, 'find']);
 
-    Route::get('/qstat', [QStatController::class, 'index']);          // Load
-    Route::get('/lookupQStat', [QStatController::class, 'lookup']);   // Lookup modal
-    Route::post('/getQStat', [QStatController::class, 'get']);        // Single
-    Route::post('/upsertQStat', [QStatController::class, 'upsert']);  // Save
-    Route::post('/deleteQStat', [QStatController::class, 'delete']);  // Delete
 
-    Route::get('/lookupJobCode', [JobCodesController::class, 'lookup']);   // Lookup modal
+    Route::get('/qstat', [QStatController::class, 'index']);          
+    Route::get('/lookupQStat', [QStatController::class, 'lookup']);   
+    Route::post('/getQStat', [QStatController::class, 'get']);        
+    Route::post('/upsertQStat', [QStatController::class, 'upsert']);  
+    Route::post('/deleteQStat', [QStatController::class, 'delete']);  
+    Route::post('/checkInUsedQStat', [QStatController::class, 'checkInUsed']);
+    Route::post('/checkDuplicateQStat', [QStatController::class, 'checkDuplicate']);
+
+
+    Route::get('/lookupJobCode', [JobCodesController::class, 'lookup']);
+    Route::get('/jobCode', [JobCodesController::class, 'index']);
+    Route::post('/upsertJobCode', [JobCodesController::class, 'upsert']);
+    Route::get('/lookupJobCode', [JobCodesController::class, 'lookup']);
+    Route::get('/getJobCode', [JobCodesController::class, 'get']);
+    Route::post('/deleteJobCode', [JobCodesController::class, 'delete']);
+    Route::post('/checkInUsedJobCode', [JobCodesController::class, 'checkInUsed']);
+    Route::post('/checkDuplicateJobCode', [JobCodesController::class, 'checkDuplicate']);
+   // Lookup modal
 
 
     Route::get('/MSIS', [MSISController::class, 'index']);
@@ -554,6 +570,27 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getMSST', [MSSTController::class, 'get']);
     Route::get('/postingMSST', [MSSTController::class, 'posting']);
     Route::get('/findMSST', [MSSTController::class, 'find']);
+    Route::post('/getMSSTHistory', [MSSTController::class, 'history']);
+
+    Route::get('/RMST', [RMSTController::class, 'index']);
+    Route::post('/upsertRMST', [RMSTController::class, 'upsert']);
+    Route::post('/generateGLRMST', [RMSTController::class, 'generateGL']);
+    Route::get('/getRMST', [RMSTController::class, 'get']);
+    Route::get('/postingRMST', [RMSTController::class, 'posting']);
+    Route::get('/findRMST', [RMSTController::class, 'find']);
+    Route::post('/getRMSTHistory', [RMSTController::class, 'history']);
+
+
+    Route::get('/FGST', [FGSTController::class, 'index']);
+    Route::post('/upsertFGST', [FGSTController::class, 'upsert']);
+    Route::post('/generateGLFGST', [FGSTController::class, 'generateGL']);
+    Route::get('/getFGST', [FGSTController::class, 'get']);
+    Route::get('/postingFGST', [FGSTController::class, 'posting']);
+    Route::get('/findFGST', [FGSTController::class, 'find']);
+    Route::post('/getFGSTHistory', [FGSTController::class, 'history']);
+
+
+
 
     Route::get('/MSAJ', [MSAJController::class, 'index']);
     Route::post('/upsertMSAJ', [MSAJController::class, 'upsert']);
@@ -603,9 +640,9 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getUom', [UOMController::class, 'get']);
     Route::post('/deleteUom', [UOMController::class, 'delete']);
     Route::post('/checkInUsedUom', [UOMController::class, 'checkInUsed']);
-    Route::post('/checkInUsedLocation', [UOMController::class, 'checkInUsed']);
+    Route::post('/checkDuplicateUom', [UOMController::class, 'checkDuplicate']);
 
-   
+
 
     Route::get('/aPCM', [APCMController::class, 'index']);
     Route::post('/upsertAPCM', [APCMController::class, 'upsert']);
@@ -703,6 +740,9 @@ Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
     Route::post('/finalizeAPCM', [APCMController::class, 'finalize']);
     Route::post('/finalizeMSRR', [MSRRController::class, 'finalize']);
     Route::post('/finalizeMSAJ', [MSAJController::class, 'finalize']);
+    Route::post('/finalizeMSST', [MSSTController::class, 'finalize']);
+    Route::post('/finalizeRMST', [RMSTController::class, 'finalize']);
+    Route::post('/finalizeFGST', [FGSTController::class, 'finalize']);
 
 
     Route::post('/cancelARDM', [ARDMController::class, 'cancel']);
@@ -721,6 +761,10 @@ Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
     Route::post('/cancelPR',  [PRController::class, 'cancel']);
     Route::post('/cancelPO', [POController::class, 'cancel']);
     Route::post('/cancelJO',  [JOController::class, 'cancel']);
+    Route::post('/cancelMSST',   [MSSTController::class, 'cancel']);
+    Route::post('/cancelRMST',   [RMSTController::class, 'cancel']);
+    Route::post('/cancelFGST',   [FGSTController::class, 'cancel']);
+    
 
     Route::post('/generateJVARCWLCL', [ARBalanceController::class, 'generateJVARCWLCL']);
     Route::post('/processGLMonthEnd', [GLBalanceController::class, 'processGLMonthEnd']);
