@@ -1,5 +1,9 @@
 ﻿<?php
 
+
+
+
+// GLOBAL - CONTROLLERS
 use App\Http\Controllers\HSDocController;
 use App\Http\Controllers\HSDropdownController;
 use App\Http\Controllers\HSOptionController;
@@ -8,54 +12,124 @@ use App\Http\Controllers\HSRptController;
 use App\Http\Controllers\HSToolsController;
 use App\Http\Controllers\PrintingController;
 use App\Http\Controllers\FileAttachmentController;
+use App\Http\Controllers\AllBIRController;
+use App\Http\Controllers\TemplateLayoutController;
 
+
+
+
+// GLOBAL REFERENCE - CONTROLLERS
 use App\Http\Controllers\CompanyController;
-use App\Http\Controllers\BankTypeController;
+use App\Http\Controllers\CutoffController;
 use App\Http\Controllers\VATController;
 use App\Http\Controllers\ATCController;
 use App\Http\Controllers\CurrController;
-use App\Http\Controllers\CutoffController;
-use App\Http\Controllers\RCTypeController;
-use App\Http\Controllers\RCMastController;
 use App\Http\Controllers\DForexController;
-use App\Http\Controllers\BankMasterController;
+use App\Http\Controllers\BranchController;
+
+
+
+
+// GENERAL LEDGER - TRANSACTION CONTROLLERS
+use App\Http\Controllers\JournalVoucherController;
+
+// GENERAL LEDGER - REFERENCE FILE CONTROLLERS
 use App\Http\Controllers\COAMasterController;
 use App\Http\Controllers\COAClassController;
 use App\Http\Controllers\FSConsolidationController;
-use App\Http\Controllers\BranchController;
-use App\Http\Controllers\BillCodeController;
-use App\Http\Controllers\PayTermController;
-use App\Http\Controllers\BillTermController;
-use App\Http\Controllers\VendMasterController;
-use App\Http\Controllers\CustMasterController;
+use App\Http\Controllers\RCTypeController;
+use App\Http\Controllers\RCMastController;
 use App\Http\Controllers\SLMasterController;
+use App\Http\Controllers\BankTypeController;
+use App\Http\Controllers\BankMasterController;
 
-use App\Http\Controllers\AreaController;
-use App\Http\Controllers\ZoneController;
-use App\Http\Controllers\CustTypeController;
+// GENERAL LEDGER - INQUIRY CONTROLLERS
+use App\Http\Controllers\GLBalanceController;
 
-use App\Http\Controllers\JournalVoucherController;
+
+
+// GENERAL LEDGER - BANKRECON CONTROLLERS
+use App\Http\Controllers\BankReconController;
+use App\Http\Controllers\ARDSController;
+use App\Http\Controllers\ARDSBalanceController;
+
+
+
+
+// ACCOUNTS PAYABLE - TRANSACTION CONTROLLERS
 use App\Http\Controllers\APVoucherController;
 use App\Http\Controllers\APDMController;
 use App\Http\Controllers\APCMController;
 use App\Http\Controllers\CVController;
 use App\Http\Controllers\PCVController;
+
+// ACCOUNTS PAYABLE - REFERENCE FILE CONTROLLERS
+use App\Http\Controllers\PayTermController;
+use App\Http\Controllers\VendMasterController;
+use App\Http\Controllers\CheckTemplateController;
+
+// ACCOUNTS PAYABLE - INQUIRY CONTROLLERS
+use App\Http\Controllers\APBalanceController;
+
+
+
+
+// SALES - TRANSACTION CONTROLLERS
+use App\Http\Controllers\SOController;
+use App\Http\Controllers\DRController;
+use App\Http\Controllers\SIController;
+use App\Http\Controllers\CSIController;
+
+// SALES - REFERENCE FILE CONTROLLERS
+use App\Http\Controllers\PriceMatrixController;
+
+// SALES - INQUIRY CONTROLLERS
+use App\Http\Controllers\SalesInqController;
+
+
+
+
+// ACCOUNTS RECEIVABLE - TRANSACTION CONTROLLERS
 use App\Http\Controllers\SVIController;
 use App\Http\Controllers\SOAController;
 use App\Http\Controllers\ARCMController;
 use App\Http\Controllers\ARDMController;
 use App\Http\Controllers\CRController;
-use App\Http\Controllers\SalesRepController;
-use App\Http\Controllers\SOController;
-use App\Http\Controllers\DRController;
 
+// ACCOUNTS RECEIVABLE - REFERENCE FILE CONTROLLERS
+use App\Http\Controllers\SalesRepController;
+use App\Http\Controllers\AreaController;
+use App\Http\Controllers\ZoneController;
+use App\Http\Controllers\CustTypeController;
+use App\Http\Controllers\BillCodeController;
+use App\Http\Controllers\BillTermController;
+use App\Http\Controllers\CustMasterController;
+
+// ACCOUNTS RECEIVABLE - INQUIRY CONTROLLERS
 use App\Http\Controllers\ARController;
 use App\Http\Controllers\ARBalanceController;
-use App\Http\Controllers\GLBalanceController;
-use App\Http\Controllers\APBalanceController;
-use App\Http\Controllers\AllBIRController;
 
 
+
+
+// PURCHASING - TRANSACTION CONTROLLERS
+use App\Http\Controllers\POController;
+use App\Http\Controllers\PRController;
+use App\Http\Controllers\JOController;
+use App\Http\Controllers\CanController;
+
+// PURCHASING - REFERENCE FILE CONTROLLERS
+use App\Http\Controllers\JobCodesController;
+
+// PURCHASING - INQUIRY CONTROLLERS
+use App\Http\Controllers\PRInqController;
+use App\Http\Controllers\POInqController;
+use App\Http\Controllers\JOInqController;
+
+
+
+
+// SECURITY - CONTROLLERS
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\AccessRightsController;
 use App\Http\Controllers\MasterAccessRightsController;
@@ -63,61 +137,157 @@ use App\Http\Controllers\ReportAccessRightsController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MailController;
+use App\Http\Controllers\AllTranApprovalController;
 
-use App\Http\Controllers\POController;
-use App\Http\Controllers\PRController;
-use App\Http\Controllers\RRController;
-use App\Http\Controllers\JOController;
-use App\Http\Controllers\MSMastController;
-use App\Http\Controllers\FGMastController;
+
+
+
+// FG INVENTORY - TRANSACTION CONTROLLERS
 use App\Http\Controllers\FGRRController;
-use App\Http\Controllers\MSCategController;
-use App\Http\Controllers\MSClassController;
+use App\Http\Controllers\FGRTVController;
+use App\Http\Controllers\FGISController;
+use App\Http\Controllers\FGSTController;
+use App\Http\Controllers\FGAJController;
+use App\Http\Controllers\FGPRController;
+
+// FG INVENTORY - REFERENCE FILE CONTROLLERS
+use App\Http\Controllers\FGMastController;
 use App\Http\Controllers\FGCategController;
 use App\Http\Controllers\FGClassController;
+
+// FG INVENTORY - INQUIRY CONTROLLERS
+use App\Http\Controllers\FGInvBalanceController;
+use App\Http\Controllers\FGInvStockCardController;
+
+
+
+
+// MS INVENTORY - TRANSACTION CONTROLLERS
+use App\Http\Controllers\MSRRController;
+use App\Http\Controllers\MSRTVController;
+use App\Http\Controllers\MSISController;
+use App\Http\Controllers\MSSTController;
+use App\Http\Controllers\MSAJController;
+
+
+
+
+// MS INVENTORY - REFERENCE FILE CONTROLLERS
+use App\Http\Controllers\MSMastController;
+use App\Http\Controllers\MSCategController;
+use App\Http\Controllers\MSClassController;
+
+// MS INVENTORY - INQUIRY CONTROLLERS
+use App\Http\Controllers\MSInvBalanceController;
+use App\Http\Controllers\MSInvStockCardController;
+
+
+
+
+// RM INVENTORY - TRANSACTION CONTROLLERS
+use App\Http\Controllers\RMRRController;
+use App\Http\Controllers\RMRTVController;
+use App\Http\Controllers\RMISController;
+use App\Http\Controllers\RMSTController;
+use App\Http\Controllers\RMAJController;
+
+
+
+
+
+// RM INVENTORY - REFERENCE FILE CONTROLLERS
+use App\Http\Controllers\RMMastController;
+use App\Http\Controllers\RMCategController;
+use App\Http\Controllers\RMClassController;
+
+
+
+
+
+// RM INVENTORY - INQUIRY CONTROLLERS
+use App\Http\Controllers\RMInvBalanceController;
+use App\Http\Controllers\RMInvStockCardController;
+
+
+
+
+// INVENTORY - GLOBAL CONTROLLERS
+use App\Http\Controllers\RRController;
 use App\Http\Controllers\UOMController;
 use App\Http\Controllers\WarehouseMastController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\QStatController;
-use App\Http\Controllers\JobCodesController;
-use App\Http\Controllers\MSISController;
-use App\Http\Controllers\MSSTController;
-use App\Http\Controllers\RMSTController;
-use App\Http\Controllers\MSAJController;
-use App\Http\Controllers\MSRRController;
-use App\Http\Controllers\MSRTVController;
-use App\Http\Controllers\MSInvBalanceController;
-<<<<<<< HEAD
-use App\Http\Controllers\UOMController;
-use App\Http\Controllers\FGSTController;
-use App\Http\Controllers\FGInvBalanceController;
-=======
-use App\Http\Controllers\MSInvStockCardController;
-use App\Http\Controllers\FGInvBalanceController;
-use App\Http\Controllers\PriceMatrixController;
-use App\Http\Controllers\PRInqController;
-use App\Http\Controllers\POInqController;
-use App\Http\Controllers\JOInqController;
-use App\Http\Controllers\AllTranApprovalController;
-use App\Http\Controllers\CheckTemplateController;
-use App\Http\Controllers\CanController;
-use App\Http\Controllers\BankReconController;
-use App\Http\Controllers\SIController;
-use App\Http\Controllers\ARDSController;
-use App\Http\Controllers\FGAJController;
 
 
->>>>>>> f86ae426a6f0953b4fe07eec682ea0307bd91725
+
+
+
+// FIXED ASSETS - TRANSACTION CONTROLLERS
+use App\Http\Controllers\FARRController;
+use App\Http\Controllers\FATRController;
+use App\Http\Controllers\FARCController;
+use App\Http\Controllers\FAADController;
+use App\Http\Controllers\FASPController;
+use App\Http\Controllers\FAMGController;
+use App\Http\Controllers\FADPController;
+use App\Http\Controllers\FADSController;
+use App\Http\Controllers\FARSController;
+
+// FIXED ASSETS - REFERENCE FILE CONTROLLERS
+use App\Http\Controllers\FACategController; 
+use App\Http\Controllers\FAClassController;
+use App\Http\Controllers\FALocController;
+use App\Http\Controllers\FAMastController;
+
+// FIXED ASSETS - INQUIRY CONTROLLERS
+use App\Http\Controllers\FAMoveController;
+
+
+
+
+// LANDED COST - TRANSACTION CONTROLLERS
+use App\Http\Controllers\LCController;
+
+// LANDED COST - REFERENCE FILE CONTROLLERS
+use App\Http\Controllers\LCRefController;
+
+
+//STORE-PORTAL
+use App\Http\Controllers\StorePortalOrderController;
+
+
+// BUDGET - TRANSACTION CONTROLLERS
+use App\Http\Controllers\BUDBBController;
+
+
+
+// BUDGET - REFERENCE FILE CONTROLLERS
+use App\Http\Controllers\BudItemRefController;
+use App\Http\Controllers\BUDMoveController;
+use App\Http\Controllers\BUDRAController;
+use App\Http\Controllers\BUDAUController;
+use App\Http\Controllers\BUDCLController;
+
+
+
+
+// PRODUCTION - REFERENCE FILE CONTROLLERS
+use App\Http\Controllers\ProdBOMController;
+use App\Http\Controllers\ProdParametersController;
+
+
+
+
+
+// PRODUCTION - TRANSACTION CONTROLLERS
+use App\Http\Controllers\WOController;
+use App\Http\Controllers\WorkCenterController;
 
 
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-<<<<<<< HEAD
-use App\Http\Controllers\POInqController;
-use App\Http\Controllers\PRInqController;
-=======
->>>>>>> f86ae426a6f0953b4fe07eec682ea0307bd91725
+
 
 
 /*
@@ -133,6 +303,9 @@ Route::options('{any}', function () {
 
 Route::get('/companies', [AuthController::class, 'companies']);
 Route::post('/send-mail', [MailController::class, 'send']);
+
+
+
 
 Route::middleware('tenant')->group(function () {
 
@@ -239,16 +412,38 @@ Route::middleware('tenant')->group(function () {
     Route::post('/upsertDocSign', [PrintingController::class, 'upsertDocSign']);
     Route::get('/getDocSign', [PrintingController::class, 'getDocSign']);
 
+
+
+
+
     Route::get('/getPOInquiry', [POInqController::class, 'getPOInquiry']);
     Route::get('/getJOInquiry', [JOInqController::class, 'getJOInquiry']);
     Route::post('/getPURReport', [PrintingController::class, 'getPUR_Report']);
-
+    Route::post('/getFAReport', [PrintingController::class, 'getFA_Report']);
+    Route::post('/getIMPReport', [PrintingController::class, 'getIMP_Report']);
+    Route::post('/getBudgetReport', [PrintingController::class, 'getBudget_Report']);
+    Route::post('/getSalesReport', [PrintingController::class, 'getSales_Report']);
+    
 
 
     // --Revised export using React
     Route::post('/getARReport', [PrintingController::class, 'getAR_Report']);
     Route::post('/getAPReport', [PrintingController::class, 'getAP_Report']);
     Route::post('/getGLReport', [PrintingController::class, 'getGL_Report']);
+    Route::post('/getFGINVReport', [PrintingController::class, 'getFGINV_Report']);
+    Route::post('/getMSINVReport', [PrintingController::class, 'getMSINV_Report']);
+    Route::post('/getRMINVReport', [PrintingController::class, 'getRMINV_Report']);
+
+	
+
+
+    //Dev Express Printing
+    Route::post('/print-dxr-form', [PrintingController::class, 'printDxrForm']);
+    Route::post('/open-dxr-viewer', [PrintingController::class, 'openDxrViewer']);
+    Route::post('/print-dxr-report', [PrintingController::class, 'printDxrReport']);            
+
+
+
 
 
 
@@ -273,6 +468,7 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getARAging', [ARBalanceController::class, 'getARAging']);
     Route::get('/getARAdvances', [ARBalanceController::class, 'getARAdvances']);
     Route::get('/getARCWLCLInquiry', [ARBalanceController::class, 'getARCWLCLInquiry']);
+    Route::post('/updateARCWLCL', [ARBalanceController::class, 'updateARCWLCL']);
 
 
     Route::get('/getGLInquiry', [GLBalanceController::class, 'getGLInquiry']);
@@ -556,6 +752,14 @@ Route::middleware('tenant')->group(function () {
     Route::post('/checkDuplicateFGMast', [FGMastController::class, 'checkDuplicate']);
     Route::post('/checkInUsedFGMast',    [FGMastController::class, 'checkInUsed']);
 
+    Route::get('/rmMast',                [RMMastController::class, 'index']);
+    Route::post('/upsertRMMast',         [RMMastController::class, 'upsert']);
+    Route::get('/lookupRMMast',          [RMMastController::class, 'lookup']);
+    Route::post('/getRMMast',            [RMMastController::class, 'get']);
+    Route::post('/checkDuplicateRMMast', [RMMastController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedRMMast',    [RMMastController::class, 'checkInUsed']);
+    Route::post('/deleteRMMast',         [RMMastController::class, 'delete']);
+
     Route::get('/msCateg', [MSCategController::class, 'index']);
     Route::get('/lookupMSCateg', [MSCategController::class, 'lookup']);
     Route::get('/getMSCateg', [MSCategController::class, 'get']);
@@ -584,6 +788,24 @@ Route::middleware('tenant')->group(function () {
     Route::post('/checkDuplicateFGCateg', [FGCategController::class, 'checkDuplicate']);
     Route::post('/checkInUsedFGCateg', [FGCategController::class, 'checkInUsed']);
 
+    Route::get('/rmCateg', [RMCategController::class, 'index']);
+    Route::get('/lookupRMCateg', [RMCategController::class, 'lookup']);
+    Route::get('/getRMCateg', [RMCategController::class, 'get']);
+    Route::post('/upsertRMCateg', [RMCategController::class, 'upsert']);
+    Route::post('/deleteRMCateg', [RMCategController::class, 'delete']);
+    Route::post('/checkDuplicateRMCateg', [RMCategController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedRMCateg', [RMCategController::class, 'checkInUsed']);
+    Route::post('/validateRMCategBulk', [RMCategController::class, 'validateBulk']);
+
+    Route::get('/rmClass', [RMClassController::class, 'index']);
+    Route::get('/getRMClass', [RMClassController::class, 'get']);
+    Route::get('/lookupRMClass', [RMClassController::class, 'lookup']);
+    Route::post('/upsertRMClass', [RMClassController::class, 'upsert']);
+    Route::post('/deleteRMClass', [RMClassController::class, 'delete']);
+    Route::post('/checkDuplicateRMClass', [RMClassController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedRMClass', [RMClassController::class, 'checkInUsed']);
+
+
     Route::prefix('location')->group(function () {
     Route::get('/location',   [LocationController::class, 'load']);
     Route::get('/getLocation',    [LocationController::class, 'get']);           
@@ -595,10 +817,63 @@ Route::middleware('tenant')->group(function () {
     });
 
 
+    Route::prefix('ms/inventory/stock-card')->group(function () {
+        Route::get('/setup', [MSInvStockCardController::class, 'setup']);
+        Route::get('/fifo-balance', [MSInvStockCardController::class, 'fifoBalance']);
+        Route::get('/location-balance', [MSInvStockCardController::class, 'locationBalance']);
+        Route::get('/stock-card', [MSInvStockCardController::class, 'stockCard']);
+        Route::get('/stock-status', [MSInvStockCardController::class, 'stockStatus']);
+    });
+
+    
+    Route::prefix('fg/inventory/stock-card')->group(function () {
+        Route::get('/setup', [FGInvStockCardController::class, 'setup']);
+        Route::get('/fifo-balance', [FGInvStockCardController::class, 'fifoBalance']);
+        Route::get('/location-balance', [FGInvStockCardController::class, 'locationBalance']);
+        Route::get('/stock-card', [FGInvStockCardController::class, 'stockCard']);
+        Route::get('/stock-status', [FGInvStockCardController::class, 'stockStatus']);
+    });
+
+
+    Route::prefix('rm/inventory/stock-card')->group(function () {
+        Route::get('/setup', [RMInvStockCardController::class, 'setup']);
+        Route::get('/fifo-balance', [RMInvStockCardController::class, 'fifoBalance']);
+        Route::get('/location-balance', [RMInvStockCardController::class, 'locationBalance']);
+        Route::get('/stock-card', [RMInvStockCardController::class, 'stockCard']);
+        Route::get('/stock-status', [RMInvStockCardController::class, 'stockStatus']);
+    });
+
+
+
+    Route::get('/prodBOM',                [ProdBOMController::class, 'index']);
+    Route::post('/getProdBOM',            [ProdBOMController::class, 'get']);
+    Route::get('/lookupProdBOMItem',      [ProdBOMController::class, 'lookupItem']);
+    Route::post('/upsertProdBOM',         [ProdBOMController::class, 'upsert']);
+    Route::post('/deleteProdBOM',         [ProdBOMController::class, 'delete']);
+    Route::post('/checkDuplicateProdBOM', [ProdBOMController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedProdBOM',    [ProdBOMController::class, 'checkInUsed']);
+   
+
+    Route::prefix('workCenter')->group(function () {
+    Route::get('/load', [WorkCenterController::class, 'index']);
+    Route::post('/get', [WorkCenterController::class, 'get']);
+    Route::get('/lookup', [WorkCenterController::class, 'lookup']); // Connects to SearchWorkCenterRef.jsx
+    Route::post('/upsert', [WorkCenterController::class, 'upsert']);
+    Route::post('/delete', [WorkCenterController::class, 'delete']);
+    Route::post('/checkDuplicate', [WorkCenterController::class, 'checkDuplicate']);
+    Route::post('/checkInUsed', [WorkCenterController::class, 'checkInUsed']);
+});
+    Route::get('/lookupWorkCenter', [WorkCenterController::class, 'lookup']);
+
+  Route::prefix('prodParameters')->group(function () {
+        Route::get('/load',   [ProdParametersController::class, 'index']);
+        Route::post('/get',   [ProdParametersController::class, 'get']);
+        Route::post('/upsert', [ProdParametersController::class, 'upsert']);
+    });
+
+
     Route::get('/getInvLookupMS', [MSInvBalanceController::class, 'getInvLookup']);
     Route::get('/getInvLookupFG', [FGInvBalanceController::class, 'getInvLookup']);
-<<<<<<< HEAD
-=======
 
     Route::get('/fgClass', [FGClassController::class, 'index']);
     Route::get('/getFGClass', [FGClassController::class, 'get']);
@@ -619,7 +894,6 @@ Route::middleware('tenant')->group(function () {
     Route::get('/historyPriceMatrix', [PriceMatrixController::class, 'history']);
     Route::get('/historyPriceMatrixperItem', [PriceMatrixController::class, 'historyPerItem']);
 
->>>>>>> f86ae426a6f0953b4fe07eec682ea0307bd91725
 
 
 
@@ -652,7 +926,9 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getPORR_OpenSummary', [POController::class, 'getPORR_OpenSummary']);
     Route::get('/getFGPORR_OpenSummary', [POController::class, 'getFGPORR_OpenSummary']);
     Route::post('/getPORR_OpenDetail', [POController::class, 'getPORR_OpenDetail']);
-
+    Route::post('/getFGPORR_OpenDetail', [POController::class, 'getFGPORR_OpenDetail']);
+    Route::get('/getRMPORR_OpenSummary', [POController::class, 'getRMPORR_OpenSummary']);
+    Route::post('/getRMPORR_OpenDetail', [POController::class, 'getRMPORR_OpenDetail']);
 
     Route::get('/JO', [JOController::class, 'index']);
     Route::post('/upsertJO', [JOController::class, 'upsert']);
@@ -661,6 +937,50 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getJOApproval', [JOController::class, 'getJOApproval']);
     Route::post('/approveJO', [JOController::class, 'approveJO']);
 
+
+    Route::get('/RMRR', [RMRRController::class, 'index']);
+    Route::post('/upsertRMRR', [RMRRController::class, 'upsert']);
+    Route::post('/generateGLRMRR', [RMRRController::class, 'generateGL']);
+    Route::get('/getRMRR', [RMRRController::class, 'get']);
+    Route::get('/postingRMRR', [RMRRController::class, 'posting']);
+    Route::get('/findRMRR', [RMRRController::class, 'find']);
+    Route::post('/getRMRRHistory', [RMRRController::class, 'history']);
+
+    
+    Route::get('/RMRTV', [RMRTVController::class, 'index']);
+    Route::post('/upsertRMRTV', [RMRTVController::class, 'upsert']);
+    Route::post('/generateGLRMRTV', [RMRTVController::class, 'generateGL']);
+    Route::get('/getRMRTV', [RMRTVController::class, 'get']);
+    Route::get('/postingRMRTV', [RMRTVController::class, 'posting']);
+    Route::post('/finalizeRMRTV', [RMRTVController::class, 'finalize']);
+    Route::post('/getRMRTVHistory', [RMRTVController::class, 'history']);
+    Route::get('/findRMRTV', [RMRTVController::class, 'find']);
+
+    
+    
+
+    Route::post('/getRMAJ', [RMAJController::class, 'get']);
+    Route::get('/getRMAJ', [RMAJController::class, 'get']);
+    Route::get('/postingRMAJ', [RMAJController::class, 'posting']);
+    Route::post('/upsertRMAJ', [RMAJController::class, 'upsert']);
+    Route::post('/generateRMAJEntries', [RMAJController::class, 'generateGL']);
+    Route::post('/getRMAJHistory', [RMAJController::class, 'history']);
+    Route::post('/findRMAJ', [RMAJController::class, 'find']);
+    Route::post('/validateRMAJUpload', [RMAJController::class, 'validateUpload']);
+    Route::post('/checkRMAJBBUploaded', [RMAJController::class, 'checkBBUploaded']);
+    Route::post('/finalizeRMAJ', [RMAJController::class, 'finalize']);
+
+
+
+    Route::get('/RMST', [RMSTController::class, 'index']);
+    Route::post('/upsertRMST', [RMSTController::class, 'upsert']);
+    Route::post('/generateGLRMST', [RMSTController::class, 'generateGL']);
+    Route::get('/getRMST', [RMSTController::class, 'get']);
+    Route::get('/postingRMST', [RMSTController::class, 'posting']);
+    Route::get('/findRMST', [RMSTController::class, 'find']);
+    Route::post('/getRMSTHistory', [RMSTController::class, 'history']);
+
+    Route::post('/cancelRMST',   [RMSTController::class, 'cancel']);
 
 
 
@@ -691,29 +1011,42 @@ Route::middleware('tenant')->group(function () {
     Route::get('/getAPVJO_OpenSummary', [APVoucherController::class, 'getAPVJO_OpenSummary']);
     Route::post('/getAPVRR_OpenDetail', [APVoucherController::class, 'getAPVRR_OpenDetail']);
 
+    Route::get('/FGRR', [FGRRController::class, 'index']);
+    Route::post('/upsertFGRR', [FGRRController::class, 'upsert']);
+    Route::post('/generateGLFGRR', [FGRRController::class, 'generateGL']);
+    Route::get('/getFGRR', [FGRRController::class, 'get']);
+    Route::get('/postingFGRR', [FGRRController::class, 'posting']);
+    Route::get('/findFGRR', [FGRRController::class, 'find']);
+    Route::post('/getFGRRHistory', [FGRRController::class, 'history']);
+
+    Route::get('/FGIS', [FGISController::class, 'index']);
+    Route::post('/upsertFGIS', [FGISController::class, 'upsert']);
+    Route::post('/generateGLFGIS', [FGISController::class, 'generateGL']);
+    Route::get('/getFGIS', [FGISController::class, 'get']);
+    Route::post('/getFGISHistory', [FGISController::class, 'history']);
+    Route::get('/postingFGIS', [FGISController::class, 'posting']);
+    Route::get('/findFGIS', [FGISController::class, 'find']);
+
+    Route::get('/FGPR', [FGPRController::class, 'index']);
+    Route::post('/upsertFGPR', [FGPRController::class, 'upsert']);
+    Route::post('/generateGLFGPR', [FGPRController::class, 'generateGL']);
+    Route::get('/getFGPR', [FGPRController::class, 'get']);
+    Route::get('/postingFGPR', [FGPRController::class, 'posting']);
+    Route::post('/getFGPRHistory', [FGPRController::class, 'history']);
+    Route::post('/finalizeFGPR', [FGPRController::class, 'finalize']);
+    Route::post('/cancelFGPR', [FGPRController::class, 'cancel']);
+    Route::get('/getFGPRWO', [FGPRController::class, 'getWO']);
+
+Route::get('/RMIS', [RMISController::class, 'index']);
+Route::post('/upsertRMIS', [RMISController::class, 'upsert']);
+Route::post('/generateGLRMIS', [RMISController::class, 'generateGL']);
+Route::get('/getRMIS', [RMISController::class, 'get']);
+Route::post('/getRMISHistory', [RMISController::class, 'history']);
+Route::get('/postingRMIS', [RMISController::class, 'posting']);
+Route::get('/findRMIS', [RMISController::class, 'find']);
 
 
-<<<<<<< HEAD
 
-    Route::get('/qstat', [QStatController::class, 'index']);          
-    Route::get('/lookupQStat', [QStatController::class, 'lookup']);   
-    Route::post('/getQStat', [QStatController::class, 'get']);        
-    Route::post('/upsertQStat', [QStatController::class, 'upsert']);  
-    Route::post('/deleteQStat', [QStatController::class, 'delete']);  
-    Route::post('/checkInUsedQStat', [QStatController::class, 'checkInUsed']);
-    Route::post('/checkDuplicateQStat', [QStatController::class, 'checkDuplicate']);
-
-
-    Route::get('/lookupJobCode', [JobCodesController::class, 'lookup']);
-    Route::get('/jobCode', [JobCodesController::class, 'index']);
-    Route::post('/upsertJobCode', [JobCodesController::class, 'upsert']);
-    Route::get('/lookupJobCode', [JobCodesController::class, 'lookup']);
-    Route::get('/getJobCode', [JobCodesController::class, 'get']);
-    Route::post('/deleteJobCode', [JobCodesController::class, 'delete']);
-    Route::post('/checkInUsedJobCode', [JobCodesController::class, 'checkInUsed']);
-    Route::post('/checkDuplicateJobCode', [JobCodesController::class, 'checkDuplicate']);
-   // Lookup modal
-=======
     Route::get('/qstat', [QStatController::class, 'index']);          // Load
     Route::get('/lookupQStat', [QStatController::class, 'lookup']);   // Lookup modal
     Route::post('/getQStat', [QStatController::class, 'get']);        // Single
@@ -722,7 +1055,6 @@ Route::middleware('tenant')->group(function () {
     Route::post('/checkInUsedQStat', [QStatController::class, 'checkInUsed']);
     Route::post('/checkDuplicateQStat', [QStatController::class, 'checkDuplicate']);
 
->>>>>>> f86ae426a6f0953b4fe07eec682ea0307bd91725
 
 
     Route::get('/jobCode', [JobCodesController::class, 'index']);
@@ -736,6 +1068,7 @@ Route::middleware('tenant')->group(function () {
     Route::get('/MSIS', [MSISController::class, 'index']);
     Route::post('/upsertMSIS', [MSISController::class, 'upsert']);
     Route::post('/generateGLMSIS', [MSISController::class, 'generateGL']);
+    Route::post('/getMSISHistory', [MSISController::class, 'history']);
     Route::get('/getMSIS', [MSISController::class, 'get']);
     Route::get('/postingMSIS', [MSISController::class, 'posting']);
     Route::get('/findMSIS', [MSISController::class, 'find']);
@@ -745,27 +1078,11 @@ Route::middleware('tenant')->group(function () {
     Route::post('/generateGLMSST', [MSSTController::class, 'generateGL']);
     Route::get('/getMSST', [MSSTController::class, 'get']);
     Route::get('/postingMSST', [MSSTController::class, 'posting']);
+    Route::post('/finalizeMSST', [MSSTController::class, 'finalize']);
+    Route::get('/loadOpenSummaryMSSTWHINT', [MSSTController::class, 'loadOpenSummary']);
+    Route::get('/loadOpenDetailMSSTWHINT', [MSSTController::class, 'loadOpenDetail']);
+    Route::get('/retrieveSelectedMSSTWHINT', [MSSTController::class, 'retrieveSelectedWHINT']);
     Route::get('/findMSST', [MSSTController::class, 'find']);
-    Route::post('/getMSSTHistory', [MSSTController::class, 'history']);
-
-    Route::get('/RMST', [RMSTController::class, 'index']);
-    Route::post('/upsertRMST', [RMSTController::class, 'upsert']);
-    Route::post('/generateGLRMST', [RMSTController::class, 'generateGL']);
-    Route::get('/getRMST', [RMSTController::class, 'get']);
-    Route::get('/postingRMST', [RMSTController::class, 'posting']);
-    Route::get('/findRMST', [RMSTController::class, 'find']);
-    Route::post('/getRMSTHistory', [RMSTController::class, 'history']);
-
-
-    Route::get('/FGST', [FGSTController::class, 'index']);
-    Route::post('/upsertFGST', [FGSTController::class, 'upsert']);
-    Route::post('/generateGLFGST', [FGSTController::class, 'generateGL']);
-    Route::get('/getFGST', [FGSTController::class, 'get']);
-    Route::get('/postingFGST', [FGSTController::class, 'posting']);
-    Route::get('/findFGST', [FGSTController::class, 'find']);
-    Route::post('/getFGSTHistory', [FGSTController::class, 'history']);
-
-
 
 
     Route::get('/MSAJ', [MSAJController::class, 'index']);
@@ -779,13 +1096,45 @@ Route::middleware('tenant')->group(function () {
     Route::post('/checkMSAJBBUploaded', [MSAJController::class, 'checkBBUploaded']);
 
 
+    Route::get('/getInvLookupMS', [MSInvBalanceController::class, 'getInvLookup']);
+    Route::get('/getInvLookupRM', [RMInvBalanceController::class, 'getInvLookup']);
+    Route::get('/getInvLookupFG', [FGInvBalanceController::class, 'getInvLookup']);
+
+
     Route::get('/MSRTV', [MSRTVController::class, 'index']);
     Route::post('/upsertMSRTV', [MSRTVController::class, 'upsert']);
     Route::post('/generateGLMSRTV', [MSRTVController::class, 'generateGL']);
     Route::get('/getMSRTV', [MSRTVController::class, 'get']);
     Route::get('/postingMSRTV', [MSRTVController::class, 'posting']);
+    Route::post('/finalizeMSRTV', [MSRTVController::class, 'finalize']);
     Route::post('/getMSRTVHistory', [MSRTVController::class, 'history']);
     Route::get('/findMSRTV', [MSRTVController::class, 'find']);
+    
+
+    Route::get('/FGST', [FGSTController::class, 'index']);
+    Route::post('/upsertFGST', [FGSTController::class, 'upsert']);
+    Route::post('/generateGLFGST', [FGSTController::class, 'generateGL']);
+    Route::get('/getFGST', [FGSTController::class, 'get']);
+    Route::get('/postingFGST', [FGSTController::class, 'posting']);
+    Route::post('/getFGSTHistory', [FGSTController::class, 'history']);
+    Route::get('/findFGST', [FGSTController::class, 'find']);
+    Route::post('/finalizeFGST', [FGSTController::class, 'finalize']);
+
+
+
+
+
+
+
+    Route::get('/FGRTV', [FGRTVController::class, 'index']);
+    Route::post('/upsertFGRTV', [FGRTVController::class, 'upsert']);
+    Route::post('/generateGLFGRTV', [FGRTVController::class, 'generateGL']);
+    Route::get('/getFGRTV', [FGRTVController::class, 'get']);
+    Route::get('/postingFGRTV', [FGRTVController::class, 'posting']);
+    Route::post('/finalizeFGRTV', [FGRTVController::class, 'finalize']);
+    Route::post('/getFGRTVHistory', [FGRTVController::class, 'history']);
+    Route::get('/findFGRTV', [FGRTVController::class, 'find']);
+
 
 
 
@@ -794,6 +1143,7 @@ Route::middleware('tenant')->group(function () {
     Route::get('/postingFGAJ', [FGAJController::class, 'posting']);
     Route::post('/upsertFGAJ', [FGAJController::class, 'upsert']);
     Route::post('/generateFGAJEntries', [FGAJController::class, 'generateGL']);
+    Route::post('/generateGLFGAJ', [FGAJController::class, 'generateGL']);
     Route::post('/getFGAJHistory', [FGAJController::class, 'history']);
     Route::post('/findFGAJ', [FGAJController::class, 'find']);
     Route::post('/validateFGAJUpload', [FGAJController::class, 'validateUpload']);
@@ -836,11 +1186,6 @@ Route::middleware('tenant')->group(function () {
     Route::post('/deleteUom', [UOMController::class, 'delete']);
     Route::post('/checkInUsedUom', [UOMController::class, 'checkInUsed']);
     Route::post('/checkDuplicateUom', [UOMController::class, 'checkDuplicate']);
-<<<<<<< HEAD
-
-
-=======
->>>>>>> f86ae426a6f0953b4fe07eec682ea0307bd91725
 
     Route::get('/aPCM', [APCMController::class, 'index']);
     Route::post('/upsertAPCM', [APCMController::class, 'upsert']);
@@ -966,9 +1311,105 @@ Route::middleware('tenant')->group(function () {
     Route::get('/postingSI', [SIController::class, 'posting']);
     Route::post('/getSIHistory', [SIController::class, 'history']);
     Route::post('/finalizeSI', [SIController::class, 'finalize']);
-    Route::post('/cancelSI', [SIController::class, 'cancel']);
     Route::get('/findSI', [SIController::class, 'find']);
 
+
+    Route::get('/csI', [CSIController::class, 'index']);
+    Route::post('/upsertCSI', [CSIController::class, 'upsert']);
+    Route::post('/generateGLCSI', [CSIController::class, 'generateGL']);
+    Route::get('/getCSI', [CSIController::class, 'get']);
+    Route::get('/postingCSI', [CSIController::class, 'posting']);
+    Route::post('/getCSIHistory', [CSIController::class, 'history']);
+    Route::get('/findCSI', [CSIController::class, 'find']);
+
+ 
+
+
+
+    Route::get('/fARR', [FARRController::class, 'index']);
+    Route::post('/upsertFARR', [FARRController::class, 'upsert']);
+    Route::get('/getFARR', [FARRController::class, 'get']);
+    Route::post('/getFARRHistory', [FARRController::class, 'history']);
+    Route::get('/findFARR', [FARRController::class, 'find']);
+    Route::get('/postingFARR', [FARRController::class, 'posting']);
+    Route::post('/generateGLFARR', [FARRController::class, 'generateGL']);
+
+
+
+
+    /* FA Category */
+    Route::get('/faCateg', [FACategController::class, 'index']);
+    Route::post('/upsertFACateg', [FACategController::class, 'upsert']);
+    Route::get('/lookupFACateg', [FACategController::class, 'lookup']);
+    Route::get('/getFACateg', [FACategController::class, 'get']);
+    Route::post('/deleteFACateg', [FACategController::class, 'delete']);
+    Route::post('/checkInUsedFACateg', [FACategController::class, 'checkInUsed']);
+    Route::post('/checkDuplicateFACateg', [FACategController::class, 'checkDuplicate']);
+    Route::get('/loadFACateg', [FACategController::class, 'index']);
+
+    /* FA Class */
+    Route::get('/faClass', [FAClassController::class, 'index']);
+    Route::post('/upsertFAClass', [FAClassController::class, 'upsert']);
+    Route::get('/lookupFAClass', [FAClassController::class, 'lookup']);
+    Route::get('/getFAClass', [FAClassController::class, 'get']);
+    Route::post('/deleteFAClass', [FAClassController::class, 'delete']);
+    Route::post('/checkInUsedFAClass', [FAClassController::class, 'checkInUsed']);
+    Route::post('/checkDuplicateFAClass', [FAClassController::class, 'checkDuplicate']);
+    Route::get('/loadFAClass', [FAClassController::class, 'index']);
+
+    /* FA Location */
+    Route::get('/faLoc', [FALocController::class, 'index']);
+    Route::post('/upsertFALoc', [FALocController::class, 'upsert']);
+    Route::get('/lookupFALoc', [FALocController::class, 'lookup']);
+    Route::get('/getFALoc', [FALocController::class, 'get']);
+    Route::post('/deleteFALoc', [FALocController::class, 'delete']);
+    Route::post('/checkInUsedFALoc', [FALocController::class, 'checkInUsed']);
+    Route::post('/checkDuplicateFALoc', [FALocController::class, 'checkDuplicate']);
+    Route::get('/loadFALoc', [FALocController::class, 'index']);
+
+    Route::get('/faMast', [FAMastController::class, 'index']);
+    Route::post('/lookupFAMast', [FAMastController::class, 'lookup']);
+    Route::get('/lookupFAMast', [FAMastController::class, 'lookup']);
+    Route::post('/getFAMast', [FAMastController::class, 'get']);
+    Route::post('/upsertFAMast', [FAMastController::class, 'upsert']);
+    Route::post('/checkFAMastDuplicate', [FAMastController::class, 'checkDuplicate']);
+    Route::post('/checkFAMastInUsed', [FAMastController::class, 'checkInUsed']);
+    Route::post('/deleteFAMast', [FAMastController::class, 'delete']);
+    Route::get('/faMastFinancialInfo', [FAMastController::class, 'financialInfo']);
+
+    Route::get('/fATR', [FATRController::class, 'index']);
+    Route::post('/upsertFATR', [FATRController::class, 'upsert']);
+    Route::get('/getFATR', [FATRController::class, 'get']);
+    Route::post('/getFATRHistory', [FATRController::class, 'history']);
+    Route::get('/findFATR', [FATRController::class, 'find']);
+    Route::get('/postingFATR', [FATRController::class, 'posting']);
+    Route::post('/generateGLFATR', [FATRController::class, 'generateGL']);
+
+
+    Route::get('/fADP', [FADPController::class, 'index']);
+    Route::post('/upsertFADP', [FADPController::class, 'upsert']);
+    Route::get('/getFADP', [FADPController::class, 'get']);
+    Route::post('/getFADP', [FADPController::class, 'get']);
+    Route::post('/getFADPHistory', [FADPController::class, 'history']);
+    Route::get('/findFADP', [FADPController::class, 'find']);
+    Route::get('/postingFADP', [FADPController::class, 'posting']);
+    Route::post('/generateGLFADP', [FADPController::class, 'generateGL']);
+
+
+
+	Route::get('/fADS', [FADSController::class, 'index']);
+	Route::post('/upsertFADS', [FADSController::class, 'upsert']);
+	Route::get('/getFADS', [FADSController::class, 'get']);
+	Route::post('/getFADSHistory', [FADSController::class, 'history']);
+	Route::get('/findFADS', [FADSController::class, 'find']);
+	Route::get('/postingFADS', [FADSController::class, 'posting']);
+	Route::post('/generateGLFADS', [FADSController::class, 'generateGL']);
+
+
+
+
+    Route::get('/lookupFAAsset', [FATRController::class, 'assetLookup']);
+    Route::get('/getFAAssetInquiry', [FATRController::class, 'assetInquiry']);
 
 
     Route::get('/allTranApproval', [AllTranApprovalController::class, 'get']);
@@ -994,15 +1435,111 @@ Route::middleware('tenant')->group(function () {
     Route::post('/checkCheckTemplateInUsed', [CheckTemplateController::class, 'checkInUsed']);
     Route::post('/checkCheckTemplateDuplicate', [CheckTemplateController::class, 'checkDuplicate']);
 
+    
+
+    Route::post('/getSalesTrackerSummary', [SalesInqController::class, 'getSalesTrackerSummary']);
+    Route::post('/getSalesTrackerDelivery', [SalesInqController::class, 'getSalesTrackerDelivery']);
+    Route::post('/getSalesTrackerInvoices', [SalesInqController::class, 'getSalesTrackerInvoices']);
+    Route::post('/getSalesTrackerSettlements', [SalesInqController::class, 'getSalesTrackerSettlements']);
+    Route::post('/getSalesTrackerTimeline', [SalesInqController::class, 'getSalesTrackerTimeline']);
+    Route::post('/getSalesTrackerDetails', [SalesInqController::class, 'getSalesTrackerDetails']);
+
+    // Landed Cost Reference
+    Route::get('/lcRef', [LCRefController::class, 'index']);
+    Route::post('/upsertLCRef', [LCRefController::class, 'upsert']);
+    Route::get('/lookupLCRef', [LCRefController::class, 'lookup']);
+    Route::get('/getLCRef', [LCRefController::class, 'get']);
+    Route::post('/deleteLCRef', [LCRefController::class, 'delete']);
+    Route::post('/checkInUsedLCRef', [LCRefController::class, 'checkInUsed']);
+    Route::post('/checkDuplicateLCRef', [LCRefController::class, 'checkDuplicate']);
+    Route::get('/loadLCRef', [LCRefController::class, 'index']);
 
 
+    
+    // Landed Cost Transaction
+    Route::get('/lC', [LCController::class, 'index']);
+    Route::post('/upsertLC', [LCController::class, 'upsert']);
+    Route::get('/getLC', [LCController::class, 'get']);
+    Route::post('/getLCOpen', [LCController::class, 'getLCOpen']);
+    Route::post('/getLCHistory', [LCController::class, 'history']);
+    Route::get('/getRRLC_OpenSummary', [LCController::class, 'getRRLC_OpenSummary']);
+    Route::post('/getRRLC_Selected', [LCController::class, 'getRRLC_Selected']);
+    Route::get('/postingLC', [LCController::class, 'posting']);
+
+
+
+    // Budget Transaction
+    Route::get('/budItemRef', [BudItemRefController::class, 'index']);
+    Route::post('/lookupBudItemRef', [BudItemRefController::class, 'lookup']);
+    Route::get('/lookupBudItemRef', [BudItemRefController::class, 'lookup']);
+    Route::post('/getBudItemRef', [BudItemRefController::class, 'get']);
+    Route::post('/upsertBudItemRef', [BudItemRefController::class, 'upsert']);
+    Route::post('/checkBudItemRefDuplicate', [BudItemRefController::class, 'checkDuplicate']);
+    Route::post('/checkBudItemRefInUsed', [BudItemRefController::class, 'checkInUsed']);
+    Route::post('/deleteBudItemRef', [BudItemRefController::class, 'delete']);
+
+
+    Route::get('/budbb', [BUDBBController::class, 'index']);
+    Route::post('/getBUDBB', [BUDBBController::class, 'get']);
+    Route::get('/getBUDBB', [BUDBBController::class, 'get']);
+    Route::post('/upsertBUDBB', [BUDBBController::class, 'upsert']);
+    Route::post('/getBUDBBHistory', [BUDBBController::class, 'history']);
+    Route::post('/findBUDBB', [BUDBBController::class, 'find']);
+    Route::post('/postingBUDBB', [BUDBBController::class, 'posting']);
+    Route::post('/uploadBUDBBExcel', [BUDBBController::class, 'uploadExcel']);
+
+    Route::get('/getBUDRA', [BUDRAController::class, 'get']);
+    Route::post('/upsertBUDRA', [BUDRAController::class, 'upsert']);
+    Route::post('/getBUDRAHistory', [BUDRAController::class, 'history']);
+    Route::post('/findBUDRA', [BUDRAController::class, 'find']);
+    Route::get('/postingBUDRA', [BUDRAController::class, 'posting']);
+  
+
+    Route::get('/getBUDAU', [BUDAUController::class, 'get']);
+    Route::post('/upsertBUDAU', [BUDAUController::class, 'upsert']);
+    Route::post('/getBUDAUHistory', [BUDAUController::class, 'history']);
+    Route::post('/findBUDAU', [BUDAUController::class, 'find']);
+    Route::get('/postingBUDAU', [BUDAUController::class, 'posting']);
+
+    Route::post('/getBUDCL', [BUDCLController::class, 'get']);
+    Route::get('/getBUDCL', [BUDCLController::class, 'get']);
+    Route::post('/loadBUDCL', [BUDCLController::class, 'index']);
+    Route::post('/upsertBUDCL', [BUDCLController::class, 'upsert']);
+    Route::post('/getBUDCLHistory', [BUDCLController::class, 'history']);
+    Route::post('/findBUDCL', [BUDCLController::class, 'find']);
+    Route::get('/postingBUDCL', [BUDCLController::class, 'posting']);
+    Route::post('/postingBUDCL', [BUDCLController::class, 'posting']);
+    Route::post('/getBUDCLBudgetBalance', [BUDCLController::class, 'budgetBalance']);
+
+     
+    Route::post('/lookupBUDOpenBalanceYTD', [BUDMoveController::class, 'budOpenBalanceYTD']);
+    Route::post('/BUDOpenBalanceYTD', [BUDMoveController::class, 'budOpenBalanceYTD']);
+    Route::post('/BUDTop1OpenTempBalance', [BUDMoveController::class, 'budTop1OpenTempBalance']);
+    Route::post('/getBUDTop1OpenTempBalance', [BUDMoveController::class, 'budTop1OpenTempBalance']);
+    Route::post('/getBUDBudgetQuery', [BUDMoveController::class, 'budgetQuery']);
+    Route::post('/getBUDBudgetMonthlyComparative', [BUDMoveController::class, 'budgetMonthlyComparative']);
+
+
+    Route::get('/fARS', [FARSController::class, 'index']);
+    Route::post('/upsertFARS', [FARSController::class, 'upsert']);
+    Route::get('/getFARS', [FARSController::class, 'get']);
+    Route::post('/getFARSHistory', [FARSController::class, 'history']);
+    Route::get('/findFARS', [FARSController::class, 'find']);
+    Route::get('/postingFARS', [FARSController::class, 'posting']);
+    Route::post('/generateGLFARS', [FARSController::class, 'generateGL']);
+
+
+    Route::post('/getFAAssetQuery', [FAMoveController::class, 'getFAAssetQuery']);
+    Route::post('/getFAAssetHistory', [FAMoveController::class, 'getFAAssetHistory']);
+    Route::post('/getFADeprHistory', [FAMoveController::class, 'getFADeprHistory']);
+    Route::post('/getFALapsingSchedule', [FAMoveController::class, 'getFALapsingSchedule']);
+	
     
     Route::post('/getCANHistory', [CanController::class, 'getHistory']);
     Route::post('/getCANOpenPR', [CanController::class, 'getOpenPR']);
     Route::post('/getCANOpenPRDetail', [CanController::class, 'getOpenPRDetail']);
     Route::post('/getCAN', [CanController::class, 'getCAN']);
     Route::post('/upsertCAN', [CanController::class, 'upsert']);
-    Route::post('/cancelCAN', [CanController::class, 'cancel']);
     Route::post('/submitCAN', [CanController::class, 'submit']);
     Route::post('/approveCAN', [CanController::class, 'approve']);
     Route::post('/awardCAN', [CanController::class, 'award']);
@@ -1024,6 +1561,53 @@ Route::middleware('tenant')->group(function () {
     Route::post('/bankRecon/find', [BankReconController::class, 'find']);
     Route::post('/bankRecon/emailReport', [BankReconController::class, 'emailReport']);
 
+
+
+    Route::get('/template-layouts/{layoutType}', [TemplateLayoutController::class, 'index']);
+    Route::get('/template-layouts/{layoutType}/{layoutName}', [TemplateLayoutController::class, 'show']);
+    Route::post('/template-layouts/{layoutType}', [TemplateLayoutController::class, 'store']);
+    Route::delete('/template-layouts/{layoutType}/{layoutName}', [TemplateLayoutController::class, 'destroy']);
+
+
+    // Work Order
+    Route::get('/wo', [WOController::class, 'index']);
+    Route::post('/getWO', [WOController::class, 'get']);
+    Route::post('/loadWO', [WOController::class, 'load']);
+    Route::post('/getWOHistory', [WOController::class, 'history']);
+    Route::post('/findWO', [WOController::class, 'find']);
+    Route::post('/findWOBOM', [WOController::class, 'findBOM']);
+    Route::post('/loadWOBOM', [WOController::class, 'loadBOM']);
+    Route::post('/upsertWO', [WOController::class, 'upsert']);
+    Route::post('/postingWO', [WOController::class, 'posting']);
+    Route::post('/cancelWO', [WOController::class, 'cancel']);
+
+    Route::get('/prodBOM',                [ProdBOMController::class, 'index']);
+    Route::post('/getProdBOM',            [ProdBOMController::class, 'get']);
+    Route::get('/lookupProdBOMItem',      [ProdBOMController::class, 'lookupItem']);
+    Route::post('/upsertProdBOM',         [ProdBOMController::class, 'upsert']);
+    Route::post('/deleteProdBOM',         [ProdBOMController::class, 'delete']);
+    Route::post('/checkDuplicateProdBOM', [ProdBOMController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedProdBOM',    [ProdBOMController::class, 'checkInUsed']);
+
+    Route::get('/lookupBOM',              [ProdBOMController::class, 'lookupBOM']);
+    Route::get('/loadBOM',                [ProdBOMController::class, 'loadBOM']);
+
+
+
+    Route::prefix('store-portal')->group(function () {
+    Route::get('/store-context', [StorePortalOrderController::class, 'storeContext']);
+    Route::get('/items', [StorePortalOrderController::class, 'items']);
+    Route::get('/weekly-forecast', [StorePortalOrderController::class, 'loadWeeklyForecast']);
+    Route::get('/weekly-forecast-history', [StorePortalOrderController::class, 'loadWeeklyForecastHistory']);
+    Route::post('/weekly-forecast', [StorePortalOrderController::class, 'saveWeeklyForecast']);
+    Route::get('/confirmation', [StorePortalOrderController::class, 'loadConfirmation']);
+    Route::post('/confirm-order', [StorePortalOrderController::class, 'confirmOrder']);
+    Route::get('/query-summary', [StorePortalOrderController::class, 'querySummary']);
+    Route::get('/query-detail', [StorePortalOrderController::class, 'queryDetail']);
+});
+
+
+
 });
 
 Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
@@ -1039,18 +1623,35 @@ Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
     Route::post('/finalizeAPDM', [APDMController::class, 'finalize']);
     Route::post('/finalizeAPCM', [APCMController::class, 'finalize']);
     Route::post('/finalizeMSRR', [MSRRController::class, 'finalize']);
-    Route::post('/finalizeMSAJ', [MSAJController::class, 'finalize']);
-<<<<<<< HEAD
+    Route::post('/finalizeFGRR', [FGRRController::class, 'finalize']);
+    Route::post('/finalizeRMRR', [RMRRController::class, 'finalize']);
+    Route::post('/finalizeMSIS', [MSISController::class, 'finalize']);
     Route::post('/finalizeMSST', [MSSTController::class, 'finalize']);
-    Route::post('/finalizeRMST', [RMSTController::class, 'finalize']);
-    Route::post('/finalizeFGST', [FGSTController::class, 'finalize']);
-=======
+    Route::post('/finalizeMSAJ', [MSAJController::class, 'finalize']);
     Route::post('/finalizeAPV', [APVoucherController::class, 'finalize']);
     Route::post('/finalizeARDS', [ARDSController::class, 'finalize']);
     Route::post('/cancelARDS', [ARDSController::class, 'cancel']);
     Route::post('/finalizeDR', [DRController::class, 'finalize']);
     Route::post('/finalizeSI', [SIController::class, 'finalize']);
->>>>>>> f86ae426a6f0953b4fe07eec682ea0307bd91725
+    Route::post('/finalizeFGAJ', [FGAJController::class, 'finalize']);
+    Route::post('/finalizeFARR', [FARRController::class, 'finalize']);
+    Route::post('/finalizeFATR', [FATRController::class, 'finalize']);
+    Route::post('/finalizeFARC', [FARCController::class, 'finalize']);
+    Route::post('/finalizeFAAD', [FAADController::class, 'finalize']);
+    Route::post('/finalizeFASP', [FASPController::class, 'finalize']);
+    Route::post('/finalizeFAMG', [FAMGController::class, 'finalize']);
+    Route::post('/finalizeFADP', [FADPController::class, 'finalize']);
+    Route::post('/finalizeFADS', [FADSController::class, 'finalize']);
+    Route::post('/finalizeFARS', [FARSController::class, 'finalize']);
+    Route::post('/finalizeLC', [LCController::class, 'finalize']);
+    Route::post('/finalizeFGIS', [FGISController::class, 'finalize']);
+    Route::post('/finalizeRMIS', [RMISController::class, 'finalize']);
+    Route::post('/finalizeRMST', [RMSTController::class, 'finalize']);
+    Route::post('/finalizeCSI', [CSIController::class, 'finalize']);
+    Route::post('/finalizeBUDBB', [BUDBBController::class, 'finalize']);
+    Route::post('/finalizeBUDRA', [BUDRAController::class, 'finalize']);	
+    Route::post('/finalizeBUDAU', [BUDAUController::class, 'finalize']);
+    Route::post('/finalizeBUDCL', [BUDCLController::class, 'finalize']);
 
 
     Route::post('/cancelARDM', [ARDMController::class, 'cancel']);
@@ -1066,21 +1667,38 @@ Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
     Route::post('/cancelAPDM', [APDMController::class, 'cancel']);
     Route::post('/cancelAPCM', [APCMController::class, 'cancel']);
     Route::post('/cancelMSRR', [MSRRController::class, 'cancel']);
+    Route::post('/cancelMSIS', [MSISController::class, 'cancel']);
+    Route::post('/cancelFGRR', [FGRRController::class, 'cancel']);
+    Route::post('/cancelRMRR', [RMRRController::class, 'cancel']);
+    Route::post('/cancelMSRTV', [MSRTVController::class, 'cancel']);
     Route::post('/cancelMSAJ', [MSAJController::class, 'cancel']);
+    Route::post('/cancelFGRTV', [FGRTVController::class, 'cancel']);
     Route::post('/cancelFGAJ', [FGAJController::class, 'cancel']);
+    Route::post('/cancelMSST', [MSSTController::class, 'cancel']);
     Route::post('/cancelPR',  [PRController::class, 'cancel']);
     Route::post('/cancelPO',  [POController::class, 'cancel']);
     Route::post('/cancelJO',  [JOController::class, 'cancel']);
-<<<<<<< HEAD
-    Route::post('/cancelMSST',   [MSSTController::class, 'cancel']);
-    Route::post('/cancelRMST',   [RMSTController::class, 'cancel']);
-    Route::post('/cancelFGST',   [FGSTController::class, 'cancel']);
-    
-=======
     Route::post('/cancelSO',  [SOController::class, 'cancel']);
     Route::post('/cancelDR',  [DRController::class, 'cancel']);
     Route::post('/cancelSI', [SIController::class, 'cancel']);
->>>>>>> f86ae426a6f0953b4fe07eec682ea0307bd91725
+    Route::post('/cancelFGAJ', [FGAJController::class, 'cancel']);
+    Route::post('/cancelFARR', [FARRController::class, 'cancel']);
+    Route::post('/cancelFATR', [FATRController::class, 'cancel']);
+    Route::post('/cancelFARC', [FARCController::class, 'cancel']);
+    Route::post('/cancelFAAD', [FAADController::class, 'cancel']);
+    Route::post('/cancelFASP', [FASPController::class, 'cancel']);
+    Route::post('/cancelFAMG', [FAMGController::class, 'cancel']);
+    Route::post('/cancelFADP', [FADPController::class, 'cancel']);
+    Route::post('/cancelFADS', [FADSController::class, 'cancel']);
+    Route::post('/cancelFARS', [FARSController::class, 'cancel']);
+    Route::post('/cancelLC', [LCController::class, 'cancel']);
+    Route::post('/cancelCSI', [CSIController::class, 'cancel']);
+    Route::post('/cancelBUDBB', [BUDBBController::class, 'cancel']);
+    Route::post('/cancelCAN', [CanController::class, 'cancel']);
+    Route::post('/cancelBUDRA', [BUDRAController::class, 'cancel']);
+    Route::post('/cancelBUDAU', [BUDAUController::class, 'cancel']);
+    Route::post('/cancelBUDCL', [BUDCLController::class, 'cancel']);
+
 
     Route::post('/generateJVARCWLCL', [ARBalanceController::class, 'generateJVARCWLCL']);
     Route::post('/processGLMonthEnd', [GLBalanceController::class, 'processGLMonthEnd']);
