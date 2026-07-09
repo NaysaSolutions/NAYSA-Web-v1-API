@@ -254,6 +254,7 @@ use App\Http\Controllers\LCRefController;
 
 //STORE-PORTAL
 use App\Http\Controllers\StorePortalOrderController;
+use App\Http\Controllers\CommissaryController;
 
 
 // BUDGET - TRANSACTION CONTROLLERS
@@ -1605,6 +1606,13 @@ Route::get('/findRMIS', [RMISController::class, 'find']);
     Route::get('/query-summary', [StorePortalOrderController::class, 'querySummary']);
     Route::get('/query-detail', [StorePortalOrderController::class, 'queryDetail']);
 });
+
+Route::prefix('commissary')->group(function () {
+    Route::get('/categories', [CommissaryController::class, 'getCategories']);
+    Route::get('/summary', [CommissaryController::class, 'getSummary']);
+    Route::get('/detailed', [CommissaryController::class, 'getDetailed']);
+});
+
 
 
 
