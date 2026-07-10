@@ -1609,6 +1609,18 @@ Route::get('/findRMIS', [RMISController::class, 'find']);
 
 Route::prefix('commissary')->group(function () {
     Route::get('/categories', [CommissaryController::class, 'getCategories']);
+
+    // Forecast tabs: original Weekly Forecast quantity from Store Portal
+    Route::get('/forecast-summary', [CommissaryController::class, 'getForecastSummary']);
+    Route::get('/forecast-detailed', [CommissaryController::class, 'getForecastDetailed']);
+    Route::get('/forecast-material-needed', [CommissaryController::class, 'getForecastMaterialNeeded']);
+
+    // Confirmed tabs: confirmed quantity from Store Portal
+    Route::get('/confirmed-summary', [CommissaryController::class, 'getConfirmedSummary']);
+    Route::get('/confirmed-detailed', [CommissaryController::class, 'getConfirmedDetailed']);
+    Route::get('/confirmed-material-needed', [CommissaryController::class, 'getConfirmedMaterialNeeded']);
+
+    // Backward-compatible routes; these now return confirmed quantities only.
     Route::get('/summary', [CommissaryController::class, 'getSummary']);
     Route::get('/detailed', [CommissaryController::class, 'getDetailed']);
 });

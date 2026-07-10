@@ -58,6 +58,53 @@ class CommissaryController extends Controller
         return $decoded ?: [];
     }
 
+    private function getValidatedQuery(Request $request, bool $includeStore = false): array
+    {
+        $rules = [
+            'startDate' => 'required|date',
+            'endDate' => 'required|date|after_or_equal:startDate',
+            'category' => 'nullable|string',
+        ];
+
+        if ($includeStore) {
+            $rules['storeCode'] = 'nullable|string';
+        }
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            throw new HttpResponseException(response()->json([
+                'message' => 'Invalid commissary query parameters.',
+                'errors' => $validator->errors(),
+            ], 422));
+        }
+
+        $data = [
+            'startDate' => Carbon::parse($request->startDate)->toDateString(),
+            'endDate' => Carbon::parse($request->endDate)->toDateString(),
+            'category' => $request->filled('category') ? $request->category : 'All',
+        ];
+
+        if ($includeStore) {
+            $data['storeCode'] = $request->filled('storeCode') ? $request->storeCode : 'All';
+        }
+
+        return $data;
+    }
+
+    private function queryMode(Request $request, string $mode, string $successMessage, bool $includeStore = false)
+    {
+        $data = $this->execCommissarySproc(
+            $mode,
+            $this->getValidatedQuery($request, $includeStore)
+        );
+
+        return response()->json([
+            'message' => $successMessage,
+            'data' => $data,
+        ]);
+    }
+
     public function getCategories(Request $request)
     {
         $data = $this->execCommissarySproc('CategoryList');
@@ -68,57 +115,73 @@ class CommissaryController extends Controller
         ]);
     }
 
+    public function getForecastSummary(Request $request)
+    {
+        return $this->queryMode(
+            $request,
+            'QueryForecastSummary',
+            'Forecast summary loaded successfully.'
+        );
+    }
+
+    public function getForecastDetailed(Request $request)
+    {
+        return $this->queryMode(
+            $request,
+            'QueryForecastDetailed',
+            'Forecast detail loaded successfully.',
+            true
+        );
+    }
+
+    public function getForecastMaterialNeeded(Request $request)
+    {
+        return $this->queryMode(
+            $request,
+            'QueryForecastMaterialNeeded',
+            'Forecast material needed loaded successfully.'
+        );
+    }
+
+    public function getConfirmedSummary(Request $request)
+    {
+        return $this->queryMode(
+            $request,
+            'QueryConfirmedSummary',
+            'Confirmed summary loaded successfully.'
+        );
+    }
+
+    public function getConfirmedDetailed(Request $request)
+    {
+        return $this->queryMode(
+            $request,
+            'QueryConfirmedDetailed',
+            'Confirmed detail loaded successfully.',
+            true
+        );
+    }
+
+    public function getConfirmedMaterialNeeded(Request $request)
+    {
+        return $this->queryMode(
+            $request,
+            'QueryConfirmedMaterialNeeded',
+            'Confirmed material needed loaded successfully.'
+        );
+    }
+
+    /**
+     * Backward-compatible endpoints.
+     * Existing /commissary/summary and /commissary/detailed now show confirmed qty only.
+     */
     public function getSummary(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'startDate' => 'required|date',
-            'endDate' => 'required|date|after_or_equal:startDate',
-            'category' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Invalid commissary summary query parameters.',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $data = $this->execCommissarySproc('QuerySummary', [
-            'startDate' => Carbon::parse($request->startDate)->toDateString(),
-            'endDate' => Carbon::parse($request->endDate)->toDateString(),
-            'category' => $request->filled('category') ? $request->category : 'All',
-        ]);
-
-        return response()->json([
-            'message' => 'Commissary summary loaded successfully.',
-            'data' => $data,
-        ]);
+        return $this->getConfirmedSummary($request);
     }
 
     public function getDetailed(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'startDate' => 'required|date',
-            'endDate' => 'required|date|after_or_equal:startDate',
-            'category' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Invalid commissary detailed query parameters.',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $data = $this->execCommissarySproc('QueryDetailed', [
-            'startDate' => Carbon::parse($request->startDate)->toDateString(),
-            'endDate' => Carbon::parse($request->endDate)->toDateString(),
-            'category' => $request->filled('category') ? $request->category : 'All',
-        ]);
-
-        return response()->json([
-            'message' => 'Commissary detail loaded successfully.',
-            'data' => $data,
-        ]);
+        return $this->getConfirmedDetailed($request);
     }
 }
