@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Http\Exceptions\HttpResponseException;
-use Carbon\Carbon;
 
 class CommissaryController extends Controller
 {
@@ -82,18 +82,24 @@ class CommissaryController extends Controller
         $data = [
             'startDate' => Carbon::parse($request->startDate)->toDateString(),
             'endDate' => Carbon::parse($request->endDate)->toDateString(),
-            'category' => $request->filled('category') ? $request->category : 'All',
+            'category' => $request->filled('category') ? trim((string) $request->category) : 'All',
         ];
 
         if ($includeStore) {
-            $data['storeCode'] = $request->filled('storeCode') ? $request->storeCode : 'All';
+            $data['storeCode'] = $request->filled('storeCode')
+                ? trim((string) $request->storeCode)
+                : 'All';
         }
 
         return $data;
     }
 
-    private function queryMode(Request $request, string $mode, string $successMessage, bool $includeStore = false)
-    {
+    private function queryMode(
+        Request $request,
+        string $mode,
+        string $successMessage,
+        bool $includeStore = false
+    ) {
         $data = $this->execCommissarySproc(
             $mode,
             $this->getValidatedQuery($request, $includeStore)
@@ -107,11 +113,9 @@ class CommissaryController extends Controller
 
     public function getCategories(Request $request)
     {
-        $data = $this->execCommissarySproc('CategoryList');
-
         return response()->json([
             'message' => 'Commissary categories loaded successfully.',
-            'data' => $data,
+            'data' => $this->execCommissarySproc('CategoryList'),
         ]);
     }
 
@@ -143,6 +147,16 @@ class CommissaryController extends Controller
         );
     }
 
+    public function getForecastMaterialNeededSummary(Request $request)
+    {
+        return $this->queryMode(
+            $request,
+            'QueryForecastMaterialNeededSummary',
+            'Forecast material needed summary loaded successfully.',
+            true
+        );
+    }
+
     public function getConfirmedSummary(Request $request)
     {
         return $this->queryMode(
@@ -171,10 +185,17 @@ class CommissaryController extends Controller
         );
     }
 
-    /**
-     * Backward-compatible endpoints.
-     * Existing /commissary/summary and /commissary/detailed now show confirmed qty only.
-     */
+    public function getConfirmedMaterialNeededSummary(Request $request)
+    {
+        return $this->queryMode(
+            $request,
+            'QueryConfirmedMaterialNeededSummary',
+            'Confirmed material needed summary loaded successfully.',
+            true
+        );
+    }
+
+    // Backward-compatible routes.
     public function getSummary(Request $request)
     {
         return $this->getConfirmedSummary($request);
