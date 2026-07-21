@@ -8,32 +8,47 @@ use Illuminate\Support\Facades\DB;
 class POInqController extends Controller
 {
     public function getPOInquiry(Request $request)
-{ 
-    try {
+    {
+        try {
+            $jsonData = $request->query('json_data', []);
 
-        $dataArray = $request->input('json_data');
-        $jsonString = json_encode([
-            'json_data' => $dataArray
-        ]);
+            if (is_string($jsonData)) {
+                $jsonData = json_decode($jsonData, true) ?? [];
+            }
 
-        $results = DB::select(
-            'EXEC sproc_PHP_PO_Inq @_params = ? ',
-            [$jsonString]
-        );
+            if (!is_array($jsonData)) {
+                $jsonData = [];
+            }
 
-        return response()->json([
-            'success' => true,
-            'data' => $results,
-        ], 200);
+            $params = [
+                'json_data' => [
+                    'branchCode'     => $jsonData['branchCode'] ?? '',
+                    'itemCode'       => $jsonData['itemCode'] ?? $jsonData['itemNo'] ?? '',
+                    'poStatus'       => $jsonData['poStatus'] ?? $jsonData['poStat'] ?? '',
+                    'startingDate'   => $jsonData['startingDate'] ?? '',
+                    'endingDate'     => $jsonData['endingDate'] ?? '',
+                    'startingCutoff' => $jsonData['startingCutoff'] ?? '',
+                    'endingCutoff'   => $jsonData['endingCutoff'] ?? '',
+                    'rcCode'         => $jsonData['rcCode'] ?? $jsonData['actCode'] ?? '',
+                    'vendCode'       => $jsonData['vendCode'] ?? '',
+                    'invType'        => $jsonData['invType'] ?? '',
+                ],
+            ];
 
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
-        ], 500);
+            $results = DB::select(
+                'EXEC dbo.sproc_PHP_PO_Inq @_params = ?',
+                [json_encode($params)]
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $results,
+            ], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
     }
-}
-
-
 }
