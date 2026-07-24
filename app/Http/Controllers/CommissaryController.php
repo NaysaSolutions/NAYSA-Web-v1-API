@@ -205,4 +205,120 @@ class CommissaryController extends Controller
     {
         return $this->getConfirmedDetailed($request);
     }
+
+    public function sendConfirmedToSODR(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'startDate'    => 'required|date',
+            'endDate'      => 'required|date|after_or_equal:startDate',
+            'branchCode'   => 'required|string|max:10',
+            'userCode'     => 'required|string|max:50',
+            'category'     => 'nullable|string|max:100',
+            'storeCode'    => 'nullable|string|max:100',
+            'documentDate' => 'nullable|date',
+            'whouseCode'   => 'nullable|string|max:10',
+            'locCode'      => 'nullable|string|max:10',
+            'soTranType'   => 'nullable|string|max:20',
+            'drTranType'   => 'nullable|string|max:20',
+            'customerCode' => 'required|string|max:50',
+            'customerName' => 'nullable|string|max:200',
+            'poNumber'     => 'nullable|string|max:100',
+            'salesRepCode' => 'nullable|string|max:50',
+            'remarks'      => 'nullable|string|max:2000',
+            'selectedItems' => 'required|array|min:1',
+            'selectedItems.*.storeCode' => 'required|string|max:100',
+            'selectedItems.*.itemCode' => 'required|string|max:30',
+            'selectedItems.*.deliveryDates' => 'required|array|min:1',
+            'selectedItems.*.deliveryDates.*' => 'required|date',
+            'selectedItems.*.quantity' => 'nullable|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            throw new HttpResponseException(response()->json([
+                'message' => 'Invalid parameters for SO/DR integration.',
+                'errors' => $validator->errors(),
+            ], 422));
+        }
+
+        $jsonData = [
+            'startDate' => Carbon::parse($request->startDate)->toDateString(),
+            'endDate' => Carbon::parse($request->endDate)->toDateString(),
+            'branchCode' => trim((string) $request->branchCode),
+            'userCode' => trim((string) $request->userCode),
+            'category' => $request->filled('category')
+                ? trim((string) $request->category)
+                : 'All',
+            'storeCode' => $request->filled('storeCode')
+                ? trim((string) $request->storeCode)
+                : 'All',
+            'documentDate' => $request->filled('documentDate')
+                ? Carbon::parse($request->documentDate)->toDateString()
+                : Carbon::now('Asia/Manila')->toDateString(),
+            'whouseCode' => trim((string) $request->input('whouseCode', '')),
+            'locCode' => trim((string) $request->input('locCode', '')),
+            'soTranType' => trim((string) $request->input('soTranType', 'SO01')),
+            'drTranType' => trim((string) $request->input('drTranType', 'DR01')),
+            'customerCode' => trim((string) $request->customerCode),
+            'customerName' => trim((string) $request->input('customerName', '')),
+            'poNumber' => trim((string) $request->input('poNumber', '')),
+            'salesRepCode' => trim((string) $request->input('salesRepCode', '')),
+            'remarks' => trim((string) $request->input('remarks', '')),
+            'selectedItems' => collect($request->input('selectedItems', []))
+                ->map(function ($item) {
+                    return [
+                        'storeCode' => trim((string) ($item['storeCode'] ?? '')),
+                        'itemCode' => trim((string) ($item['itemCode'] ?? '')),
+                        'deliveryDates' => collect($item['deliveryDates'] ?? [])
+                            ->map(fn ($date) => Carbon::parse($date)->toDateString())
+                            ->unique()
+                            ->values()
+                            ->all(),
+                        'quantity' => (float) ($item['quantity'] ?? 0),
+                    ];
+                })
+                ->values()
+                ->all(),
+        ];
+
+        $data = $this->execCommissarySproc('SendConfirmedToSODR', $jsonData);
+
+        return response()->json([
+            'message' => 'The selected confirmed items were consolidated into one SO and one DR successfully.',
+            'documentCount' => count($data),
+            'documents' => $data,
+            'data' => $data,
+        ]);
+    }
+
+    public function generateWorkOrders(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'startDate' => 'required|date',
+            'endDate'   => 'required|date|after_or_equal:startDate',
+        ]);
+
+        if ($validator->fails()) {
+            throw new HttpResponseException(response()->json([
+                'message' => 'Invalid parameters for Work Order generation.',
+                'errors'  => $validator->errors(),
+            ], 422));
+        }
+
+        $jsonData = [
+            'startDate' => Carbon::parse($request->startDate)->toDateString(),
+            'endDate'   => Carbon::parse($request->endDate)->toDateString(),
+        ];
+
+        $data = $this->execCommissarySproc('GenerateWorkOrders', $jsonData);
+
+        return response()->json([
+            'message' => 'Work Orders generated successfully.',
+            'data'    => $data,
+        ]);
+    }
+
+
+
+
+
 }
