@@ -466,7 +466,17 @@ class CommissaryController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'startDate' => 'required|date',
-            'endDate'   => 'required|date|after_or_equal:startDate',
+            'endDate' => 'required|date|after_or_equal:startDate',
+            'category' => 'nullable|string|max:100',
+            'branchCode' => 'required|string|max:10',
+            'userCode' => 'required|string|max:50',
+            'documentDate' => 'nullable|date',
+            'remarks' => 'nullable|string|max:200',
+            'selectedItems' => 'required|array|min:1',
+            'selectedItems.*.itemCode' => 'required|string|max:30',
+            'selectedItems.*.deliveryDates' => 'required|array|min:1',
+            'selectedItems.*.deliveryDates.*' => 'required|date',
+            'selectedItems.*.quantity' => 'required|numeric|gt:0',
         ]);
 
         if ($validator->fails()) {
@@ -478,14 +488,41 @@ class CommissaryController extends Controller
 
         $jsonData = [
             'startDate' => Carbon::parse($request->startDate)->toDateString(),
-            'endDate'   => Carbon::parse($request->endDate)->toDateString(),
+            'endDate' => Carbon::parse($request->endDate)->toDateString(),
+            'category' => $request->filled('category')
+                ? trim((string) $request->category)
+                : 'All',
+            'branchCode' => trim((string) $request->branchCode),
+            'userCode' => trim((string) $request->userCode),
+            'documentDate' => $request->filled('documentDate')
+                ? Carbon::parse($request->documentDate)->toDateString()
+                : Carbon::now('Asia/Manila')->toDateString(),
+            'remarks' => trim((string) $request->input('remarks', '')),
+            'selectedItems' => collect($request->input('selectedItems', []))
+                ->map(function ($item) {
+                    return [
+                        'itemCode' => trim((string) ($item['itemCode'] ?? '')),
+                        'deliveryDates' => collect($item['deliveryDates'] ?? [])
+                            ->map(fn ($date) => Carbon::parse($date)->toDateString())
+                            ->unique()
+                            ->values()
+                            ->all(),
+                        'quantity' => (float) ($item['quantity'] ?? 0),
+                    ];
+                })
+                ->values()
+                ->all(),
         ];
 
         $data = $this->execCommissarySproc('GenerateWorkOrders', $jsonData);
+        $workOrderCount = count($data);
 
         return response()->json([
-            'message' => 'Work Orders generated successfully.',
-            'data'    => $data,
+            'message' => $workOrderCount === 1
+                ? 'One Work Order was created successfully.'
+                : "{$workOrderCount} Work Orders were created successfully.",
+            'documentCount' => $workOrderCount,
+            'data' => $data,
         ]);
     }
 
