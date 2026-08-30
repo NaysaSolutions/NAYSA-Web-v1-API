@@ -161,6 +161,40 @@ use App\Http\Controllers\FGInvStockCardController;
 
 
 
+// VEHICLE INVENTORY - TRANSACTION CONTROLLERS
+use App\Http\Controllers\VERRController;
+use App\Http\Controllers\VEAJController;
+use App\Http\Controllers\VERTVController;
+use App\Http\Controllers\VESTController;
+use App\Http\Controllers\VSOController;
+use App\Http\Controllers\VDRController;
+use App\Http\Controllers\VSIController;
+use App\Http\Controllers\VESRController;
+use App\Http\Controllers\VSPNController;
+use App\Http\Controllers\VEInvBalanceController;
+
+// VEHICLE INVENTORY - MASTER AND REFERENCE CONTROLLERS
+use App\Http\Controllers\VEMastController;
+use App\Http\Controllers\VECategController;
+use App\Http\Controllers\VEMakeController;
+use App\Http\Controllers\VEClassController;
+use App\Http\Controllers\VEColorController;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // MS INVENTORY - TRANSACTION CONTROLLERS
 use App\Http\Controllers\MSRRController;
@@ -778,6 +812,7 @@ Route::middleware('tenant')->group(function () {
     Route::post('/checkInUsedMSClass', [MSClassController::class, 'checkInUsed']);
     Route::get('/getInvLookupMS', [MSInvBalanceController::class, 'getInvLookup']);
     Route::get('/getInvLookupFG', [FGInvBalanceController::class, 'getInvLookup']);
+    Route::get('/getInvLookupVE', [VEInvBalanceController::class, 'getInvLookup']);
     Route::post('/getFGUpdateStockAllocation', [FGInvBalanceController::class, 'getFGUpdateStockAllocation']);
 
     
@@ -1150,8 +1185,124 @@ Route::get('/findRMIS', [RMISController::class, 'find']);
     Route::post('/validateFGAJUpload', [FGAJController::class, 'validateUpload']);
     Route::post('/checkFGAJBBUploaded', [FGAJController::class, 'checkBBUploaded']);
     Route::post('/finalizeFGAJ', [FGAJController::class, 'finalize']);
-    
 
+
+
+
+
+    // VEHICLE INVENTORY - TRANSACTIONS
+    Route::get('/VERR', [VERRController::class, 'index']);
+    Route::post('/upsertVERR', [VERRController::class, 'upsert']);
+    Route::get('/getVERR', [VERRController::class, 'get']);
+    Route::post('/generateGLVERR', [VERRController::class, 'generateGL']);
+    Route::get('/postingVERR', [VERRController::class, 'posting']);
+    Route::post('/getVERRHistory', [VERRController::class, 'history']);
+    Route::get('/findVERR', [VERRController::class, 'find']);
+    Route::get('/checkVERRDuplicate', [VERRController::class, 'checkDuplicate']);
+
+    Route::get('/VEAJ', [VEAJController::class, 'index']);
+    Route::post('/upsertVEAJ', [VEAJController::class, 'upsert']);
+    Route::get('/getVEAJ', [VEAJController::class, 'get']);
+    Route::get('/postingVEAJ', [VEAJController::class, 'posting']);
+    Route::post('/getVEAJHistory', [VEAJController::class, 'history']);
+    Route::get('/checkVEAJDuplicate', [VEAJController::class, 'checkDuplicate']);
+
+    Route::get('/VERTV', [VERTVController::class, 'index']);
+    Route::post('/upsertVERTV', [VERTVController::class, 'upsert']);
+    Route::get('/getVERTV', [VERTVController::class, 'get']);
+    Route::get('/postingVERTV', [VERTVController::class, 'posting']);
+    Route::post('/getVERTVHistory', [VERTVController::class, 'history']);
+    Route::get('/checkVERTVDuplicate', [VERTVController::class, 'checkDuplicate']);
+
+    Route::get('/VEST', [VESTController::class, 'index']);
+    Route::post('/upsertVEST', [VESTController::class, 'upsert']);
+    Route::post('/generateGLVEST', [VESTController::class, 'generateGL']);
+    Route::get('/getVEST', [VESTController::class, 'get']);
+    Route::get('/postingVEST', [VESTController::class, 'posting']);
+    Route::post('/getVESTHistory', [VESTController::class, 'history']);
+    Route::get('/findVEST', [VESTController::class, 'find']);
+    Route::post('/finalizeVEST', [VESTController::class, 'finalize']);
+    Route::post('/cancelVEST', [VESTController::class, 'cancel']);
+    Route::get('/checkVESTDuplicate', [VESTController::class, 'checkDuplicate']);
+
+    Route::get('/VSO', [VSOController::class, 'index']);
+    Route::post('/upsertVSO', [VSOController::class, 'upsert']);
+    Route::get('/getVSO', [VSOController::class, 'get']);
+    Route::post('/getVSOHistory', [VSOController::class, 'history']);
+    Route::post('/loadVSO', [VSOController::class, 'load']);
+    Route::get('/findVSO', [VSOController::class, 'find']);
+
+    Route::get('/VDR', [VDRController::class, 'index']);
+    Route::post('/upsertVDR', [VDRController::class, 'upsert']);
+    Route::get('/getVDR', [VDRController::class, 'get']);
+    Route::get('/postingVDR', [VDRController::class, 'posting']);
+    Route::post('/getVDRHistory', [VDRController::class, 'history']);
+    Route::get('/checkVDRDuplicate', [VDRController::class, 'checkDuplicate']);
+
+    Route::get('/VSI', [VSIController::class, 'index']);
+    Route::post('/upsertVSI', [VSIController::class, 'upsert']);
+    Route::get('/getVSI', [VSIController::class, 'get']);
+    Route::get('/postingVSI', [VSIController::class, 'posting']);
+    Route::post('/getVSIHistory', [VSIController::class, 'history']);
+    Route::get('/checkVSIDuplicate', [VSIController::class, 'checkDuplicate']);
+
+    Route::get('/VESR', [VESRController::class, 'index']);
+    Route::post('/upsertVESR', [VESRController::class, 'upsert']);
+    Route::get('/getVESR', [VESRController::class, 'get']);
+    Route::get('/postingVESR', [VESRController::class, 'posting']);
+    Route::post('/getVESRHistory', [VESRController::class, 'history']);
+    Route::get('/checkVESRDuplicate', [VESRController::class, 'checkDuplicate']);
+
+    Route::get('/VSPN', [VSPNController::class, 'index']);
+    Route::post('/upsertVSPN', [VSPNController::class, 'upsert']);
+    Route::get('/getVSPN', [VSPNController::class, 'get']);
+    Route::get('/postingVSPN', [VSPNController::class, 'posting']);
+    Route::post('/getVSPNHistory', [VSPNController::class, 'history']);
+    Route::get('/checkVSPNDuplicate', [VSPNController::class, 'checkDuplicate']);
+
+
+    // VEHICLE INVENTORY - MASTER AND REFERENCES
+    Route::get('/veMast', [VEMastController::class, 'index']);
+    Route::post('/getVEMast', [VEMastController::class, 'get']);
+    Route::get('/lookupVEMast', [VEMastController::class, 'lookup']);
+    Route::post('/upsertVEMast', [VEMastController::class, 'upsert']);
+    Route::post('/deleteVEMast', [VEMastController::class, 'delete']);
+    Route::post('/checkDuplicateVEMast', [VEMastController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedVEMast', [VEMastController::class, 'checkInUsed']);
+    Route::get('/loadVEColorMatrix', [VEMastController::class, 'loadColorMatrix']);
+
+    Route::get('/veMake', [VEMakeController::class, 'index']);
+    Route::post('/upsertVEMake', [VEMakeController::class, 'upsert']);
+    Route::post('/deleteVEMake', [VEMakeController::class, 'delete']);
+    Route::post('/checkDuplicateVEMake', [VEMakeController::class, 'checkDuplicate']);
+    Route::post('/checkVEMakeDuplicate', [VEMakeController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedVEMake', [VEMakeController::class, 'checkInUsed']);
+    Route::post('/checkVEMakeInUsed', [VEMakeController::class, 'checkInUsed']);
+
+
+    Route::get('/veCateg', [VECategController::class, 'index']);
+    Route::post('/getVECateg', [VECategController::class, 'get']);
+    Route::post('/lookupVECateg', [VECategController::class, 'lookup']);
+    Route::post('/upsertVECateg', [VECategController::class, 'upsert']);
+    Route::post('/deleteVECateg', [VECategController::class, 'delete']);
+    Route::post('/checkDuplicateVECateg', [VECategController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedVECateg', [VECategController::class, 'checkInUsed']);
+
+    Route::get('/veClass', [VEClassController::class, 'index']);
+    Route::get('/getVEClass', [VEClassController::class, 'get']);
+    Route::get('/lookupVEClass', [VEClassController::class, 'lookup']);
+    Route::post('/upsertVEClass', [VEClassController::class, 'upsert']);
+    Route::post('/deleteVEClass', [VEClassController::class, 'delete']);
+    Route::post('/checkDuplicateVEClass', [VEClassController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedVEClass', [VEClassController::class, 'checkInUsed']);
+
+    Route::get('/veColor', [VEColorController::class, 'index']);
+    Route::get('/getVEColor', [VEColorController::class, 'get']);
+    Route::get('/lookupVEColor', [VEColorController::class, 'lookup']);
+    Route::post('/upsertVEColor', [VEColorController::class, 'upsert']);
+    Route::post('/deleteVEColor', [VEColorController::class, 'delete']);
+    Route::post('/checkDuplicateVEColor', [VEColorController::class, 'checkDuplicate']);
+    Route::post('/checkInUsedVEColor', [VEColorController::class, 'checkInUsed']);
 
 
 
@@ -1609,22 +1760,31 @@ Route::get('/findRMIS', [RMISController::class, 'find']);
 
 Route::prefix('commissary')->group(function () {
     Route::get('/categories', [CommissaryController::class, 'getCategories']);
+    Route::get('/setup', [CommissaryController::class, 'getSetup']);
+    Route::post('/setup', [CommissaryController::class, 'saveSetup']);
+    Route::get('/unconfirmed-orders', [CommissaryController::class, 'getUnconfirmedOrders']);
+    Route::post('/unconfirmed-orders/decision', [CommissaryController::class, 'decideUnconfirmedOrder']);
 
-    // Forecast tabs: original Weekly Forecast quantity from Store Portal
     Route::get('/forecast-summary', [CommissaryController::class, 'getForecastSummary']);
     Route::get('/forecast-detailed', [CommissaryController::class, 'getForecastDetailed']);
     Route::get('/forecast-material-needed', [CommissaryController::class, 'getForecastMaterialNeeded']);
+    Route::get('/forecast-material-needed-summary', [CommissaryController::class, 'getForecastMaterialNeededSummary']);
 
-    // Confirmed tabs: confirmed quantity from Store Portal
     Route::get('/confirmed-summary', [CommissaryController::class, 'getConfirmedSummary']);
     Route::get('/confirmed-detailed', [CommissaryController::class, 'getConfirmedDetailed']);
     Route::get('/confirmed-material-needed', [CommissaryController::class, 'getConfirmedMaterialNeeded']);
+    Route::get('/confirmed-material-needed-summary', [CommissaryController::class, 'getConfirmedMaterialNeededSummary']);
 
-    // Backward-compatible routes; these now return confirmed quantities only.
+    Route::get('/integration-customers', [CommissaryController::class, 'getIntegrationCustomers']);
+    Route::post('/send-confirmed-to-so-dr', [CommissaryController::class, 'sendConfirmedToSODR']);
+    // Work Order Generation Integration
+    Route::post('/generate-work-orders', [CommissaryController::class, 'generateWorkOrders']);
+
+    // Backward-compatible routes.
     Route::get('/summary', [CommissaryController::class, 'getSummary']);
     Route::get('/detailed', [CommissaryController::class, 'getDetailed']);
-});
 
+});
 
 
 
