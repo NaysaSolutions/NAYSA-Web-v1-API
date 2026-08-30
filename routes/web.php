@@ -28,7 +28,7 @@ Route::middleware(['web', 'tenant'])->prefix('api/user-bio')->group(function () 
 });
 
 Route::prefix('api')
-    ->middleware(['web', 'tenant']) // <= IMPORTANT: web + tenant
+    ->middleware(['tenant', \App\Http\Middleware\EnsureRecentActivity::class])
     ->group(function () {
         Route::post('/login',  [AuthController::class, 'login']);
         Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth');

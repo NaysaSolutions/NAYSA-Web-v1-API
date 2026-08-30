@@ -342,14 +342,12 @@ Route::post('/send-mail', [MailController::class, 'send']);
 
 
 
-Route::middleware('tenant')->group(function () {
+// Authentication resolves users from the tenant database. Keep the activity
+// check after ApplyTenant so Auth::check() does not cache a lookup against the
+// default connection for the remainder of the request.
+Route::middleware(['tenant', \App\Http\Middleware\EnsureRecentActivity::class])->group(function () {
 
     Route::post('/register', [AuthController::class, 'register']);
-
-    /** ✅ ADDED (from attached api.php) — you had these commented out */
-    Route::get('/me', [AuthController::class, 'me']);
-    Route::post('/logout', [AuthController::class, 'logout']);
-    Route::post('/auth/heartbeat', [AuthController::class, 'heartbeat']);
 
     Route::post('/upsertCompany', [CompanyController::class, 'upsert']);
     Route::get('/getCompany', [CompanyController::class, 'get']);
@@ -1790,7 +1788,11 @@ Route::prefix('commissary')->group(function () {
 
 });
 
-Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
+Route::group(['middleware' => [
+    'tenant',
+    \App\Http\Middleware\EnsureRecentActivity::class,
+    'posting.credential',
+]], function () {
     Route::post('/finalizeAR',   [ARController::class,   'finalize']);
     Route::post('/finalizeCR',   [CRController::class,   'finalize']);
     Route::post('/finalizeARDM', [ARDMController::class, 'finalize']);
@@ -1808,6 +1810,7 @@ Route::group(['middleware' => ['tenant', 'posting.credential']], function () {
     Route::post('/finalizeMSIS', [MSISController::class, 'finalize']);
     Route::post('/finalizeMSST', [MSSTController::class, 'finalize']);
     Route::post('/finalizeMSAJ', [MSAJController::class, 'finalize']);
+    Route::post('/finalizeVEST', [VESTController::class, 'finalize']);
     Route::post('/finalizeAPV', [APVoucherController::class, 'finalize']);
     Route::post('/finalizeARDS', [ARDSController::class, 'finalize']);
     Route::post('/cancelARDS', [ARDSController::class, 'cancel']);

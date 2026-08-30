@@ -184,15 +184,67 @@ class VESTController extends Controller
                 JSON_UNESCAPED_UNICODE
             );
 
-            $results = DB::select(
-                'EXEC sproc_PHP_Posting_VEST @mode = ?, @params = ?',
-                ['Finalize', $params]
-            );
+            Log::info('VEST Finalize started.', [
+                'userCode' => $validated['json_data']['userCode'] ?? '',
+                'selectedCount' => count($validated['json_data']['dt1'] ?? []),
+            ]);
 
-            return response()->json([
-                'success' => true,
-                'data' => $results,
-            ], 200);
+            /*
+             * SQL Server posting procedures can emit intermediate result sets
+             * from GLDTL, GLSUM, or DocTrail. Laravel DB::select() reads only
+             * the first result set, which can hide the final VEST summary.
+             * Walk every result set and retain the final posting/error row.
+             */
+            $pdo = DB::connection()->getPdo();
+            $statement = $pdo->prepare(
+                'EXEC sproc_PHP_Posting_VEST @mode = ?, @params = ?'
+            );
+            $statement->execute(['Finalize', $params]);
+
+            $lastNonEmptyRows = [];
+            $postingRows = [];
+
+            do {
+                $rows = $statement->columnCount() > 0
+                    ? $statement->fetchAll(\PDO::FETCH_ASSOC)
+                    : [];
+
+                if (is_array($rows) && count($rows) > 0) {
+                    $lastNonEmptyRows = $rows;
+
+                    foreach ($rows as $row) {
+                        if (
+                            array_key_exists('result', $row) ||
+                            array_key_exists('errorMsg', $row) ||
+                            array_key_exists('errorCount', $row)
+                        ) {
+                            $postingRows = $rows;
+                        }
+                    }
+                }
+            } while ($statement->nextRowset());
+
+            $statement->closeCursor();
+
+            $results = count($postingRows) > 0
+                ? $postingRows
+                : $lastNonEmptyRows;
+
+            Log::info('VEST Finalize SQL result.', [
+                'rowCount' => count($results),
+                'results' => $results,
+            ]);
+
+            if (count($results) === 0) {
+                return response()->json([[
+                    'result' => '',
+                    'errorMsg' => 'VEST posting procedure returned no result set. Check laravel.log for the VEST Finalize trace.',
+                    'errorCount' => 1,
+                ]], 500);
+            }
+
+            /* useHandlePostTran expects response.data to be the row array. */
+            return response()->json($results, 200);
         } catch (\Throwable $e) {
             $message = $e->getMessage();
 
@@ -246,14 +298,12 @@ class VESTController extends Controller
                             );
 
                             if (count($posted) === count($groupIds)) {
-                                return response()->json([
-                                    'success' => true,
+                                return response()->json([[
+                                    'result' => 'The following VEST Transactions have been posted successfully.',
+                                    'errorMsg' => '',
+                                    'errorCount' => 0,
                                     'warning' => 'SQL Server returned a null aggregate warning, but the VEST transaction was already posted successfully.',
-                                    'data' => [[
-                                        'result' => 'The following VEST Transactions have been posted successfully.',
-                                    ]],
-                                    'posted' => $posted,
-                                ], 200);
+                                ]], 200);
                             }
                         }
                     }
