@@ -1219,9 +1219,10 @@ Route::get('/findRMIS', [RMISController::class, 'find']);
     Route::get('/postingVEST', [VESTController::class, 'posting']);
     Route::post('/getVESTHistory', [VESTController::class, 'history']);
     Route::get('/findVEST', [VESTController::class, 'find']);
-    Route::post('/finalizeVEST', [VESTController::class, 'finalize']);
     Route::post('/cancelVEST', [VESTController::class, 'cancel']);
     Route::get('/checkVESTDuplicate', [VESTController::class, 'checkDuplicate']);
+    // Keep VEST posting on the same route/middleware flow as the working FGST posting.
+    Route::post('/finalizeVEST', [VESTController::class, 'finalize']);
 
     Route::get('/VSO', [VSOController::class, 'index']);
     Route::post('/upsertVSO', [VSOController::class, 'upsert']);
@@ -1810,7 +1811,6 @@ Route::group(['middleware' => [
     Route::post('/finalizeMSIS', [MSISController::class, 'finalize']);
     Route::post('/finalizeMSST', [MSSTController::class, 'finalize']);
     Route::post('/finalizeMSAJ', [MSAJController::class, 'finalize']);
-    Route::post('/finalizeVEST', [VESTController::class, 'finalize']);
     Route::post('/finalizeAPV', [APVoucherController::class, 'finalize']);
     Route::post('/finalizeARDS', [ARDSController::class, 'finalize']);
     Route::post('/cancelARDS', [ARDSController::class, 'cancel']);

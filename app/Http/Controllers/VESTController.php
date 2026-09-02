@@ -131,7 +131,8 @@ class VESTController extends Controller
      * Normalize frontend aliases into the field names expected by sproc_PHP_VEST.
      *
      * VEST.jsx currently sends modelYear/chassisNo while the stored procedure
-     * reads modelYr/csNo. Keep both aliases so retrieval/editing remains tolerant.
+     * reads modelYr/csNo. Normalize VE_ID aliases as well so the selected
+     * VEFIFO_LOC vehicle identity is persisted in VEST_DT1.VE_ID.
      */
     private function normalizeUpsertPayload($payload)
     {
@@ -154,6 +155,19 @@ class VESTController extends Controller
 
             if (!isset($row['csNo']) || $row['csNo'] === null || $row['csNo'] === '') {
                 $row['csNo'] = $row['chassisNo'] ?? $row['cs_no'] ?? '';
+            }
+
+            if (!isset($row['veId']) || $row['veId'] === null || $row['veId'] === '') {
+                $row['veId'] = $row['ve_id']
+                    ?? $row['VE_ID']
+                    ?? $row['VeId']
+                    ?? $row['uniqueKey']
+                    ?? '';
+            }
+
+            // VEST_DT1.VE_ID is NVARCHAR(100).
+            if ($row['veId'] !== null) {
+                $row['veId'] = substr((string) $row['veId'], 0, 100);
             }
 
             // VEST_DT1.UNIQUE_KEY is NVARCHAR(40), so preserve up to 40 characters.
@@ -179,72 +193,77 @@ class VESTController extends Controller
                 'json_data' => 'required|array',
             ]);
 
-            $params = json_encode(
-                ['json_data' => $validated['json_data']],
-                JSON_UNESCAPED_UNICODE
-            );
+            // Use the same request envelope as the working FGST finalize method.
+            $params = json_encode(['json_data' => $validated['json_data']], JSON_UNESCAPED_UNICODE);
 
-            Log::info('VEST Finalize started.', [
-                'userCode' => $validated['json_data']['userCode'] ?? '',
-                'selectedCount' => count($validated['json_data']['dt1'] ?? []),
-            ]);
+            $results = DB::select(
+                'EXEC sproc_PHP_Posting_VEST @mode = ?, @params = ?',
+                ['Finalize', $params]
+            );
 
             /*
-             * SQL Server posting procedures can emit intermediate result sets
-             * from GLDTL, GLSUM, or DocTrail. Laravel DB::select() reads only
-             * the first result set, which can hide the final VEST summary.
-             * Walk every result set and retain the final posting/error row.
+             * A posting helper called inside the SQL procedure may emit an
+             * empty/unrelated result set before the final VEST result. When
+             * that happens, verify the document status instead of returning
+             * a silent success with an empty data array.
              */
-            $pdo = DB::connection()->getPdo();
-            $statement = $pdo->prepare(
-                'EXEC sproc_PHP_Posting_VEST @mode = ?, @params = ?'
-            );
-            $statement->execute(['Finalize', $params]);
+            $validResults = array_values(array_filter($results, static function ($row) {
+                return is_object($row)
+                    && (property_exists($row, 'result')
+                        || property_exists($row, 'errorMsg')
+                        || property_exists($row, 'errorCount'));
+            }));
 
-            $lastNonEmptyRows = [];
-            $postingRows = [];
+            if (count($validResults) === 0) {
+                $groupIds = $this->getFinalizeGroupIds($validated['json_data']);
+                $posted = $this->getPostedVESTRows($groupIds);
 
-            do {
-                $rows = $statement->columnCount() > 0
-                    ? $statement->fetchAll(\PDO::FETCH_ASSOC)
-                    : [];
-
-                if (is_array($rows) && count($rows) > 0) {
-                    $lastNonEmptyRows = $rows;
-
-                    foreach ($rows as $row) {
-                        if (
-                            array_key_exists('result', $row) ||
-                            array_key_exists('errorMsg', $row) ||
-                            array_key_exists('errorCount', $row)
-                        ) {
-                            $postingRows = $rows;
-                        }
-                    }
+                if (count($groupIds) > 0 && count($posted) === count($groupIds)) {
+                    return response()->json([[
+                        'result' => 'The following VEST Transactions have been posted successfully.',
+                        'errorMsg' => '',
+                        'errorCount' => 0,
+                    ]], 200);
                 }
-            } while ($statement->nextRowset());
 
-            $statement->closeCursor();
+                $message = 'sproc_PHP_Posting_VEST returned no VEST result row and the selected transaction remains unposted.';
 
-            $results = count($postingRows) > 0
-                ? $postingRows
-                : $lastNonEmptyRows;
+                Log::error('VEST Finalize returned no result row.', [
+                    'groupIds' => $groupIds,
+                    'rawResultCount' => count($results),
+                ]);
 
-            Log::info('VEST Finalize SQL result.', [
-                'rowCount' => count($results),
-                'results' => $results,
-            ]);
-
-            if (count($results) === 0) {
-                return response()->json([[
-                    'result' => '',
-                    'errorMsg' => 'VEST posting procedure returned no result set. Check laravel.log for the VEST Finalize trace.',
-                    'errorCount' => 1,
-                ]], 500);
+                return $this->postingErrorResponse($message);
             }
 
-            /* useHandlePostTran expects response.data to be the row array. */
-            return response()->json($results, 200);
+            /*
+             * useHandlePostTran reads response.data[0].result/errorMsg.
+             * Return the SQL rows directly; do not wrap them in { success, data }.
+             */
+            foreach ($validResults as $row) {
+                if (!property_exists($row, 'result')) {
+                    $row->result = '';
+                }
+
+                if (!property_exists($row, 'errorMsg')) {
+                    $row->errorMsg = '';
+                }
+
+                if (!property_exists($row, 'errorCount')) {
+                    $row->errorCount = $row->errorMsg !== '' ? 1 : 0;
+                }
+
+                // Some versions of useHandlePostTran display only `result`.
+                // Mirror the SQL error there so the actual failure is not hidden.
+                if (
+                    trim((string) $row->result) === ''
+                    && trim((string) $row->errorMsg) !== ''
+                ) {
+                    $row->result = $row->errorMsg;
+                }
+            }
+
+            return response()->json($validResults, 200);
         } catch (\Throwable $e) {
             $message = $e->getMessage();
 
@@ -258,54 +277,16 @@ class VESTController extends Controller
                 str_contains($message, 'Null value is eliminated by an aggregate')
             ) {
                 try {
-                    $payload = $request->input('json_data', []);
-                    $rows = $payload['dt1']
-                        ?? $payload['selectedData']
-                        ?? $payload['selectedRows']
-                        ?? $payload['data']
-                        ?? [];
+                    $groupIds = $this->getFinalizeGroupIds($request->input('json_data', []));
+                    $posted = $this->getPostedVESTRows($groupIds);
 
-                    if (is_array($rows) && count($rows) > 0) {
-                        $groupIds = [];
-
-                        foreach ($rows as $row) {
-                            if (!is_array($row)) {
-                                continue;
-                            }
-
-                            $groupId = $row['groupId']
-                                ?? $row['vestId']
-                                ?? $row['documentID']
-                                ?? $row['docId']
-                                ?? null;
-
-                            if ($groupId) {
-                                $groupIds[] = $groupId;
-                            }
-                        }
-
-                        $groupIds = array_values(array_unique($groupIds));
-
-                        if (count($groupIds) > 0) {
-                            $placeholders = implode(',', array_fill(0, count($groupIds), '?'));
-
-                            $posted = DB::select(
-                                "SELECT vest_id, vest_no, branch_code, vest_status
-                                 FROM vest_hd
-                                 WHERE vest_id IN ($placeholders)
-                                   AND ISNULL(vest_status, '') = 'F'",
-                                $groupIds
-                            );
-
-                            if (count($posted) === count($groupIds)) {
-                                return response()->json([[
-                                    'result' => 'The following VEST Transactions have been posted successfully.',
-                                    'errorMsg' => '',
-                                    'errorCount' => 0,
-                                    'warning' => 'SQL Server returned a null aggregate warning, but the VEST transaction was already posted successfully.',
-                                ]], 200);
-                            }
-                        }
+                    if (count($groupIds) > 0 && count($posted) === count($groupIds)) {
+                        return response()->json([[
+                            'result' => 'The following VEST Transactions have been posted successfully.',
+                            'errorMsg' => '',
+                            'errorCount' => 0,
+                            'warning' => 'SQL Server returned a null aggregate warning, but the VEST transaction was already posted successfully.',
+                        ]], 200);
                     }
                 } catch (\Throwable $verifyError) {
                     Log::warning('VEST finalize warning verification failed.', [
@@ -314,16 +295,81 @@ class VESTController extends Controller
                 }
             }
 
-            Log::error('VEST Finalize failed', [
+            Log::error('VEST Finalize failed.', [
                 'message' => $message,
-                'request' => $request->all(),
+                'groupIds' => $this->getFinalizeGroupIds($request->input('json_data', [])),
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => $message,
-            ], 500);
+            /*
+             * Return the SQL error through the normal posting result contract.
+             * The shared useHandlePostTran helper can then display errorMsg
+             * instead of only reporting a generic Axios/HTTP failure.
+             */
+            return $this->postingErrorResponse($message);
         }
+    }
+
+    private function getFinalizeGroupIds($payload): array
+    {
+        if (!is_array($payload)) {
+            return [];
+        }
+
+        $rows = $payload['dt1']
+            ?? $payload['selectedData']
+            ?? $payload['selectedRows']
+            ?? $payload['data']
+            ?? [];
+
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        $groupIds = [];
+
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $groupId = $row['groupId']
+                ?? $row['vestId']
+                ?? $row['documentID']
+                ?? $row['docId']
+                ?? null;
+
+            if ($groupId !== null && trim((string) $groupId) !== '') {
+                $groupIds[] = trim((string) $groupId);
+            }
+        }
+
+        return array_values(array_unique($groupIds));
+    }
+
+    private function getPostedVESTRows(array $groupIds): array
+    {
+        if (count($groupIds) === 0) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($groupIds), '?'));
+
+        return DB::select(
+            "SELECT vest_id, vest_no, branch_code, vest_status
+             FROM vest_hd
+             WHERE vest_id IN ($placeholders)
+               AND ISNULL(vest_status, '') = 'F'",
+            $groupIds
+        );
+    }
+
+    private function postingErrorResponse(string $message)
+    {
+        return response()->json([[
+            'result' => $message,
+            'errorMsg' => $message,
+            'errorCount' => 1,
+        ]], 200);
     }
 
     public function generateGL(Request $request)
