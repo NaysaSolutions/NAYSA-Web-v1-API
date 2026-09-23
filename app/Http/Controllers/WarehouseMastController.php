@@ -144,4 +144,34 @@ public function checkInUsedWH(Request $request) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
+
+
+    
+
+    public function get(Request $request)
+    {
+
+        $request->validate([
+            'whCode' => 'required|string',
+        ]);
+
+        try {
+            $results = DB::select(
+                'EXEC sproc_PHP_WareMast @mode = ?, @params = ?',
+                ['Get', $request->whCode]
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $results,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
 }

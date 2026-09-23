@@ -66,6 +66,37 @@ public function get(Request $request) {
 
 
 
+// public function upsert(Request $request)
+// {
+//     $validated = $request->validate([
+//         'json_data' => 'required|array'
+//     ]);
+
+//     try {
+//         $params = json_encode(['json_data' => $validated['json_data']]);
+
+//         $result = DB::select(
+//             "EXEC sproc_PHP_MSRR @mode = ?, @params = ?",
+//             ["Upsert", $params]
+//         );
+
+//         // Return same response structure as MSAJ
+//         return response()->json([
+//             'success' => true,
+//             'mode'    => 'Upsert',
+//             'data'    => $result
+//         ], 200);
+
+//     } catch (\Throwable $e) {
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'Error executing MSRR Upsert.',
+//             'details' => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
+
 public function upsert(Request $request)
 {
     $validated = $request->validate([
@@ -73,16 +104,18 @@ public function upsert(Request $request)
     ]);
 
     try {
-        $params = json_encode(['json_data' => $validated['json_data']]);
+        $params = json_encode([
+            'json_data' => $validated['json_data']
+        ], JSON_UNESCAPED_UNICODE);
 
         $result = DB::select(
-            "EXEC sproc_PHP_FGRR @mode = ?, @params = ?",
-            ["Upsert", $params]
+            'EXEC sproc_PHP_FGRR @mode = ?, @params = ?',
+            ['Upsert', $params]
         );
 
-        // Return same response structure as MSAJ
         return response()->json([
             'success' => true,
+            'status'  => 'success',
             'mode'    => 'Upsert',
             'data'    => $result
         ], 200);
@@ -90,11 +123,13 @@ public function upsert(Request $request)
     } catch (\Throwable $e) {
         return response()->json([
             'success' => false,
+            'status'  => 'error',
             'message' => 'Error executing FGRR Upsert.',
             'details' => $e->getMessage()
         ], 500);
     }
 }
+
 
 
     
@@ -121,7 +156,7 @@ public function cancel(Request $request)
         } catch (\Throwable $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Error executing FGRR Cancel.',
+                'message' => 'Error executing PR Upsert.',
                 'details' => $e->getMessage()
             ], 500);
         }
@@ -151,7 +186,7 @@ public function history(Request $request) {
         } catch (\Throwable $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Error executing FGRR History.',
+                'message' => 'Error executing PR Upsert.',
                 'details' => $e->getMessage()
             ], 500);
     }
@@ -264,11 +299,11 @@ public function update(Request $request)
 {
     try {
 
-        Log::info('🟠 FGRR FINALIZE RAW REQUEST', [
+        Log::info('🟠 MSRR FINALIZE RAW REQUEST', [
             'all' => $request->all()
         ]);
 
-        Log::info('🟠 FGRR json_data ONLY', [
+        Log::info('🟠 MSRR json_data ONLY', [
             'json_data' => $request->input('json_data')
         ]);
 
@@ -280,7 +315,7 @@ public function update(Request $request)
             'json_data' => $validated['json_data']
         ]);
 
-        Log::info('🟠 FGRR FINAL PAYLOAD TO SQL', [
+        Log::info('🟠 MSRR FINAL PAYLOAD TO SQL', [
             'params' => $params
         ]);
 
@@ -289,7 +324,7 @@ public function update(Request $request)
             ['Finalize', $params, $request->user()->USER_CODE ?? 'ADMIN']
         );
 
-        Log::info('🟠 FGRR SQL RESULT', [
+        Log::info('🟠 MSRR SQL RESULT', [
             'result' => $results
         ]);
 
@@ -300,7 +335,7 @@ public function update(Request $request)
 
     } catch (\Exception $e) {
 
-        Log::error('❌ FGRR FINALIZE ERROR', [
+        Log::error('❌ MSRR FINALIZE ERROR', [
             'message' => $e->getMessage()
         ]);
 
@@ -312,6 +347,21 @@ public function update(Request $request)
 }
 
 
+
+public function close(Request $request)
+{
+    $validated = $request->validate(['json_data' => 'required|array']);
+
+    try {
+        $params = json_encode(['json_data' => $validated['json_data']], JSON_UNESCAPED_UNICODE);
+        $result = DB::select('EXEC sproc_PHP_FGRR @mode = ?, @params = ?', ['Close', $params]);
+
+        return response()->json(['success' => true, 'status' => 'success', 'mode' => 'Close', 'data' => $result], 200);
+    } catch (\Throwable $e) {
+        Log::error('FGRR Close failed: ' . $e->getMessage());
+        return response()->json(['success' => false, 'status' => 'error', 'message' => 'Unable to close FGRR.', 'details' => $e->getMessage()], 500);
+    }
+}
 
 public function generateGL(Request $request)
     {
@@ -367,11 +417,11 @@ public function generateGL(Request $request)
             ], 200);
 
         } catch (\Throwable $e) {
-            Log::error('Error executing sproc_PHP_FGRR Find: ' . $e->getMessage());
+            Log::error('Error executing sproc_PHP_MSRR Find: ' . $e->getMessage());
 
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Error executing FGRR Find.',
+                'message' => 'Error executing MSRR Find.',
                 'details' => $e->getMessage()
             ], 500);
         }

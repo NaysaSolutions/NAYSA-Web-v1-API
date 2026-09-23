@@ -182,15 +182,8 @@ use App\Http\Controllers\VEColorController;
 
 
 
-
-
-
-
-
-
-
-
-
+use App\Http\Controllers\ItemBrandMatrixController;
+use App\Http\Controllers\BrandMasterController;
 
 
 
@@ -494,6 +487,8 @@ Route::middleware(['tenant', \App\Http\Middleware\EnsureRecentActivity::class])-
     Route::get('/getAPCheckRelasing', [APBalanceController::class, 'getAPCheckRelasing']);
     Route::post('/getAPCheckRelasing', [APBalanceController::class, 'getAPCheckRelasing']);
     Route::post('/updateAPCKRL', [APBalanceController::class, 'updateAPCKRL']);
+    Route::post('/getAP2307', [APBalanceController::class, 'getAP2307']);
+
 
     Route::get('/getOpenARBalance', [ARBalanceController::class, 'getOpenARBalance']);
     Route::get('/getSelectedARBalance', [ARBalanceController::class, 'getSelectedARBalance']);
@@ -744,6 +739,9 @@ Route::middleware(['tenant', \App\Http\Middleware\EnsureRecentActivity::class])-
     Route::post('/checkDuplicatePayee', [VendMasterController::class, 'checkDuplicate']);
     Route::post('/checkDuplicatePayeeName', [VendMasterController::class, 'checkDuplicateName']);
     Route::post('/checkInUsedPayee', [VendMasterController::class, 'checkInUsed']);
+    Route::post('/payeeGenerateCode', [VendMasterController::class, 'generateCode']);
+
+
 
     Route::get('/customer', [CustMasterController::class, 'index']);
     Route::post('/upsertCustomer', [CustMasterController::class, 'upsert']);
@@ -792,6 +790,9 @@ Route::middleware(['tenant', \App\Http\Middleware\EnsureRecentActivity::class])-
     Route::post('/checkDuplicateRMMast', [RMMastController::class, 'checkDuplicate']);
     Route::post('/checkInUsedRMMast',    [RMMastController::class, 'checkInUsed']);
     Route::post('/deleteRMMast',         [RMMastController::class, 'delete']);
+    Route::get('/rmMastGenerationMode', [RMMastController::class, 'generationMode']);
+    Route::get('/rmMastGenerateCode', [RMMastController::class, 'generateCode']);
+
 
     Route::get('/msCateg', [MSCategController::class, 'index']);
     Route::get('/lookupMSCateg', [MSCategController::class, 'lookup']);
@@ -950,6 +951,23 @@ Route::middleware(['tenant', \App\Http\Middleware\EnsureRecentActivity::class])-
     Route::post('/getAPVHistory', [APVoucherController::class, 'history']);
     Route::get('/postingAPV', [APVoucherController::class, 'posting']);
 
+    //  LC reference
+    Route::get('/getAPVLC_OpenSummary', [APVoucherController::class, 'getAPVLC_OpenSummary']);
+    Route::post('/getAPVLC_OpenDetail', [APVoucherController::class, 'getAPVLC_OpenDetail']);
+
+    //PO REFERENCE
+    Route::get('/getAPVPO_OpenSummary', [APVoucherController::class, 'getAPVPO_OpenSummary']);
+    Route::post('/getAPVPO_OpenDetail', [APVoucherController::class, 'getAPVPO_OpenDetail']);
+;
+Route::post('/getPCVRR_OpenSummary', [APVoucherController::class, 'getPCVRR_OpenSummary']);
+
+Route::post('/apv/reference-summary', [APVoucherController::class, 'getAPVReferenceSummary']);
+
+
+
+
+
+
     Route::get('/PO', [POController::class, 'index']);
     Route::post('/upsertPO', [POController::class, 'upsert']);
     Route::get('/getPO', [POController::class, 'get']);
@@ -963,6 +981,14 @@ Route::middleware(['tenant', \App\Http\Middleware\EnsureRecentActivity::class])-
     Route::post('/getFGPORR_OpenDetail', [POController::class, 'getFGPORR_OpenDetail']);
     Route::get('/getRMPORR_OpenSummary', [POController::class, 'getRMPORR_OpenSummary']);
     Route::post('/getRMPORR_OpenDetail', [POController::class, 'getRMPORR_OpenDetail']);
+    Route::get('/getVEPORR_OpenSummary', [POController::class, 'getVEPORR_OpenSummary']);
+    Route::post('/getVEPORR_OpenDetail', [POController::class, 'getVEPORR_OpenDetail']);
+    Route::get('/getPOAPV_Summary', [POController::class, 'getPOAPVSummary']);
+
+
+
+
+
 
     Route::get('/JO', [JOController::class, 'index']);
     Route::post('/upsertJO', [JOController::class, 'upsert']);
@@ -1474,6 +1500,18 @@ Route::get('/findRMIS', [RMISController::class, 'find']);
     Route::get('/findCSI', [CSIController::class, 'find']);
 
  
+
+    Route::get('/brand', [BrandMasterController::class, 'index']);
+    Route::post('/upsert', [BrandMasterController::class, 'upsert']);
+    Route::post('/check-duplicate', [BrandMasterController::class, 'checkDuplicate']);
+    Route::post('/check-in-used', [BrandMasterController::class, 'checkInUsed']);
+    Route::post('/delete', [BrandMasterController::class, 'delete']);
+
+
+    Route::get('/itemBrandMatrix', [ItemBrandMatrixController::class, 'load']);
+    Route::post('/upsertItemBrandMatrix', [ItemBrandMatrixController::class, 'upsert']);
+
+
 
 
 

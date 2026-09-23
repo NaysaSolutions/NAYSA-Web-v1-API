@@ -12,24 +12,26 @@ class VendMasterController extends Controller
     public function index(Request $request)
     {
         try {
-            $page = max((int) $request->query('page', 1), 1);
-            $pageSize = (int) $request->query('pageSize', 300);
-            $pageSize = max(min($pageSize, 1000), 1);
-
-            $jsonData = [
-                'page' => $page,
-                'pageSize' => $pageSize,
-                'filter' => trim((string) $request->query('filter', '')),
-                'sltypeCode' => trim((string) $request->query('sltypeCode', '')),
-                'vendCode' => trim((string) $request->query('vendCode', '')),
-                'vendName' => trim((string) $request->query('vendName', '')),
-                'businessName' => trim((string) $request->query('businessName', '')),
-                'vendTin' => trim((string) $request->query('vendTin', '')),
-                'branchCode' => trim((string) $request->query('branchCode', '')),
-                'active' => trim((string) $request->query('active', '')),
-            ];
-
-            $params = json_encode(['json_data' => $jsonData]);
+            /*
+             * Payee Master Data uses server-side filtering/paging.
+             * Forward query-string values to sproc_PHP_VendMast Load mode.
+             */
+            $params = json_encode([
+                'json_data' => [
+                    'page'         => (int) $request->query('page', 1),
+                    'pageSize'     => (int) $request->query('pageSize', 300),
+                    'sltypeCode'   => (string) $request->query('sltypeCode', ''),
+                    'vendCode'     => (string) $request->query('vendCode', ''),
+                    'vendName'     => (string) $request->query('vendName', ''),
+                    'businessName' => (string) $request->query('businessName', ''),
+                    'vendTin'      => (string) $request->query('vendTin', ''),
+                    'branchCode'   => (string) $request->query('branchCode', ''),
+                    'active'       => (string) $request->query('active', ''),
+                    'filter'       => (string) $request->query('filter', ''),
+                    'search'       => (string) $request->query('search', ''),
+                    'searchMode'   => (string) $request->query('searchMode', ''),
+                ],
+            ], JSON_UNESCAPED_UNICODE);
 
             $results = DB::select(
                 'EXEC sproc_PHP_VendMast @mode = ?, @params = ?',
@@ -41,8 +43,6 @@ class VendMasterController extends Controller
                 'data' => $results,
             ], 200);
         } catch (\Exception $e) {
-            Log::error('Vendor list load failed:', ['error' => $e->getMessage()]);
-
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
@@ -92,6 +92,43 @@ class VendMasterController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Used only by HS_DOC = Auto to preview/display a Payee Code before Save.
+     * HS_DOC = System does not call this endpoint; the stored procedure
+     * generates the code during Upsert. HS_DOC = Manual uses the user-entered code.
+     */
+    public function generateCode(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'sltypeCode' => 'required|string|max:20',
+            ]);
+
+            $params = json_encode([
+                'json_data' => [
+                    'sltypeCode' => strtoupper(trim($validated['sltypeCode'])),
+                ],
+            ]);
+
+            $results = DB::select(
+                'EXEC sproc_PHP_VendMast @mode = ?, @params = ?',
+                ['GenerateCode', $params]
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $results,
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Payee code generation failed:', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate Payee Code: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -166,26 +203,6 @@ class VendMasterController extends Controller
             $results = DB::select(
                 'EXEC sproc_PHP_VendMast @mode = ?, @params = ?',
                 ['CheckDuplicate', $request->input('json_data')]
-            );
-
-            return response()->json([
-                'success' => true,
-                'data' => $results,
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    public function checkDuplicateName(Request $request)
-    {
-        try {
-            $results = DB::select(
-                'EXEC sproc_PHP_VendMast @mode = ?, @params = ?',
-                ['CheckDuplicateName', $request->input('json_data')]
             );
 
             return response()->json([

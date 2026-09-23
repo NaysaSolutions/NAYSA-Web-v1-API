@@ -216,5 +216,47 @@ public function updateAPCKRL(Request $request)
 
 
 
+public function getAP2307(Request $request)
+{
+    try {
+        $dataArray = $request->input('json_data', []);
+
+        // Accept either an already-decoded request object or a JSON string.
+        if (is_string($dataArray)) {
+            $decodedData = json_decode($dataArray, true);
+            $dataArray = is_array($decodedData) ? $decodedData : [];
+        }
+
+        if (!is_array($dataArray)) {
+            $dataArray = [];
+        }
+
+        // sproc_PHP_AP_Inq reads all parameters from $.json_data.*.
+        $jsonString = json_encode(
+            ['json_data' => $dataArray],
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+        );
+
+        $results = DB::select(
+            'EXEC sproc_PHP_AP_Inq @_mode = ?, @_params = ?',
+            ['AP_2307', $jsonString]
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $results,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ], 500);
+    }
+}
+
+
+
+
 
 }
