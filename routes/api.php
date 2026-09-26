@@ -1023,12 +1023,13 @@ Route::post('/apv/reference-summary', [APVoucherController::class, 'getAPVRefere
     Route::get('/getRMAJ', [RMAJController::class, 'get']);
     Route::get('/postingRMAJ', [RMAJController::class, 'posting']);
     Route::post('/upsertRMAJ', [RMAJController::class, 'upsert']);
-    Route::post('/generateRMAJEntries', [RMAJController::class, 'generateGL']);
+    Route::post('/generateGLRMAJ', [RMAJController::class, 'generateGL']);
     Route::post('/getRMAJHistory', [RMAJController::class, 'history']);
     Route::post('/findRMAJ', [RMAJController::class, 'find']);
     Route::post('/validateRMAJUpload', [RMAJController::class, 'validateUpload']);
     Route::post('/checkRMAJBBUploaded', [RMAJController::class, 'checkBBUploaded']);
     Route::post('/finalizeRMAJ', [RMAJController::class, 'finalize']);
+
 
 
 

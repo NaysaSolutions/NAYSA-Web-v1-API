@@ -126,7 +126,7 @@ class FGSTController extends Controller
                 continue;
             }
 
-            $row['uniqueKey'] = substr((string) $row['uniqueKey'], 0, 20);
+            $row['uniqueKey'] = substr((string) $row['uniqueKey'], 0, 100);
         }
 
         unset($row);
