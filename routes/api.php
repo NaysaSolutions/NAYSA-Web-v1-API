@@ -969,6 +969,7 @@ Route::post('/apv/reference-summary', [APVoucherController::class, 'getAPVRefere
 
 
     Route::get('/PO', [POController::class, 'index']);
+    Route::post('/po/last-purchase-price', [POController::class, 'lastPurchasePrice']);
     Route::post('/upsertPO', [POController::class, 'upsert']);
     Route::get('/getPO', [POController::class, 'get']);
     Route::post('/getPOOpen', [POController::class, 'getPOOpen']);

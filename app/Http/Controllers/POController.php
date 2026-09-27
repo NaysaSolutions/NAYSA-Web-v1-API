@@ -11,6 +11,35 @@ use App\Mail\GenericApiMail;
 class POController extends Controller
 {
 
+    public function lastPurchasePrice(Request $request)
+    {
+        $validated = $request->validate([
+            'branchCode' => 'required|string|max:10',
+            'invType' => 'required|string|max:10',
+            'itemCodeList' => 'required|array|min:1',
+            'itemCodeList.*' => 'required|string|max:50',
+        ]);
+
+        try {
+            $params = json_encode(['json_data' => $validated], JSON_UNESCAPED_UNICODE);
+            $results = DB::connection('tenant')->select(
+                'EXEC dbo.sproc_PHP_PO @mode = ?, @params = ?',
+                ['lastPurchasePrice', $params]
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $results,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to retrieve the last purchase price.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function index(Request $request)
     {
 
@@ -856,7 +885,6 @@ public function getVEPORR_OpenDetail(Request $request)
 
 
 }
-
 
 
 
